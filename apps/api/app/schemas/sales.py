@@ -96,6 +96,10 @@ class DeliveryChallanOut(BaseModel):
     sales_order_id: uuid.UUID
     dispatch_date: date
     status: str
+    trip_id: uuid.UUID | None = None
+
+    class Config:
+        from_attributes = True
 
     class Config:
         from_attributes = True

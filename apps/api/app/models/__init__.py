@@ -1,12 +1,25 @@
 from app.models.accounting import Account, JournalEntry, JournalLine
 from app.models.audit import AuditLog
 from app.models.catalog import Batch, Category, UnitConversion
+from app.models.field_sales import Visit
+from app.models.fleet import Driver, ProofOfDelivery, Trip, Vehicle
 from app.models.idempotency import IdempotencyKey
 from app.models.importing import ImportBatch, ImportBatchRow
 from app.models.inventory import StockBalance, StockLedger, StockReservation
 from app.models.masters import Customer, Item, Supplier
 from app.models.numbering import DocNumberCounter, FinancialYear
 from app.models.pricing import CustomerItemPrice, RateContract
+from app.models.procurement import (
+    GoodsReceipt,
+    GoodsReceiptItem,
+    LandedCostEntry,
+    PurchaseBill,
+    PurchaseBillItem,
+    PurchaseOrder,
+    PurchaseOrderItem,
+    SupplierPayment,
+    SupplierPaymentAllocation,
+)
 from app.models.projects import Project, Site
 from app.models.sales import (
     DeliveryChallan,
@@ -22,6 +35,14 @@ from app.models.sales import (
 )
 from app.models.tenant import Branch, Company, Tenant, Warehouse
 from app.models.user import Permission, Role, RolePermission, User, UserRole
+from app.models.warehouse_ops import (
+    SalesReturn,
+    SalesReturnItem,
+    StockCount,
+    StockCountItem,
+    StockTransfer,
+    StockTransferItem,
+)
 
 __all__ = [
     "Tenant",
@@ -65,4 +86,24 @@ __all__ = [
     "InvoiceItem",
     "Receipt",
     "PaymentAllocation",
+    "Vehicle",
+    "Driver",
+    "Trip",
+    "ProofOfDelivery",
+    "StockTransfer",
+    "StockTransferItem",
+    "StockCount",
+    "StockCountItem",
+    "SalesReturn",
+    "SalesReturnItem",
+    "PurchaseOrder",
+    "PurchaseOrderItem",
+    "GoodsReceipt",
+    "GoodsReceiptItem",
+    "LandedCostEntry",
+    "PurchaseBill",
+    "PurchaseBillItem",
+    "SupplierPayment",
+    "SupplierPaymentAllocation",
+    "Visit",
 ]

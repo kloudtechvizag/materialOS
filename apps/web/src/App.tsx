@@ -2,14 +2,30 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 import { AppShell } from "@/components/layout/AppShell";
 import { BranchesPage } from "@/routes/BranchesPage";
+import { CollectionsPage } from "@/routes/CollectionsPage";
 import { Customer360Page } from "@/routes/Customer360Page";
 import { CustomersPage } from "@/routes/CustomersPage";
 import { DashboardPage } from "@/routes/DashboardPage";
+import { DispatchBoardPage } from "@/routes/dispatch/DispatchBoardPage";
+import { FleetPage } from "@/routes/dispatch/FleetPage";
+import { PodCapturePage } from "@/routes/dispatch/PodCapturePage";
+import { StockCountDetailPage } from "@/routes/dispatch/StockCountDetailPage";
+import { StockCountsPage } from "@/routes/dispatch/StockCountsPage";
+import { TransfersPage } from "@/routes/dispatch/TransfersPage";
+import { TripDetailPage } from "@/routes/dispatch/TripDetailPage";
+import { TripsPage } from "@/routes/dispatch/TripsPage";
+import { FieldSalesPage } from "@/routes/FieldSalesPage";
 import { ImportWizardPage } from "@/routes/imports/ImportWizardPage";
 import { ImportsPage } from "@/routes/imports/ImportsPage";
 import { InvoiceDetailPage } from "@/routes/InvoiceDetailPage";
 import { ItemsPage } from "@/routes/ItemsPage";
 import { LoginPage } from "@/routes/LoginPage";
+import { GoodsReceiptDetailPage } from "@/routes/procurement/GoodsReceiptDetailPage";
+import { PurchaseBillDetailPage } from "@/routes/procurement/PurchaseBillDetailPage";
+import { PurchaseOrderDetailPage } from "@/routes/procurement/PurchaseOrderDetailPage";
+import { PurchaseOrdersPage } from "@/routes/procurement/PurchaseOrdersPage";
+import { Supplier360Page } from "@/routes/procurement/Supplier360Page";
+import { SuppliersPage } from "@/routes/procurement/SuppliersPage";
 import { ProjectsPage } from "@/routes/ProjectsPage";
 import { NewQuotationPage } from "@/routes/quotations/NewQuotationPage";
 import { QuotationDetailPage } from "@/routes/quotations/QuotationDetailPage";
@@ -31,6 +47,16 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
 
+      {/* Standalone, no sidebar -- this is the page a driver opens on their phone (ADR-005). */}
+      <Route
+        path="/pod/:challanId"
+        element={
+          <RequireAuth>
+            <PodCapturePage />
+          </RequireAuth>
+        }
+      />
+
       <Route
         element={
           <RequireAuth>
@@ -48,6 +74,21 @@ export default function App() {
         <Route path="/quotations/:quotationId" element={<QuotationDetailPage />} />
         <Route path="/sales-orders/:orderId" element={<SalesOrderDetailPage />} />
         <Route path="/invoices/:invoiceId" element={<InvoiceDetailPage />} />
+        <Route path="/dispatch-board" element={<DispatchBoardPage />} />
+        <Route path="/fleet" element={<FleetPage />} />
+        <Route path="/trips" element={<TripsPage />} />
+        <Route path="/trips/:tripId" element={<TripDetailPage />} />
+        <Route path="/stock-counts" element={<StockCountsPage />} />
+        <Route path="/stock-counts/:countId" element={<StockCountDetailPage />} />
+        <Route path="/transfers" element={<TransfersPage />} />
+        <Route path="/suppliers" element={<SuppliersPage />} />
+        <Route path="/suppliers/:supplierId" element={<Supplier360Page />} />
+        <Route path="/purchase-orders" element={<PurchaseOrdersPage />} />
+        <Route path="/purchase-orders/:orderId" element={<PurchaseOrderDetailPage />} />
+        <Route path="/goods-receipts/:receiptId" element={<GoodsReceiptDetailPage />} />
+        <Route path="/purchase-bills/:billId" element={<PurchaseBillDetailPage />} />
+        <Route path="/collections" element={<CollectionsPage />} />
+        <Route path="/field-sales" element={<FieldSalesPage />} />
         <Route path="/imports" element={<ImportsPage />} />
         <Route path="/imports/new" element={<ImportWizardPage />} />
         <Route path="/branches" element={<BranchesPage />} />

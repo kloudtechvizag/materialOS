@@ -4,15 +4,22 @@ from app.api.v1 import (
     auth,
     branches,
     catalog,
+    collections,
     companies,
     customers,
     dashboard,
+    dispatch,
+    field_sales,
+    fleet,
     health,
     imports,
+    procurement,
     projects,
     sales,
+    suppliers,
     tenants,
     users,
+    warehouse_ops,
     warehouses,
 )
 
@@ -30,3 +37,10 @@ api_router.include_router(customers.router)
 api_router.include_router(projects.router)
 api_router.include_router(sales.router)
 api_router.include_router(dashboard.router)
+api_router.include_router(fleet.router)
+api_router.include_router(dispatch.router)
+api_router.include_router(warehouse_ops.router)
+api_router.include_router(suppliers.router)
+api_router.include_router(procurement.router)
+api_router.include_router(collections.router)
+api_router.include_router(field_sales.router)

@@ -1,6 +1,7 @@
 """dev.md §25: a new order automatically evaluates credit against
 Customer.credit_limit. Outstanding = opening_balance (Slice 0 baseline)
-+ posted invoice totals - allocated receipts (Part C's definition).
++ posted invoice totals - allocated receipts - sales returns (Part C's
+definition, extended for Slice 2's returns).
 """
 
 import uuid
@@ -12,6 +13,7 @@ from sqlalchemy.orm import Session
 from app.errors import AppError, ErrorCode
 from app.models.masters import Customer
 from app.models.sales import Invoice, PaymentAllocation
+from app.models.warehouse_ops import SalesReturn
 
 
 def compute_outstanding(db: Session, customer_id: uuid.UUID) -> Decimal:
@@ -31,7 +33,13 @@ def compute_outstanding(db: Session, customer_id: uuid.UUID) -> Decimal:
         .where(Invoice.customer_id == customer_id)
     ).scalar_one()
 
-    return customer.opening_balance + Decimal(invoiced_total) - Decimal(allocated_total)
+    returned_total = db.execute(
+        select(func.coalesce(func.sum(SalesReturn.total), 0))
+        .join(Invoice, Invoice.id == SalesReturn.invoice_id)
+        .where(Invoice.customer_id == customer_id)
+    ).scalar_one()
+
+    return customer.opening_balance + Decimal(invoiced_total) - Decimal(allocated_total) - Decimal(returned_total)
 
 
 def check_credit(db: Session, customer_id: uuid.UUID, additional_amount: Decimal) -> None:

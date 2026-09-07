@@ -191,6 +191,18 @@ def invoice_order(
     return invoice
 
 
+@router.get("/delivery-challans", response_model=list[DeliveryChallanOut])
+def list_delivery_challans(
+    unassigned: bool = False,
+    db: Session = Depends(get_db_tenant),
+    _user=Depends(require_permission("customers.view")),
+) -> list[DeliveryChallan]:
+    stmt = select(DeliveryChallan).order_by(DeliveryChallan.created_at.desc())
+    if unassigned:
+        stmt = stmt.where(DeliveryChallan.trip_id.is_(None), DeliveryChallan.status == "dispatched")
+    return db.execute(stmt).scalars().all()
+
+
 # ---------------------------------------------------------------- Invoices & receipts
 
 @router.get("/invoices", response_model=list[InvoiceOut])

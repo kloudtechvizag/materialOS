@@ -5,17 +5,38 @@ AI-powered building materials business operating system. See
 product brief this build follows (it supersedes `dev.md`, the original
 116-section v1 prompt, which is kept as the full feature backlog).
 
-**Status:** Slice 0 (Foundation + Tally/Busy migration) and Slice 1
-(Sell and stock) are built and working end to end. The golden
-transaction from the brief's Slice 1 acceptance test -- quote → credit
-check → approve → sales order → reserve stock → dispatch → invoice →
-part-payment → outstanding updated → project profitability -- runs for
-real, with a balanced double-entry journal posted underneath (minimal
-chart of accounts; full accounting statements are Slice 4) and GST
-split correctly into CGST+SGST or IGST by place of supply. Slices 2-6
-(godown/dispatch operations, procurement, full accounting/GST compliance,
-AI, customer portal) are not started; see the brief's Part F for what's
-next and why the order matters.
+**Status:** Slices 0-3 are built and working end to end.
+
+- **Slice 0** (Foundation + Tally/Busy migration): signup, auth, RBAC,
+  RLS-isolated tenancy, document numbering, the audit trigger, and the
+  six-step Tally/Busy import pipeline.
+- **Slice 1** (Sell and stock): the golden transaction -- quote → credit
+  check → approve → sales order → reserve stock → dispatch → invoice →
+  part-payment → outstanding updated → project profitability -- runs for
+  real, with a balanced double-entry journal posted underneath (minimal
+  chart of accounts; full accounting statements are Slice 4) and GST
+  split correctly into CGST+SGST or IGST by place of supply.
+- **Slice 2** (Godown and dispatch): a dispatch board, vehicle/driver/trip
+  assignment, proof-of-delivery capture (signature + photo + GPS,
+  mobile-web rather than a native app -- see ADR-005) that closes the
+  trip and updates the dispatch board with no paper challan, warehouse
+  transfers, blind stock counts with variance approval posting a real
+  ledger adjustment, and sales returns that reverse both stock and the
+  journal.
+- **Slice 3** (Buy and collect): Purchase Order → approve → Goods Receipt
+  (with per-line QC) → landed cost allocation (by value or quantity,
+  folded into `Item.standard_cost` -- see ADR-006) → Purchase Bill (GST
+  split the same way Slice 1 does for sales) → Supplier Payment, all with
+  a Supplier 360. The collections module computes real ageing buckets and
+  DSO from posted invoices -- this is the number Slice 3's acceptance
+  test tracks -- plus a plain, explainable (not AI-branded) collection
+  priority list. Field sales check-in is mobile-web, same reasoning as
+  ADR-005. WhatsApp send (quote/invoice/statement/receipt) is explicitly
+  not built: it needs real Meta WhatsApp Business API credentials this
+  environment doesn't have, not a fake button.
+
+Slices 4-6 (full accounting/GST compliance, AI, customer portal) are not
+started; see the brief's Part F for what's next and why the order matters.
 
 ## Architecture
 
@@ -106,5 +127,12 @@ Recorded in `docs/decisions/`:
 - **ADR-004**: Slice 1's tax module reads the GST rate straight off
   `Item.gst_rate` rather than an effective-dated rate table -- the
   `resolve_tax()` interface already matches Slice 4's eventual shape.
+- **ADR-005**: Slice 2's driver-facing flows (today's deliveries, POD
+  capture) ship as a mobile-responsive web page, not the React Native
+  app Part E specifies -- same API either way, so swapping in a native
+  app later changes nothing server-side.
+- **ADR-006**: `Item.standard_cost` is "latest landed cost" (each goods
+  receipt overwrites it), not weighted-average or FIFO -- no new state,
+  matches how an owner actually prices day to day.
 
 Read these before re-litigating any of them.

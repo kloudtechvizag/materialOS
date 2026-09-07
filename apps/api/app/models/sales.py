@@ -91,7 +91,11 @@ class DeliveryChallan(Base, UUIDPk, TenantMixin, TimestampMixin):
     branch_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("branches.id", ondelete="RESTRICT"), nullable=False, index=True)
     sales_order_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("sales_orders.id", ondelete="RESTRICT"), nullable=False, index=True)
     warehouse_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("warehouses.id", ondelete="RESTRICT"), nullable=False, index=True)
+    trip_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("trips.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     dispatch_date: Mapped[date] = mapped_column(Date, nullable=False)
+    # dispatched -> in_transit -> delivered ; or failed (see ProofOfDelivery.status)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="dispatched")
 
     items: Mapped[list["DeliveryChallanItem"]] = relationship(order_by="DeliveryChallanItem.created_at")

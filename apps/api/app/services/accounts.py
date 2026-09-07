@@ -19,6 +19,11 @@ SYSTEM_ACCOUNTS = [
     ("2110-OUTPUT-SGST", "Output SGST", "liability"),
     ("2120-OUTPUT-IGST", "Output IGST", "liability"),
     ("4900-ROUNDOFF", "Round Off", "income"),
+    ("2000-AP", "Accounts Payable", "liability"),
+    ("5000-PURCHASES", "Purchases", "expense"),
+    ("1300-INPUT-CGST", "Input CGST", "asset"),
+    ("1310-INPUT-SGST", "Input SGST", "asset"),
+    ("1320-INPUT-IGST", "Input IGST", "asset"),
 ]
 
 
