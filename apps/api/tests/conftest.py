@@ -8,7 +8,8 @@ from sqlalchemy.orm import sessionmaker
 from app.config import settings
 from app.db import set_session_context
 from app.models.numbering import FinancialYear
-from app.models.tenant import Branch, Company, Tenant
+from app.models.tenant import Branch, Company, Tenant, Warehouse
+from app.services.accounts import ensure_default_accounts
 
 
 @pytest.fixture(scope="session")
@@ -37,12 +38,16 @@ def tenant_ctx(db):
 
     set_session_context(db, tenant_id=str(tenant.id), user_id=None)
 
-    company = Company(tenant_id=tenant.id, name="Test Co", legal_name="Test Co Pvt Ltd")
+    company = Company(tenant_id=tenant.id, name="Test Co", legal_name="Test Co Pvt Ltd", state="Andhra Pradesh")
     db.add(company)
     db.flush()
 
     branch = Branch(tenant_id=tenant.id, company_id=company.id, name="Main", code="MAIN")
     db.add(branch)
+    db.flush()
+
+    warehouse = Warehouse(tenant_id=tenant.id, branch_id=branch.id, name="Main Godown", code="MAIN-WH")
+    db.add(warehouse)
     db.flush()
 
     fy = FinancialYear(
@@ -55,4 +60,12 @@ def tenant_ctx(db):
     db.add(fy)
     db.flush()
 
-    return {"tenant": tenant, "company": company, "branch": branch, "financial_year": fy}
+    ensure_default_accounts(db, tenant_id=tenant.id, company_id=company.id)
+
+    return {
+        "tenant": tenant,
+        "company": company,
+        "branch": branch,
+        "warehouse": warehouse,
+        "financial_year": fy,
+    }

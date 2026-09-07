@@ -5,13 +5,17 @@ AI-powered building materials business operating system. See
 product brief this build follows (it supersedes `dev.md`, the original
 116-section v1 prompt, which is kept as the full feature backlog).
 
-**Status:** Slice 0 (Foundation + Tally/Busy migration) is built and
-working end to end -- signup, auth, RBAC, tenancy with real
-database-enforced row-level security, document numbering, the audit
-trigger, and the six-step Tally/Busy import pipeline. Slices 1-6 (sell &
-stock, dispatch, procurement, accounting/GST, AI, customer portal) are
-not started; see the brief's Part F for what's next and why the order
-matters.
+**Status:** Slice 0 (Foundation + Tally/Busy migration) and Slice 1
+(Sell and stock) are built and working end to end. The golden
+transaction from the brief's Slice 1 acceptance test -- quote → credit
+check → approve → sales order → reserve stock → dispatch → invoice →
+part-payment → outstanding updated → project profitability -- runs for
+real, with a balanced double-entry journal posted underneath (minimal
+chart of accounts; full accounting statements are Slice 4) and GST
+split correctly into CGST+SGST or IGST by place of supply. Slices 2-6
+(godown/dispatch operations, procurement, full accounting/GST compliance,
+AI, customer portal) are not started; see the brief's Part F for what's
+next and why the order matters.
 
 ## Architecture
 
@@ -22,7 +26,10 @@ apps/
 docs/
   decisions/   ADRs -- read these before changing a locked decision
 scripts/
-  seed.py      Slice-0-scoped demo data (Sri Balaji Building Materials)
+  seed.py      Demo data (Sri Balaji Building Materials): catalog, opening
+               stock, customers/suppliers, and a handful of quotations
+               walked through every real pipeline stage via the actual
+               service functions (no backdated/fabricated history)
 ```
 
 Money is `NUMERIC(18,4)` + Python `Decimal` end to end, never a float.
@@ -93,5 +100,11 @@ Recorded in `docs/decisions/`:
 - **ADR-002**: Slice 0 opening balances/stock use a minimal signed field
   and a real-but-minimal stock ledger, not the full journal/batch/bin
   machinery that belongs to Slices 1 and 4.
+- **ADR-003**: item parameters (grade, diameter, heat number, ...) are
+  stored as `Category.parameter_schema` + `Item.attributes` JSONB, not
+  full EAV tables.
+- **ADR-004**: Slice 1's tax module reads the GST rate straight off
+  `Item.gst_rate` rather than an effective-dated rate table -- the
+  `resolve_tax()` interface already matches Slice 4's eventual shape.
 
-Read these before re-litigating either choice.
+Read these before re-litigating any of them.

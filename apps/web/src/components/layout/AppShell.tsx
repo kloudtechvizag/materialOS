@@ -1,11 +1,24 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { Building2, LayoutDashboard, LogOut, UploadCloud, Users } from "lucide-react";
+import {
+  Building,
+  Building2,
+  FileText,
+  LayoutDashboard,
+  LogOut,
+  Package,
+  UploadCloud,
+  Users,
+} from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth";
 
 const NAV_ITEMS = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
+  { to: "/quotations", label: "Quotations", icon: FileText },
+  { to: "/items", label: "Items", icon: Package },
+  { to: "/customers", label: "Customers", icon: Users },
+  { to: "/projects", label: "Projects", icon: Building },
   { to: "/imports", label: "Import from Tally/Busy", icon: UploadCloud },
   { to: "/branches", label: "Branches", icon: Building2 },
   { to: "/users", label: "Users", icon: Users },

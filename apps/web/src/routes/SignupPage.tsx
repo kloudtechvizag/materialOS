@@ -13,6 +13,7 @@ import { useAuthStore } from "@/store/auth";
 
 const schema = z.object({
   companyName: z.string().min(1, "Required"),
+  companyState: z.string().min(1, "Required -- this decides CGST+SGST vs IGST on every invoice"),
   tenantSlug: z
     .string()
     .min(3, "At least 3 characters")
@@ -46,6 +47,7 @@ export function SignupPage() {
           tenant_slug: values.tenantSlug,
           company_name: values.companyName,
           company_legal_name: values.companyName,
+          company_state: values.companyState,
           owner_full_name: values.ownerFullName,
           owner_email: values.ownerEmail,
           owner_password: values.ownerPassword,
@@ -77,6 +79,11 @@ export function SignupPage() {
               <Label htmlFor="companyName">Company name</Label>
               <Input id="companyName" placeholder="Sri Balaji Building Materials" {...register("companyName")} />
               {errors.companyName && <p className="text-sm text-destructive">{errors.companyName.message}</p>}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="companyState">Business state</Label>
+              <Input id="companyState" placeholder="Andhra Pradesh" {...register("companyState")} />
+              {errors.companyState && <p className="text-sm text-destructive">{errors.companyState.message}</p>}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="tenantSlug">Workspace URL name</Label>

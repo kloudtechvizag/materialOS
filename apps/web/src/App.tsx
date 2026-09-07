@@ -2,10 +2,19 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 import { AppShell } from "@/components/layout/AppShell";
 import { BranchesPage } from "@/routes/BranchesPage";
+import { Customer360Page } from "@/routes/Customer360Page";
+import { CustomersPage } from "@/routes/CustomersPage";
 import { DashboardPage } from "@/routes/DashboardPage";
 import { ImportWizardPage } from "@/routes/imports/ImportWizardPage";
 import { ImportsPage } from "@/routes/imports/ImportsPage";
+import { InvoiceDetailPage } from "@/routes/InvoiceDetailPage";
+import { ItemsPage } from "@/routes/ItemsPage";
 import { LoginPage } from "@/routes/LoginPage";
+import { ProjectsPage } from "@/routes/ProjectsPage";
+import { NewQuotationPage } from "@/routes/quotations/NewQuotationPage";
+import { QuotationDetailPage } from "@/routes/quotations/QuotationDetailPage";
+import { QuotationsPage } from "@/routes/quotations/QuotationsPage";
+import { SalesOrderDetailPage } from "@/routes/SalesOrderDetailPage";
 import { SignupPage } from "@/routes/SignupPage";
 import { UsersPage } from "@/routes/UsersPage";
 import { useAuthStore } from "@/store/auth";
@@ -30,6 +39,15 @@ export default function App() {
         }
       >
         <Route path="/" element={<DashboardPage />} />
+        <Route path="/items" element={<ItemsPage />} />
+        <Route path="/customers" element={<CustomersPage />} />
+        <Route path="/customers/:customerId" element={<Customer360Page />} />
+        <Route path="/projects" element={<ProjectsPage />} />
+        <Route path="/quotations" element={<QuotationsPage />} />
+        <Route path="/quotations/new" element={<NewQuotationPage />} />
+        <Route path="/quotations/:quotationId" element={<QuotationDetailPage />} />
+        <Route path="/sales-orders/:orderId" element={<SalesOrderDetailPage />} />
+        <Route path="/invoices/:invoiceId" element={<InvoiceDetailPage />} />
         <Route path="/imports" element={<ImportsPage />} />
         <Route path="/imports/new" element={<ImportWizardPage />} />
         <Route path="/branches" element={<BranchesPage />} />

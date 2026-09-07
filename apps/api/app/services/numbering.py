@@ -7,12 +7,32 @@ because the IRP uppercases invoice numbers for IRN generation.
 """
 
 import uuid
+from datetime import date
 
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
 from app.models.numbering import DocNumberCounter, FinancialYear
+
+
+def get_current_financial_year(db: Session, company_id: uuid.UUID) -> FinancialYear:
+    today = date.today()
+    stmt = select(FinancialYear).where(
+        FinancialYear.company_id == company_id,
+        FinancialYear.start_date <= today,
+        FinancialYear.end_date >= today,
+    )
+    fy = db.execute(stmt).scalar_one_or_none()
+    if fy is None:
+        from app.errors import AppError, ErrorCode
+
+        raise AppError(
+            ErrorCode.VALIDATION_ERROR,
+            "No financial year is configured for today's date.",
+            details={"company_id": str(company_id)},
+        )
+    return fy
 
 
 def next_document_number(

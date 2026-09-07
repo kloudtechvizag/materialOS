@@ -1,25 +1,44 @@
 import { useQuery } from "@tanstack/react-query";
-import { Building2, UploadCloud } from "lucide-react";
+import { FileText, Package, TrendingUp, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { EmptyState } from "@/components/ui/empty-state";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ErrorState } from "@/components/ui/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
+import { formatINR } from "@/lib/format";
 
-interface Company {
-  id: string;
-  name: string;
-  legal_name: string;
-  gstin: string | null;
+interface Summary {
+  total_outstanding: string;
+  total_invoiced: string;
+  open_quotations: number;
+  open_sales_orders: number;
+  posted_invoices: number;
+  active_items: number;
+  active_customers: number;
+}
+
+function Kpi({ icon: Icon, label, value, to }: { icon: React.ElementType; label: string; value: string | number; to?: string }) {
+  const content = (
+    <Card className={to ? "transition-colors hover:bg-accent/50" : undefined}>
+      <CardContent className="flex items-center gap-4 pt-6">
+        <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 text-primary">
+          <Icon className="h-5 w-5" />
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">{label}</p>
+          <p className="text-xl font-semibold">{value}</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+  return to ? <Link to={to}>{content}</Link> : content;
 }
 
 export function DashboardPage() {
-  const { data: companies, isLoading, error, refetch } = useQuery({
-    queryKey: ["companies"],
-    queryFn: () => apiFetch<Company[]>("/companies"),
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ["dashboard-summary"],
+    queryFn: () => apiFetch<Summary>("/dashboard/summary"),
   });
 
   return (
@@ -27,55 +46,42 @@ export function DashboardPage() {
       <div>
         <h1 className="text-2xl font-semibold">Dashboard</h1>
         <p className="text-sm text-muted-foreground">
-          Slices 1-6 (sales, stock, dispatch, accounting, AI) land here as they ship. Today, get your existing
-          Tally or Busy data in.
+          Outstanding, pipeline, and catalog size, live from Slice 1. Dispatch, procurement, and full accounting
+          statements land as their slices ship.
         </p>
       </div>
 
       {isLoading && (
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Skeleton className="h-32" />
-          <Skeleton className="h-32" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-24" />)}
         </div>
       )}
 
       {error && <ErrorState error={error} onRetry={() => refetch()} />}
 
-      {companies && companies.length === 0 && (
-        <EmptyState
-          icon={Building2}
-          title="No company set up yet"
-          description="Your workspace was created without a company record. Contact support to fix this."
-        />
-      )}
-
-      {companies && companies.length > 0 && (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {companies.map((company) => (
-            <Card key={company.id}>
-              <CardHeader>
-                <CardTitle>{company.name}</CardTitle>
-                <CardDescription>{company.gstin ?? "GSTIN not set"}</CardDescription>
-              </CardHeader>
-            </Card>
-          ))}
-
-          <Card className="border-dashed">
-            <CardHeader>
-              <UploadCloud className="h-6 w-6 text-primary" />
-              <CardTitle className="text-base">Import your Tally or Busy data</CardTitle>
-              <CardDescription>
-                Bring in customers, suppliers, items, opening balances, and opening stock in one guided flow.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button asChild size="sm">
-                <Link to="/imports">Start import</Link>
-              </Button>
-            </CardContent>
-          </Card>
+      {data && (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Kpi icon={TrendingUp} label="Total outstanding" value={formatINR(data.total_outstanding)} to="/customers" />
+          <Kpi icon={TrendingUp} label="Total invoiced" value={formatINR(data.total_invoiced)} />
+          <Kpi icon={FileText} label="Open quotations" value={data.open_quotations} to="/quotations" />
+          <Kpi icon={FileText} label="Open sales orders" value={data.open_sales_orders} />
+          <Kpi icon={Package} label="Active items" value={data.active_items} to="/items" />
+          <Kpi icon={Users} label="Active customers" value={data.active_customers} to="/customers" />
         </div>
       )}
+
+      <Card className="border-dashed">
+        <CardHeader>
+          <CardTitle className="text-base">Start the golden transaction</CardTitle>
+        </CardHeader>
+        <CardContent className="flex gap-3">
+          <Link to="/quotations/new" className="text-sm font-medium text-primary hover:underline">
+            New quotation
+          </Link>
+          <span className="text-muted-foreground">→</span>
+          <span className="text-sm text-muted-foreground">approve → sales order → dispatch → invoice → payment</span>
+        </CardContent>
+      </Card>
     </div>
   );
 }

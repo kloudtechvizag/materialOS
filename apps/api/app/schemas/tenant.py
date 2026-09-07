@@ -8,6 +8,7 @@ class TenantSignupRequest(BaseModel):
     tenant_slug: str
     company_name: str
     company_legal_name: str
+    company_state: str | None = None  # home state -- drives CGST/SGST vs IGST (D3)
     owner_full_name: str
     owner_email: EmailStr
     owner_password: str

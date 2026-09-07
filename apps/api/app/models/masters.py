@@ -3,7 +3,7 @@ from datetime import date
 from decimal import Decimal
 
 from sqlalchemy import Boolean, Date, ForeignKey, Numeric, String, UniqueConstraint
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, TenantMixin, TimestampMixin, UUIDPk
@@ -25,6 +25,7 @@ class Customer(Base, UUIDPk, TenantMixin, TimestampMixin):
     gstin: Mapped[str | None] = mapped_column(String(15), nullable=True)
     phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
     email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    billing_state: Mapped[str | None] = mapped_column(String(100), nullable=True)  # place-of-supply default (D2/D3)
     credit_limit: Mapped[Decimal] = mapped_column(MONEY, nullable=False, default=0)
     credit_days: Mapped[int] = mapped_column(nullable=False, default=0)
     opening_balance: Mapped[Decimal] = mapped_column(MONEY, nullable=False, default=0)
@@ -50,9 +51,9 @@ class Supplier(Base, UUIDPk, TenantMixin, TimestampMixin):
 
 
 class Item(Base, UUIDPk, TenantMixin, TimestampMixin):
-    """Minimal item master for Slice 0. Dynamic parameter sets (B2's
-    (value, uom, product_id) quantity model, conversion tables, cement/TMT
-    parameters) are built out in Slice 1 -- see dev.md §11-14.
+    """Item master. Slice 0 gave it identity + tax fields; Slice 1 adds
+    dynamic parameters (ADR-003), pricing, and cost so the price/margin
+    engine and quotations have something to read.
     """
 
     __tablename__ = "items"
@@ -68,3 +69,14 @@ class Item(Base, UUIDPk, TenantMixin, TimestampMixin):
     base_uom: Mapped[str] = mapped_column(String(20), nullable=False)
     source_stock_item_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+    category_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("categories.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    brand: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    attributes: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    standard_price: Mapped[Decimal] = mapped_column(MONEY, nullable=False, default=0)
+    min_price: Mapped[Decimal] = mapped_column(MONEY, nullable=False, default=0)
+    # Landed cost without a Purchase module (that's Slice 3): manually
+    # maintained, seeded from the importer's opening rate where known.
+    standard_cost: Mapped[Decimal] = mapped_column(MONEY, nullable=False, default=0)

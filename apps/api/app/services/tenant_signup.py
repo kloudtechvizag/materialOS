@@ -10,6 +10,7 @@ from app.models.tenant import Branch, Company, Tenant, Warehouse
 from app.models.user import Permission, Role, RolePermission, User, UserRole
 from app.schemas.tenant import TenantSignupRequest
 from app.security import hash_password
+from app.services.accounts import ensure_default_accounts
 
 
 def _current_financial_year_code(today: date, start_month: int) -> tuple[str, date, date]:
@@ -42,6 +43,7 @@ def signup_tenant(db: Session, req: TenantSignupRequest) -> dict:
         tenant_id=tenant.id,
         name=req.company_name,
         legal_name=req.company_legal_name,
+        state=req.company_state,
         financial_year_start_month=4,
     )
     db.add(company)
@@ -82,6 +84,8 @@ def signup_tenant(db: Session, req: TenantSignupRequest) -> dict:
     db.flush()
 
     db.add(UserRole(tenant_id=tenant.id, user_id=user.id, role_id=owner_role.id, branch_id=None))
+
+    ensure_default_accounts(db, tenant_id=tenant.id, company_id=company.id)
 
     db.commit()
 

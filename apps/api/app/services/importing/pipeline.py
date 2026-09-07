@@ -13,13 +13,12 @@ from sqlalchemy.orm import Session
 
 from app.errors import AppError, ErrorCode
 from app.models.importing import ImportBatch, ImportBatchRow
-from app.models.inventory import StockLedger
 from app.models.masters import Customer, Item, Supplier
 from app.services.importing.busy_csv import apply_mapping as apply_csv_mapping
 from app.services.importing.busy_csv import guess_mapping, read_rows, sniff_columns
 from app.services.importing.common import VALIDATORS, StagedRow, parse_decimal
 from app.services.importing.tally_xml import parse_tally_xml
-from app.services.inventory import rebuild_stock_balance
+from app.services.inventory import apply_ledger_movement, rebuild_stock_balance
 
 
 def detect_format(file_name: str, file_bytes: bytes) -> str:
@@ -200,21 +199,21 @@ def commit_batch(
 
             opening_qty = parse_decimal(data.get("opening_qty"), default=Decimal("0"))
             opening_rate = parse_decimal(data.get("opening_rate"), default=Decimal("0"))
+            if opening_rate:
+                item.standard_cost = opening_rate
             if default_warehouse_id and opening_qty and opening_qty != 0:
-                db.add(
-                    StockLedger(
-                        tenant_id=batch.tenant_id,
-                        warehouse_id=default_warehouse_id,
-                        item_id=item.id,
-                        movement_type="opening",
-                        qty=opening_qty,
-                        rate=opening_rate,
-                        value=opening_qty * opening_rate,
-                        reference_type="import_batch",
-                        reference_id=batch.id,
-                        occurred_at=now,
-                        created_by_user_id=user_id,
-                    )
+                apply_ledger_movement(
+                    db,
+                    tenant_id=batch.tenant_id,
+                    warehouse_id=default_warehouse_id,
+                    item_id=item.id,
+                    qty=opening_qty,
+                    rate=opening_rate,
+                    movement_type="opening",
+                    reference_type="import_batch",
+                    reference_id=batch.id,
+                    user_id=user_id,
+                    occurred_at=now,
                 )
                 opening_stock_lines += 1
 
