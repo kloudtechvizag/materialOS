@@ -1,83 +1,22 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import {
-  ArrowLeftRight,
-  Banknote,
-  Building,
-  Building2,
-  ClipboardList,
-  Factory,
-  FileSpreadsheet,
-  FileText,
-  LayoutDashboard,
-  LogOut,
-  MapPin,
-  Package,
-  Receipt,
-  Settings,
-  ShieldCheck,
-  ShoppingCart,
-  Truck,
-  UploadCloud,
-  Users,
-} from "lucide-react";
+import { Menu } from "lucide-react";
+import { Outlet, useNavigate } from "react-router-dom";
 
 import { NotificationBell } from "@/components/layout/NotificationBell";
+import { MobileDrawer } from "@/components/layout/sidebar/MobileDrawer";
+import { SidebarFooter } from "@/components/layout/sidebar/SidebarFooter";
+import { SidebarHeader } from "@/components/layout/sidebar/SidebarHeader";
+import { SidebarNav } from "@/components/layout/sidebar/SidebarNav";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth";
-
-const NAV_SECTIONS = [
-  {
-    label: "Sell",
-    items: [
-      { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
-      { to: "/quotations", label: "Quotations", icon: FileText },
-      { to: "/collections", label: "Collections", icon: Banknote },
-      { to: "/field-sales", label: "Field sales", icon: MapPin },
-      { to: "/approvals", label: "Approvals", icon: ShieldCheck },
-    ],
-  },
-  {
-    label: "Dispatch",
-    items: [
-      { to: "/dispatch-board", label: "Dispatch board", icon: Truck },
-      { to: "/trips", label: "Trips", icon: Truck },
-      { to: "/fleet", label: "Fleet", icon: Truck },
-      { to: "/stock-counts", label: "Stock counts", icon: ClipboardList },
-      { to: "/transfers", label: "Transfers", icon: ArrowLeftRight },
-    ],
-  },
-  {
-    label: "Buy",
-    items: [
-      { to: "/purchase-orders", label: "Purchase orders", icon: ShoppingCart },
-      { to: "/suppliers", label: "Suppliers", icon: Factory },
-    ],
-  },
-  {
-    label: "Books",
-    items: [
-      { to: "/books", label: "Financial reports", icon: FileSpreadsheet },
-      { to: "/gst", label: "GST filing", icon: Receipt },
-    ],
-  },
-  {
-    label: "Setup",
-    items: [
-      { to: "/items", label: "Items", icon: Package },
-      { to: "/customers", label: "Customers", icon: Users },
-      { to: "/projects", label: "Projects", icon: Building },
-      { to: "/imports", label: "Import from Tally/Busy", icon: UploadCloud },
-      { to: "/branches", label: "Branches", icon: Building2 },
-      { to: "/users", label: "Users", icon: Users },
-      { to: "/company-settings", label: "Company settings", icon: Settings },
-    ],
-  },
-];
+import { useSidebarStore } from "@/store/sidebar";
 
 export function AppShell() {
   const navigate = useNavigate();
   const clearSession = useAuthStore((s) => s.clearSession);
   const tenantSlug = useAuthStore((s) => s.tenantSlug);
+  const collapsed = useSidebarStore((s) => s.collapsed);
+  const toggleCollapsed = useSidebarStore((s) => s.toggleCollapsed);
+  const setMobileOpen = useSidebarStore((s) => s.setMobileOpen);
 
   function handleLogout() {
     clearSession();
@@ -86,51 +25,37 @@ export function AppShell() {
 
   return (
     <div className="flex h-screen w-full overflow-hidden">
-      <aside className="flex w-60 shrink-0 flex-col bg-brand-navy text-brand-navy-foreground">
-        <div className="flex h-14 items-center gap-2 border-b border-white/10 px-4">
-          <img src="/brand/symbol.png" alt="" className="h-7 w-7" />
-          <span className="text-sm font-semibold">MaterialOS</span>
-        </div>
-        <nav className="flex-1 space-y-4 overflow-y-auto p-3">
-          {NAV_SECTIONS.map((section) => (
-            <div key={section.label} className="space-y-1">
-              <p className="px-3 text-xs font-semibold uppercase tracking-wide text-brand-navy-muted">{section.label}</p>
-              {section.items.map(({ to, label, icon: Icon, end }) => (
-                <NavLink
-                  key={to}
-                  to={to}
-                  end={end}
-                  className={({ isActive }) =>
-                    cn(
-                      "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                      isActive ? "bg-primary text-primary-foreground" : "text-brand-navy-muted hover:bg-white/10 hover:text-white"
-                    )
-                  }
-                >
-                  <Icon className="h-4 w-4" />
-                  {label}
-                </NavLink>
-              ))}
-            </div>
-          ))}
-        </nav>
-        <div className="border-t border-white/10 p-3">
-          <button
-            onClick={handleLogout}
-            className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-brand-navy-muted hover:bg-white/10 hover:text-white"
-          >
-            <LogOut className="h-4 w-4" />
-            Log out
-          </button>
-        </div>
+      {/* Desktop/tablet sidebar (>=768px) -- collapsible to an icon-only rail.
+          Below that, navigation lives entirely in the MobileDrawer. */}
+      <aside
+        className={cn(
+          "hidden shrink-0 flex-col bg-brand-navy text-brand-navy-foreground transition-[width] duration-200 ease-in-out md:flex",
+          collapsed ? "w-[68px]" : "w-60"
+        )}
+      >
+        <SidebarHeader collapsed={collapsed} onToggleCollapse={toggleCollapsed} />
+        <SidebarNav collapsed={collapsed} />
+        <SidebarFooter collapsed={collapsed} onLogout={handleLogout} />
       </aside>
 
+      <MobileDrawer />
+
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-6">
-          <span className="text-sm text-muted-foreground">{tenantSlug}</span>
+        <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-4 md:px-6">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setMobileOpen(true)}
+              aria-label="Open navigation"
+              className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground md:hidden"
+            >
+              <Menu className="h-5 w-5" aria-hidden="true" />
+            </button>
+            <span className="text-sm text-muted-foreground">{tenantSlug}</span>
+          </div>
           <NotificationBell />
         </header>
-        <main className="flex-1 overflow-auto p-6">
+        <main className="flex-1 overflow-auto p-4 md:p-6">
           <Outlet />
         </main>
       </div>
