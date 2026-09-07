@@ -9,7 +9,8 @@ from app.errors import AppError, ErrorCode
 from app.models.masters import Customer
 from app.models.sales import Invoice, Quotation, SalesOrder
 from app.models.user import User
-from app.schemas.customer import Customer360, CustomerCreate, CustomerOut
+from app.schemas.customer import Customer360, CustomerCreate, CustomerOut, PortalAccessCreate, PortalAccessOut
+from app.services import portal as portal_service
 from app.services.credit import compute_outstanding
 
 router = APIRouter(prefix="/customers", tags=["customers"])
@@ -40,6 +41,24 @@ def create_customer(
     db.add(customer)
     db.flush()
     return customer
+
+
+@router.post("/{customer_id}/portal-access", response_model=PortalAccessOut, status_code=201)
+def create_portal_access(
+    customer_id: uuid.UUID,
+    payload: PortalAccessCreate,
+    db: Session = Depends(get_db_tenant),
+    user: User = Depends(require_permission("customers.edit")),
+) -> dict:
+    customer = db.get(Customer, customer_id)
+    if customer is None:
+        raise AppError(ErrorCode.NOT_FOUND, "Customer not found.", status_code=404)
+
+    portal_user = portal_service.create_portal_login(
+        db, tenant_id=user.tenant_id, customer=customer,
+        email=payload.email, password=payload.password, full_name=payload.full_name,
+    )
+    return {"user_id": portal_user.id, "email": portal_user.email, "customer_id": customer.id}
 
 
 @router.get("/{customer_id}/360", response_model=Customer360)

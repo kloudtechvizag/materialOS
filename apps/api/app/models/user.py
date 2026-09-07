@@ -20,6 +20,7 @@ SYSTEM_ROLES = [
     "dispatcher",
     "driver",
     "auditor",
+    "customer",
 ]
 
 PERMISSION_ACTIONS = [
@@ -45,6 +46,13 @@ class User(Base, UUIDPk, TenantMixin, TimestampMixin):
     full_name: Mapped[str] = mapped_column(String(200), nullable=False)
     phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    # Slice 6: set only for a customer-portal login. Every /portal/*
+    # endpoint scopes its queries to this customer -- never to the whole
+    # tenant -- via deps.get_portal_customer, regardless of what RBAC
+    # permissions the "customer" role happens to carry.
+    customer_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("customers.id", ondelete="CASCADE"), nullable=True, index=True
+    )
 
 
 class Permission(Base, UUIDPk, TimestampMixin):

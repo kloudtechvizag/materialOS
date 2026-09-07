@@ -1,4 +1,5 @@
 from app.models.accounting import Account, CostCenter, JournalEntry, JournalLine
+from app.models.approvals import ApprovalRequest, ApprovalRule
 from app.models.audit import AuditLog
 from app.models.catalog import Batch, Category, UnitConversion
 from app.models.compliance import EInvoice, EWayBill
@@ -8,7 +9,9 @@ from app.models.idempotency import IdempotencyKey
 from app.models.importing import ImportBatch, ImportBatchRow
 from app.models.inventory import StockBalance, StockLedger, StockReservation
 from app.models.masters import Customer, Item, Supplier
+from app.models.notifications import Notification
 from app.models.numbering import DocNumberCounter, FinancialYear
+from app.models.portal import PortalDocument
 from app.models.pricing import CustomerItemPrice, RateContract
 from app.models.procurement import (
     GoodsReceipt,
@@ -110,4 +113,8 @@ __all__ = [
     "CostCenter",
     "EInvoice",
     "EWayBill",
+    "PortalDocument",
+    "Notification",
+    "ApprovalRule",
+    "ApprovalRequest",
 ]

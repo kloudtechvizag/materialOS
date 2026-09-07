@@ -101,6 +101,7 @@ def test_golden_transaction(db, tenant_ctx):
     # -- Sales order: credit-checked, reserved --
     order = create_sales_order_from_quotation(
         db, tenant_id=tenant.id, quotation_id=quotation.id, warehouse_id=warehouse.id, financial_year_id=fy.id,
+        requested_by_user_id=user_id,
     )
     assert order.status == "reserved"
     assert order.total == quotation.total

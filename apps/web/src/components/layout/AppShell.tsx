@@ -14,12 +14,14 @@ import {
   Package,
   Receipt,
   Settings,
+  ShieldCheck,
   ShoppingCart,
   Truck,
   UploadCloud,
   Users,
 } from "lucide-react";
 
+import { NotificationBell } from "@/components/layout/NotificationBell";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth";
 
@@ -31,6 +33,7 @@ const NAV_SECTIONS = [
       { to: "/quotations", label: "Quotations", icon: FileText },
       { to: "/collections", label: "Collections", icon: Banknote },
       { to: "/field-sales", label: "Field sales", icon: MapPin },
+      { to: "/approvals", label: "Approvals", icon: ShieldCheck },
     ],
   },
   {
@@ -123,8 +126,9 @@ export function AppShell() {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-14 shrink-0 items-center border-b border-border bg-background px-6">
+        <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-6">
           <span className="text-sm text-muted-foreground">{tenantSlug}</span>
+          <NotificationBell />
         </header>
         <main className="flex-1 overflow-auto p-6">
           <Outlet />

@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.sales import Quotation, QuotationItem, SalesOrder, SalesOrderItem
-from app.services.credit import check_credit
+from app.services.approvals import check_credit_with_approval
 from app.services.inventory import reserve_stock
 from app.services.numbering import next_document_number
 
@@ -17,6 +17,7 @@ def create_sales_order_from_quotation(
     quotation_id: uuid.UUID,
     warehouse_id: uuid.UUID,
     financial_year_id: uuid.UUID,
+    requested_by_user_id: uuid.UUID,
 ) -> SalesOrder:
     quotation = db.get(Quotation, quotation_id)
     items = db.execute(
@@ -24,8 +25,13 @@ def create_sales_order_from_quotation(
     ).scalars().all()
 
     # B25/credit check runs before a single row of the order is created --
-    # a rejection here must leave nothing behind (B6).
-    check_credit(db, quotation.customer_id, quotation.total)
+    # a rejection here must leave nothing behind (B6). ADR-009: a block
+    # also opens a pending ApprovalRequest; an approved one lets a retry
+    # through without re-blocking.
+    check_credit_with_approval(
+        db, tenant_id=tenant_id, customer_id=quotation.customer_id, additional_amount=quotation.total,
+        document_type="quotation", document_id=quotation_id, requested_by_user_id=requested_by_user_id,
+    )
 
     number = next_document_number(
         db,

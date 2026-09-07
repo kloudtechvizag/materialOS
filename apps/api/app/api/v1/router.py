@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from app.api.v1 import (
     accounting,
+    approvals,
     auth,
     branches,
     catalog,
@@ -16,6 +17,8 @@ from app.api.v1 import (
     gst,
     health,
     imports,
+    notifications,
+    portal,
     procurement,
     projects,
     sales,
@@ -52,3 +55,6 @@ api_router.include_router(accounting.router)
 api_router.include_router(gst.router)
 api_router.include_router(compliance.router)
 api_router.include_router(tally_export.router)
+api_router.include_router(portal.router)
+api_router.include_router(notifications.router)
+api_router.include_router(approvals.router)

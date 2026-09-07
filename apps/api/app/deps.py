@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.db import SessionLocal, set_session_context
 from app.errors import AppError, ErrorCode
+from app.models.masters import Customer
 from app.models.user import Permission, RolePermission, User, UserRole
 from app.security import decode_token
 
@@ -74,3 +75,16 @@ def require_permission(permission_code: str):
         return user
 
     return _check
+
+
+def get_portal_customer(db: Session = Depends(get_db_tenant), user: User = Depends(get_current_user)) -> Customer:
+    """Every /portal/* endpoint depends on this, never on require_permission
+    alone -- it scopes to exactly one customer, regardless of what RBAC
+    permissions the "customer" role happens to carry (see ADR-009).
+    """
+    if user.customer_id is None:
+        raise AppError(ErrorCode.FORBIDDEN, "This login is not a customer-portal account.", status_code=403)
+    customer = db.get(Customer, user.customer_id)
+    if customer is None:
+        raise AppError(ErrorCode.NOT_FOUND, "Customer not found.", status_code=404)
+    return customer

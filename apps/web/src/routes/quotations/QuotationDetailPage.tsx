@@ -52,6 +52,11 @@ export function QuotationDetailPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["quotation", quotationId] }),
   });
 
+  const sendToCustomer = useMutation({
+    mutationFn: () => apiFetch(`/quotations/${quotationId}/send`, { method: "POST" }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["quotation", quotationId] }),
+  });
+
   const convertToOrder = useMutation({
     mutationFn: () =>
       apiFetch<{ id: string }>(`/quotations/${quotationId}/convert-to-order`, {
@@ -73,10 +78,19 @@ export function QuotationDetailPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">{quotation.number}</h1>
-          <Badge variant={quotation.status === "converted" ? "success" : "outline"} className="mt-1">{quotation.status}</Badge>
+          <Badge variant={quotation.status === "converted" || quotation.status === "approved" ? "success" : quotation.status === "rejected" ? "destructive" : "outline"} className="mt-1">
+            {quotation.status}
+          </Badge>
         </div>
         <div className="flex gap-2">
-          {quotation.status === "draft" && <Button onClick={() => approve.mutate()} disabled={approve.isPending}>Approve</Button>}
+          {quotation.status === "draft" && (
+            <Button variant="outline" onClick={() => sendToCustomer.mutate()} disabled={sendToCustomer.isPending}>
+              {sendToCustomer.isPending ? "Sending..." : "Send to customer"}
+            </Button>
+          )}
+          {(quotation.status === "draft" || quotation.status === "sent") && (
+            <Button onClick={() => approve.mutate()} disabled={approve.isPending}>Approve</Button>
+          )}
         </div>
       </div>
 

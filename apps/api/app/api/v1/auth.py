@@ -61,4 +61,5 @@ def me(db: Session = Depends(get_db_tenant), user: User = Depends(get_current_us
         full_name=user.full_name,
         tenant_id=str(user.tenant_id),
         roles=list(roles),
+        customer_id=str(user.customer_id) if user.customer_id else None,
     )

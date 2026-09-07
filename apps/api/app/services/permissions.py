@@ -20,6 +20,7 @@ RESOURCES = [
     "items",
     "imports",
     "stock",
+    "approvals",
 ]
 
 ACTIONS = ["view", "create", "edit", "delete", "approve", "export"]

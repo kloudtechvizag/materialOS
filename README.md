@@ -5,7 +5,8 @@ AI-powered building materials business operating system. See
 product brief this build follows (it supersedes `dev.md`, the original
 116-section v1 prompt, which is kept as the full feature backlog).
 
-**Status:** Slices 0-4 are built and working end to end.
+**Status:** Slices 0-4 and 6 are built and working end to end (Slice 5, the
+AI assistant, was explicitly skipped for now -- see the brief's Part F).
 
 - **Slice 0** (Foundation + Tally/Busy migration): signup, auth, RBAC,
   RLS-isolated tenancy, document numbering, the audit trigger, and the
@@ -48,8 +49,26 @@ product brief this build follows (it supersedes `dev.md`, the original
   financing sections, both because no transactions exist yet to justify
   more than that (ADR-008).
 
-Slices 5-6 (AI, customer portal) are not started; see the brief's Part F
-for what's next and why the order matters.
+- **Slice 6** (Customer ecosystem): a customer-portal login
+  (`User.customer_id`, scoped by `deps.get_portal_customer` -- never by
+  RBAC permissions, see ADR-009) lets a customer view and approve/reject
+  their own quotations, track orders/deliveries, see a running-balance
+  statement, upload a PO against a quotation, and submit a payment
+  intimation that posts a real `Receipt` the same way staff-recorded
+  payments do (it is not a payment gateway -- no gateway credentials
+  exist here, same reasoning as ADR-007's GSP/NIC gap). A generic,
+  table-driven approval workflow (`ApprovalRule`/`ApprovalRequest`) has
+  one real call site today: a sales order blocked by B25's credit-limit
+  check opens a pending approval instead of only failing, and an approved
+  request lets the same order creation succeed on retry, visible on the
+  staff-facing Approvals page. An in-app (not push/email/WhatsApp)
+  notification centre backs both the approval workflow and portal events;
+  it's tenant-wide rather than per-user because no salesperson/customer
+  assignment model exists yet to target one user. See ADR-009 for the
+  full reasoning and what's deliberately deferred.
+
+Slice 5 (the AI assistant) is not started; see the brief's Part F for
+what's next and why the order matters.
 
 ## Architecture
 
@@ -156,5 +175,12 @@ Recorded in `docs/decisions/`:
   transactions are modeled yet. Cash flow is a flat cash-movement list
   by document type, not a labelled operating/investing/financing
   statement, since the latter two sections don't exist to be empty.
+- **ADR-009**: Slice 6's notifications are tenant-wide, not per-user (no
+  assignment model exists yet); portal payment is a `Receipt`-creating
+  intimation, not a gateway charge (no gateway credentials exist, same
+  reasoning as ADR-007); and the generic approval workflow has exactly
+  one real trigger today (B25's credit-limit check on sales orders) --
+  more `trigger_type`s are additive rows plus one call site each, not a
+  schema change.
 
 Read these before re-litigating any of them.

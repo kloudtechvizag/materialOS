@@ -11,6 +11,7 @@ from app.models.user import Permission, Role, RolePermission, User, UserRole
 from app.schemas.tenant import TenantSignupRequest
 from app.security import hash_password
 from app.services.accounts import ensure_default_accounts
+from app.services.approvals import ensure_default_approval_rules
 
 
 def _current_financial_year_code(today: date, start_month: int) -> tuple[str, date, date]:
@@ -86,6 +87,7 @@ def signup_tenant(db: Session, req: TenantSignupRequest) -> dict:
     db.add(UserRole(tenant_id=tenant.id, user_id=user.id, role_id=owner_role.id, branch_id=None))
 
     ensure_default_accounts(db, tenant_id=tenant.id, company_id=company.id)
+    ensure_default_approval_rules(db, tenant_id=tenant.id)
 
     db.commit()
 

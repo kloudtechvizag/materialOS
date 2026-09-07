@@ -89,6 +89,28 @@ def get_quotation(
     return quotation
 
 
+@router.post("/quotations/{quotation_id}/send", response_model=QuotationOut)
+def send_quotation_to_customer(
+    quotation_id: uuid.UUID,
+    db: Session = Depends(get_db_tenant),
+    _user=Depends(require_permission("customers.edit")),
+) -> Quotation:
+    """Moves a draft quotation to "sent" so it shows up in the customer's
+    portal for them to approve or reject (see services/portal.py).
+    """
+    quotation = db.get(Quotation, quotation_id)
+    if quotation is None:
+        raise AppError(ErrorCode.NOT_FOUND, "Quotation not found.", status_code=404)
+    if quotation.status != "draft":
+        raise AppError(
+            ErrorCode.VALIDATION_ERROR, "Only a draft quotation can be sent to the customer.",
+            details={"current_status": quotation.status},
+        )
+    quotation.status = "sent"
+    db.flush()
+    return quotation
+
+
 @router.post("/quotations/{quotation_id}/approve", response_model=QuotationOut)
 def approve_quotation(
     quotation_id: uuid.UUID,
@@ -122,6 +144,7 @@ def convert_to_order(
     order = create_sales_order_from_quotation(
         db, tenant_id=user.tenant_id, quotation_id=quotation_id,
         warehouse_id=payload.warehouse_id, financial_year_id=fy.id,
+        requested_by_user_id=user.id,
     )
     db.refresh(order)
     return order

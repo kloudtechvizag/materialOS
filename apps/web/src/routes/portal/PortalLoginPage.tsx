@@ -20,9 +20,10 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-export function LoginPage() {
+export function PortalLoginPage() {
   const navigate = useNavigate();
   const setSession = useAuthStore((s) => s.setSession);
+  const clearSession = useAuthStore((s) => s.clearSession);
   const [serverError, setServerError] = useState<string | null>(null);
 
   const {
@@ -42,13 +43,17 @@ export function LoginPage() {
       setSession({ tenantSlug: values.tenantSlug, accessToken: tokens.access_token, refreshToken: tokens.refresh_token });
 
       const me = await apiFetch<{ customer_id: string | null }>("/auth/me");
-      if (me.customer_id) {
-        setSession({ tenantSlug: values.tenantSlug, accessToken: "", refreshToken: "" });
-        setServerError("This is a customer login. Use the customer portal sign-in instead.");
+      if (!me.customer_id) {
+        clearSession();
+        setServerError("This is a staff login. Use the main sign-in instead.");
         return;
       }
 
-      navigate("/");
+      setSession({
+        tenantSlug: values.tenantSlug, accessToken: tokens.access_token, refreshToken: tokens.refresh_token,
+        customerId: me.customer_id,
+      });
+      navigate("/portal");
     } catch (err) {
       setServerError(err instanceof ApiError ? err.message : "Could not sign in. Try again.");
     }
@@ -59,8 +64,8 @@ export function LoginPage() {
       <Card className="w-full max-w-sm">
         <CardHeader>
           <img src="/brand/symbol.png" alt="" className="mb-2 h-8 w-8 lg:hidden" />
-          <CardTitle>Sign in to MaterialOS</CardTitle>
-          <CardDescription>Enter your workspace, email, and password.</CardDescription>
+          <CardTitle>Customer portal sign-in</CardTitle>
+          <CardDescription>Enter the workspace, email, and password given to you by your supplier.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -71,7 +76,7 @@ export function LoginPage() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="owner@yourcompany.com" {...register("email")} />
+              <Input id="email" type="email" {...register("email")} />
               {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
             </div>
             <div className="space-y-1.5">
@@ -85,15 +90,9 @@ export function LoginPage() {
             </Button>
           </form>
           <p className="mt-4 text-center text-sm text-muted-foreground">
-            New to MaterialOS?{" "}
-            <Link to="/signup" className="text-primary underline-offset-4 hover:underline">
-              Create a workspace
-            </Link>
-          </p>
-          <p className="mt-1 text-center text-sm text-muted-foreground">
-            Are you a customer?{" "}
-            <Link to="/portal/login" className="text-primary underline-offset-4 hover:underline">
-              Sign in to the customer portal
+            Staff member?{" "}
+            <Link to="/login" className="text-primary underline-offset-4 hover:underline">
+              Go to staff sign-in
             </Link>
           </p>
         </CardContent>

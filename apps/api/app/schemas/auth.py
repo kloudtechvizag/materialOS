@@ -23,3 +23,4 @@ class CurrentUserResponse(BaseModel):
     full_name: str
     tenant_id: str
     roles: list[str]
+    customer_id: str | None = None

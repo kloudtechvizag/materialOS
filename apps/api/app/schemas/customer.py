@@ -36,3 +36,15 @@ class Customer360(BaseModel):
     open_quotations: int
     open_sales_orders: int
     posted_invoices: int
+
+
+class PortalAccessCreate(BaseModel):
+    email: str
+    password: str
+    full_name: str
+
+
+class PortalAccessOut(BaseModel):
+    user_id: uuid.UUID
+    email: str
+    customer_id: uuid.UUID

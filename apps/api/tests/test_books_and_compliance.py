@@ -49,7 +49,10 @@ def _make_invoiced_customer(db, tenant_ctx, *, name, gstin, qty=Decimal("50")):
     )
     quotation.status = "approved"
     db.flush()
-    order = create_sales_order_from_quotation(db, tenant_id=tenant.id, quotation_id=quotation.id, warehouse_id=warehouse.id, financial_year_id=fy.id)
+    order = create_sales_order_from_quotation(
+        db, tenant_id=tenant.id, quotation_id=quotation.id, warehouse_id=warehouse.id, financial_year_id=fy.id,
+        requested_by_user_id=user_id,
+    )
     challan = create_delivery_challan(db, tenant_id=tenant.id, sales_order_id=order.id, financial_year_id=fy.id, user_id=user_id)
     invoice = create_invoice_from_challan(db, tenant_id=tenant.id, delivery_challan_id=challan.id, financial_year_id=fy.id)
     return customer, item, invoice

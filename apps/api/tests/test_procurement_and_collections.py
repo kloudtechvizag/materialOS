@@ -130,7 +130,10 @@ def test_ageing_and_dso(db, tenant_ctx):
     )
     quotation.status = "approved"
     db.flush()
-    order = create_sales_order_from_quotation(db, tenant_id=tenant.id, quotation_id=quotation.id, warehouse_id=warehouse.id, financial_year_id=fy.id)
+    order = create_sales_order_from_quotation(
+        db, tenant_id=tenant.id, quotation_id=quotation.id, warehouse_id=warehouse.id, financial_year_id=fy.id,
+        requested_by_user_id=uuid.uuid4(),
+    )
     challan = create_delivery_challan(db, tenant_id=tenant.id, sales_order_id=order.id, financial_year_id=fy.id, user_id=uuid.uuid4())
     invoice = create_invoice_from_challan(db, tenant_id=tenant.id, delivery_challan_id=challan.id, financial_year_id=fy.id)
 
