@@ -4,26 +4,34 @@
 
 @layer base {
   :root {
+    /* Brand palette (materialos_brand_assets): navy #1E293B, sky #0EA5E9 */
     --background: 0 0% 100%;
-    --foreground: 222 20% 12%;
+    --foreground: 217 33% 17%;
     --card: 0 0% 100%;
-    --card-foreground: 222 20% 12%;
+    --card-foreground: 217 33% 17%;
     --border: 220 14% 90%;
     --input: 220 14% 90%;
-    --ring: 222 70% 45%;
-    --primary: 222 70% 45%;
+    --ring: 199 89% 48%;
+    --primary: 199 89% 48%;
     --primary-foreground: 0 0% 100%;
     --secondary: 220 14% 96%;
-    --secondary-foreground: 222 20% 12%;
+    --secondary-foreground: 217 33% 17%;
     --muted: 220 14% 96%;
     --muted-foreground: 220 9% 46%;
     --accent: 220 14% 96%;
-    --accent-foreground: 222 20% 12%;
+    --accent-foreground: 217 33% 17%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
     --success: 142 71% 35%;
     --success-foreground: 0 0% 100%;
     --radius: 0.5rem;
+
+    /* Brand navy surface -- used for the sidebar, not the whole app
+       (see AppShell). Kept as its own tokens rather than repurposing
+       --foreground so the rest of the light theme is unaffected. */
+    --brand-navy: 217 33% 17%;
+    --brand-navy-foreground: 0 0% 100%;
+    --brand-navy-muted: 217 20% 65%;
   }
 }
 

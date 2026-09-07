@@ -31,6 +31,13 @@ class Company(Base, UUIDPk, TenantMixin, TimestampMixin):
     pincode: Mapped[str | None] = mapped_column(String(10), nullable=True)
     financial_year_start_month: Mapped[int] = mapped_column(Integer, nullable=False, default=4)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    # D2: AATO > 5cr in any FY makes e-invoicing mandatory and permanent
+    # once crossed -- that is a compliance fact about the business, not
+    # something derivable from data this system has (it needs full,
+    # multi-year turnover including pre-MaterialOS history). An admin
+    # who knows the answer flips this switch; see ADR-007.
+    e_invoice_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    e_way_bill_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
 
 class Branch(Base, UUIDPk, TenantMixin, TimestampMixin):

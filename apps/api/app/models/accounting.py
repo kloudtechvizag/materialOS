@@ -2,7 +2,7 @@ import uuid
 from datetime import date
 from decimal import Decimal
 
-from sqlalchemy import Date, ForeignKey, Numeric, String, UniqueConstraint
+from sqlalchemy import Boolean, Date, ForeignKey, Numeric, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -10,13 +10,13 @@ from app.models.base import Base, TenantMixin, TimestampMixin, UUIDPk
 
 MONEY = Numeric(18, 4)
 
-ACCOUNT_TYPES = ("asset", "liability", "income", "expense")
+ACCOUNT_TYPES = ("asset", "liability", "income", "expense", "equity")
 
 
 class Account(Base, UUIDPk, TenantMixin, TimestampMixin):
-    """Minimal chart of accounts -- enough for Invoice/Receipt to post a
-    balanced journal (B5, B6). Full CoA management, cost centres, and
-    financial statements are Slice 4.
+    """Chart of accounts. System accounts (is_system) are seeded by
+    services/accounts.py and are not user-deletable; everything else is
+    a real, admin-managed account (Slice 4).
     """
 
     __tablename__ = "accounts"
@@ -28,7 +28,26 @@ class Account(Base, UUIDPk, TenantMixin, TimestampMixin):
     code: Mapped[str] = mapped_column(String(20), nullable=False)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     account_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    parent_account_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("accounts.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     is_system: Mapped[bool] = mapped_column(nullable=False, default=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+
+class CostCenter(Base, UUIDPk, TenantMixin, TimestampMixin):
+    """dev.md §39: branch/project/site/department/salesperson/vehicle/
+    warehouse. A tag on journal lines, not a second accounting dimension
+    with its own postings -- profitability-by-cost-centre is a report
+    over JournalLine.cost_center_id, nothing more.
+    """
+
+    __tablename__ = "cost_centers"
+    __table_args__ = (UniqueConstraint("tenant_id", "name", "center_type", name="uq_cost_centers_name_type"),)
+
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    center_type: Mapped[str] = mapped_column(String(30), nullable=False)  # branch|project|site|department|salesperson|vehicle|warehouse
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
 
 class JournalEntry(Base, UUIDPk, TenantMixin, TimestampMixin):
@@ -64,3 +83,6 @@ class JournalLine(Base, UUIDPk, TenantMixin, TimestampMixin):
     credit: Mapped[Decimal] = mapped_column(MONEY, nullable=False, default=0)
     party_type: Mapped[str | None] = mapped_column(String(20), nullable=True)  # "customer" | "supplier"
     party_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
+    cost_center_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("cost_centers.id", ondelete="SET NULL"), nullable=True, index=True
+    )

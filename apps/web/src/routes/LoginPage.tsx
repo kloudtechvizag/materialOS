@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 
+import { AuthLayout } from "@/components/layout/AuthLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -46,9 +47,10 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-secondary/30 p-4">
+    <AuthLayout>
       <Card className="w-full max-w-sm">
         <CardHeader>
+          <img src="/brand/symbol.png" alt="" className="mb-2 h-8 w-8 lg:hidden" />
           <CardTitle>Sign in to MaterialOS</CardTitle>
           <CardDescription>Enter your workspace, email, and password.</CardDescription>
         </CardHeader>
@@ -82,6 +84,6 @@ export function LoginPage() {
           </p>
         </CardContent>
       </Card>
-    </div>
+    </AuthLayout>
   );
 }

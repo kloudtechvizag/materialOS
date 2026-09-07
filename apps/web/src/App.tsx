@@ -1,11 +1,14 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import { AppShell } from "@/components/layout/AppShell";
+import { BooksPage } from "@/routes/BooksPage";
 import { BranchesPage } from "@/routes/BranchesPage";
 import { CollectionsPage } from "@/routes/CollectionsPage";
+import { CompanySettingsPage } from "@/routes/CompanySettingsPage";
 import { Customer360Page } from "@/routes/Customer360Page";
 import { CustomersPage } from "@/routes/CustomersPage";
 import { DashboardPage } from "@/routes/DashboardPage";
+import { GstPage } from "@/routes/GstPage";
 import { DispatchBoardPage } from "@/routes/dispatch/DispatchBoardPage";
 import { FleetPage } from "@/routes/dispatch/FleetPage";
 import { PodCapturePage } from "@/routes/dispatch/PodCapturePage";
@@ -93,6 +96,9 @@ export default function App() {
         <Route path="/imports/new" element={<ImportWizardPage />} />
         <Route path="/branches" element={<BranchesPage />} />
         <Route path="/users" element={<UsersPage />} />
+        <Route path="/books" element={<BooksPage />} />
+        <Route path="/gst" element={<GstPage />} />
+        <Route path="/company-settings" element={<CompanySettingsPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

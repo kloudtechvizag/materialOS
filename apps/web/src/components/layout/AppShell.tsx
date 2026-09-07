@@ -6,11 +6,14 @@ import {
   Building2,
   ClipboardList,
   Factory,
+  FileSpreadsheet,
   FileText,
   LayoutDashboard,
   LogOut,
   MapPin,
   Package,
+  Receipt,
+  Settings,
   ShoppingCart,
   Truck,
   UploadCloud,
@@ -48,6 +51,13 @@ const NAV_SECTIONS = [
     ],
   },
   {
+    label: "Books",
+    items: [
+      { to: "/books", label: "Financial reports", icon: FileSpreadsheet },
+      { to: "/gst", label: "GST filing", icon: Receipt },
+    ],
+  },
+  {
     label: "Setup",
     items: [
       { to: "/items", label: "Items", icon: Package },
@@ -56,6 +66,7 @@ const NAV_SECTIONS = [
       { to: "/imports", label: "Import from Tally/Busy", icon: UploadCloud },
       { to: "/branches", label: "Branches", icon: Building2 },
       { to: "/users", label: "Users", icon: Users },
+      { to: "/company-settings", label: "Company settings", icon: Settings },
     ],
   },
 ];
@@ -72,17 +83,15 @@ export function AppShell() {
 
   return (
     <div className="flex h-screen w-full overflow-hidden">
-      <aside className="flex w-60 shrink-0 flex-col border-r border-border bg-card">
-        <div className="flex h-14 items-center gap-2 border-b border-border px-4">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">
-            M
-          </div>
+      <aside className="flex w-60 shrink-0 flex-col bg-brand-navy text-brand-navy-foreground">
+        <div className="flex h-14 items-center gap-2 border-b border-white/10 px-4">
+          <img src="/brand/symbol.png" alt="" className="h-7 w-7" />
           <span className="text-sm font-semibold">MaterialOS</span>
         </div>
         <nav className="flex-1 space-y-4 overflow-y-auto p-3">
           {NAV_SECTIONS.map((section) => (
             <div key={section.label} className="space-y-1">
-              <p className="px-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground/70">{section.label}</p>
+              <p className="px-3 text-xs font-semibold uppercase tracking-wide text-brand-navy-muted">{section.label}</p>
               {section.items.map(({ to, label, icon: Icon, end }) => (
                 <NavLink
                   key={to}
@@ -91,7 +100,7 @@ export function AppShell() {
                   className={({ isActive }) =>
                     cn(
                       "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                      isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                      isActive ? "bg-primary text-primary-foreground" : "text-brand-navy-muted hover:bg-white/10 hover:text-white"
                     )
                   }
                 >
@@ -102,10 +111,10 @@ export function AppShell() {
             </div>
           ))}
         </nav>
-        <div className="border-t border-border p-3">
+        <div className="border-t border-white/10 p-3">
           <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+            className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-brand-navy-muted hover:bg-white/10 hover:text-white"
           >
             <LogOut className="h-4 w-4" />
             Log out

@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 
+import { AuthLayout } from "@/components/layout/AuthLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -67,9 +68,10 @@ export function SignupPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-secondary/30 p-4">
+    <AuthLayout>
       <Card className="w-full max-w-md">
         <CardHeader>
+          <img src="/brand/symbol.png" alt="" className="mb-2 h-8 w-8 lg:hidden" />
           <CardTitle>Create your MaterialOS workspace</CardTitle>
           <CardDescription>Takes about a minute. You can import your Tally data right after.</CardDescription>
         </CardHeader>
@@ -118,6 +120,6 @@ export function SignupPage() {
           </p>
         </CardContent>
       </Card>
-    </div>
+    </AuthLayout>
   );
 }

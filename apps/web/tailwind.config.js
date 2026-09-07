@@ -38,6 +38,11 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        "brand-navy": {
+          DEFAULT: "hsl(var(--brand-navy))",
+          foreground: "hsl(var(--brand-navy-foreground))",
+          muted: "hsl(var(--brand-navy-muted))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

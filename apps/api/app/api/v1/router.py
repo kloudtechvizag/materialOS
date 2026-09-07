@@ -1,22 +1,26 @@
 from fastapi import APIRouter
 
 from app.api.v1 import (
+    accounting,
     auth,
     branches,
     catalog,
     collections,
     companies,
+    compliance,
     customers,
     dashboard,
     dispatch,
     field_sales,
     fleet,
+    gst,
     health,
     imports,
     procurement,
     projects,
     sales,
     suppliers,
+    tally_export,
     tenants,
     users,
     warehouse_ops,
@@ -44,3 +48,7 @@ api_router.include_router(suppliers.router)
 api_router.include_router(procurement.router)
 api_router.include_router(collections.router)
 api_router.include_router(field_sales.router)
+api_router.include_router(accounting.router)
+api_router.include_router(gst.router)
+api_router.include_router(compliance.router)
+api_router.include_router(tally_export.router)

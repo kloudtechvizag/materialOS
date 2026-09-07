@@ -5,7 +5,7 @@ AI-powered building materials business operating system. See
 product brief this build follows (it supersedes `dev.md`, the original
 116-section v1 prompt, which is kept as the full feature backlog).
 
-**Status:** Slices 0-3 are built and working end to end.
+**Status:** Slices 0-4 are built and working end to end.
 
 - **Slice 0** (Foundation + Tally/Busy migration): signup, auth, RBAC,
   RLS-isolated tenancy, document numbering, the audit trigger, and the
@@ -34,9 +34,22 @@ product brief this build follows (it supersedes `dev.md`, the original
   ADR-005. WhatsApp send (quote/invoice/statement/receipt) is explicitly
   not built: it needs real Meta WhatsApp Business API credentials this
   environment doesn't have, not a fake button.
+- **Slice 4** (Books and compliance): a real chart of accounts with cost
+  centres, general ledger / trial balance / P&L / balance sheet / cash
+  flow computed straight from the journal (nothing double-maintained),
+  GSTR-1 (B2B, B2CS, CDNR, HSN summary) and GSTR-3B data extracts, and
+  a Tally export adapter symmetric to Slice 0's importer. E-invoice
+  (IRN) and e-way bill generation both work end to end against a real,
+  deterministic sandbox gateway with the 180-day and 24-hour rules
+  enforced -- the *live* GSP/NIC gateways are structurally complete but
+  refuse to run until real credentials are configured, rather than
+  faking success on a legally-binding document (see ADR-007). Balance
+  sheet equity is a computed plug and cash flow has no investing/
+  financing sections, both because no transactions exist yet to justify
+  more than that (ADR-008).
 
-Slices 4-6 (full accounting/GST compliance, AI, customer portal) are not
-started; see the brief's Part F for what's next and why the order matters.
+Slices 5-6 (AI, customer portal) are not started; see the brief's Part F
+for what's next and why the order matters.
 
 ## Architecture
 
@@ -134,5 +147,14 @@ Recorded in `docs/decisions/`:
 - **ADR-006**: `Item.standard_cost` is "latest landed cost" (each goods
   receipt overwrites it), not weighted-average or FIFO -- no new state,
   matches how an owner actually prices day to day.
+- **ADR-007**: e-invoice/e-way bill live gateways raise `NotConfiguredError`
+  until real GSP/NIC credentials are set; only the sandbox gateway runs
+  otherwise. A fake "live" success response on a compliance document is
+  a bigger risk than an honest refusal.
+- **ADR-008**: the balance sheet's equity is `Assets - Liabilities`,
+  computed on read, not a posted account -- no capital/drawings
+  transactions are modeled yet. Cash flow is a flat cash-movement list
+  by document type, not a labelled operating/investing/financing
+  statement, since the latter two sections don't exist to be empty.
 
 Read these before re-litigating any of them.

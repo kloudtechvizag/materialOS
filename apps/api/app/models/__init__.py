@@ -1,6 +1,7 @@
-from app.models.accounting import Account, JournalEntry, JournalLine
+from app.models.accounting import Account, CostCenter, JournalEntry, JournalLine
 from app.models.audit import AuditLog
 from app.models.catalog import Batch, Category, UnitConversion
+from app.models.compliance import EInvoice, EWayBill
 from app.models.field_sales import Visit
 from app.models.fleet import Driver, ProofOfDelivery, Trip, Vehicle
 from app.models.idempotency import IdempotencyKey
@@ -106,4 +107,7 @@ __all__ = [
     "SupplierPayment",
     "SupplierPaymentAllocation",
     "Visit",
+    "CostCenter",
+    "EInvoice",
+    "EWayBill",
 ]

@@ -27,10 +27,18 @@ class CompanyOut(BaseModel):
     name: str
     legal_name: str
     gstin: str | None
+    state: str | None
     financial_year_start_month: int
+    e_invoice_enabled: bool
+    e_way_bill_enabled: bool
 
     class Config:
         from_attributes = True
+
+
+class CompanyComplianceUpdate(BaseModel):
+    e_invoice_enabled: bool | None = None
+    e_way_bill_enabled: bool | None = None
 
 
 class BranchOut(BaseModel):
