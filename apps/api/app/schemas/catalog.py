@@ -56,3 +56,5 @@ class ItemUpdate(BaseModel):
     min_price: Decimal | None = None
     standard_cost: Decimal | None = None
     is_active: bool | None = None
+    category_id: uuid.UUID | None = None
+    brand: str | None = None

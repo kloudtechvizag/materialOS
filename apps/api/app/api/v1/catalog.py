@@ -38,12 +38,18 @@ def create_category(
 @router.get("/items", response_model=list[ItemOut])
 def list_items(
     q: str | None = None,
+    category_id: uuid.UUID | None = None,
+    uncategorized: bool = False,
     db: Session = Depends(get_db_tenant),
     _user=Depends(require_permission("items.view")),
 ) -> list[Item]:
     stmt = select(Item).where(Item.is_active.is_(True)).order_by(Item.name).limit(200)
     if q:
         stmt = stmt.where(Item.name.ilike(f"%{q}%"))
+    if category_id:
+        stmt = stmt.where(Item.category_id == category_id)
+    if uncategorized:
+        stmt = stmt.where(Item.category_id.is_(None))
     return db.execute(stmt).scalars().all()
 
 
