@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
+import { SingleColumnLedger, TwoColumnLedger } from "@/components/reports/LedgerTable";
+import type { LedgerRow } from "@/components/reports/LedgerTable";
+import { ReportToolbar } from "@/components/reports/ReportToolbar";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ErrorState } from "@/components/ui/error-state";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
-import { formatINR } from "@/lib/format";
+import { downloadCsv } from "@/lib/csv";
+import { formatINRPrecise } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 interface TrialBalanceLine { account_id: string; account_code: string; account_name: string; account_type: string; debit: string; credit: string; }
@@ -62,147 +65,189 @@ export function BooksPage() {
         <p className="text-sm text-muted-foreground">Every figure here is read straight from the journal -- nothing is a separately maintained total.</p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-4">
-        <div className="flex gap-1 rounded-lg border border-border p-1">
-          {TABS.map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={cn("rounded-md px-3 py-1.5 text-sm font-medium transition-colors", tab === t ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent")}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
-        {tab !== "Trial Balance" && tab !== "Balance Sheet" && (
-          <div className="flex items-center gap-2 text-sm">
-            <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="h-9 w-40" />
-            <span className="text-muted-foreground">to</span>
-            <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="h-9 w-40" />
-          </div>
-        )}
-        {(tab === "Trial Balance" || tab === "Balance Sheet") && (
-          <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="h-9 w-40" />
-        )}
+      <div className="flex gap-1 rounded-lg border border-border p-1 print:hidden">
+        {TABS.map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={cn("rounded-md px-3 py-1.5 text-sm font-medium transition-colors", tab === t ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent")}
+          >
+            {t}
+          </button>
+        ))}
       </div>
 
       {tab === "Trial Balance" && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Trial balance as of {toDate}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {trialBalance.isLoading && <Skeleton className="h-40" />}
-            {trialBalance.error && <ErrorState error={trialBalance.error} onRetry={() => trialBalance.refetch()} />}
-            {trialBalance.data && (
-              <>
+        <div className="space-y-3">
+          <ReportToolbar
+            dateLabel="At the end of"
+            onDownload={() =>
+              trialBalance.data &&
+              downloadCsv(`trial-balance-${toDate}.csv`, [
+                ["Code", "Account", "Type", "Debit", "Credit"],
+                ...trialBalance.data.map((l) => [l.account_code, l.account_name, l.account_type, l.debit, l.credit]),
+                ["", "", "Total", totalDebit.toFixed(2), totalCredit.toFixed(2)],
+              ])
+            }
+          >
+            <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="h-9 w-40" />
+          </ReportToolbar>
+
+          {trialBalance.isLoading && <Skeleton className="h-40" />}
+          {trialBalance.error && <ErrorState error={trialBalance.error} onRetry={() => trialBalance.refetch()} />}
+          {trialBalance.data && (
+            <>
+              <div className="overflow-hidden rounded-lg border border-border">
                 <table className="w-full text-sm">
-                  <thead className="text-left text-muted-foreground">
-                    <tr><th className="pb-2">Code</th><th className="pb-2">Account</th><th className="pb-2">Type</th><th className="pb-2 text-right">Debit</th><th className="pb-2 text-right">Credit</th></tr>
+                  <thead>
+                    <tr className="border-b border-border bg-muted/40 text-left">
+                      <th className="w-10 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">#</th>
+                      <th className="px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Code</th>
+                      <th className="px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Account</th>
+                      <th className="px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Type</th>
+                      <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Debit (Rs.)</th>
+                      <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Credit (Rs.)</th>
+                    </tr>
                   </thead>
                   <tbody>
-                    {trialBalance.data.map((line) => (
-                      <tr key={line.account_id} className="border-t border-border">
-                        <td className="py-2 text-muted-foreground">{line.account_code}</td>
-                        <td className="py-2">{line.account_name}</td>
-                        <td className="py-2"><Badge variant="outline">{line.account_type}</Badge></td>
-                        <td className="py-2 text-right">{Number(line.debit) ? formatINR(line.debit) : ""}</td>
-                        <td className="py-2 text-right">{Number(line.credit) ? formatINR(line.credit) : ""}</td>
+                    {trialBalance.data.map((line, i) => (
+                      <tr key={line.account_id} className="border-b border-border last:border-b-0">
+                        <td className="px-3 py-2 text-xs text-muted-foreground">{i + 1}</td>
+                        <td className="px-3 py-2 text-muted-foreground">{line.account_code}</td>
+                        <td className="px-3 py-2">{line.account_name}</td>
+                        <td className="px-3 py-2"><Badge variant="outline">{line.account_type}</Badge></td>
+                        <td className="px-3 py-2 text-right tabular-nums">{Number(line.debit) ? formatINRPrecise(line.debit) : ""}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{Number(line.credit) ? formatINRPrecise(line.credit) : ""}</td>
                       </tr>
                     ))}
                   </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 border-foreground/15 bg-muted/30 font-semibold">
+                      <td className="px-3 py-2" colSpan={4}>Total</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{formatINRPrecise(totalDebit)}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{formatINRPrecise(totalCredit)}</td>
+                    </tr>
+                  </tfoot>
                 </table>
-                <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
-                  <span className={cn("text-sm font-medium", Math.abs(totalDebit - totalCredit) < 0.01 ? "text-success" : "text-destructive")}>
-                    {Math.abs(totalDebit - totalCredit) < 0.01 ? "✓ Ties -- debits equal credits" : "Does not tie"}
-                  </span>
-                  <div className="flex gap-6 font-semibold">
-                    <span>{formatINR(totalDebit)}</span>
-                    <span>{formatINR(totalCredit)}</span>
-                  </div>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+              </div>
+              <p className={cn("text-sm font-medium", Math.abs(totalDebit - totalCredit) < 0.01 ? "text-success" : "text-destructive")}>
+                {Math.abs(totalDebit - totalCredit) < 0.01 ? "✓ Ties -- debits equal credits" : "Does not tie"}
+              </p>
+            </>
+          )}
+        </div>
       )}
 
       {tab === "Profit & Loss" && (
-        <Card>
-          <CardHeader><CardTitle className="text-base">Profit &amp; loss, {fromDate} to {toDate}</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
-            {pnl.isLoading && <Skeleton className="h-40" />}
-            {pnl.error && <ErrorState error={pnl.error} onRetry={() => pnl.refetch()} />}
-            {pnl.data && (
-              <>
-                <div>
-                  <p className="mb-1 text-sm font-medium">Income</p>
-                  {pnl.data.income_by_account.map(([code, name, amt]) => (
-                    <div key={code} className="flex justify-between py-1 text-sm"><span className="text-muted-foreground">{name}</span><span>{formatINR(amt)}</span></div>
-                  ))}
-                </div>
-                <div>
-                  <p className="mb-1 text-sm font-medium">Expenses</p>
-                  {pnl.data.expense_by_account.map(([code, name, amt]) => (
-                    <div key={code} className="flex justify-between py-1 text-sm"><span className="text-muted-foreground">{name}</span><span>{formatINR(amt)}</span></div>
-                  ))}
-                </div>
-                <div className="flex justify-between border-t border-border pt-3 text-lg font-semibold">
-                  <span>Net profit</span><span>{formatINR(pnl.data.net_profit)}</span>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+        <div className="space-y-3">
+          <ReportToolbar
+            dateLabel="For the period"
+            onDownload={() =>
+              pnl.data &&
+              downloadCsv(`profit-and-loss-${fromDate}_to_${toDate}.csv`, [
+                ["Income account", "Amount"],
+                ...pnl.data.income_by_account.map(([, name, amt]) => [name, amt]),
+                ["Expense account", "Amount"],
+                ...pnl.data.expense_by_account.map(([, name, amt]) => [name, amt]),
+                ["Net profit", pnl.data.net_profit],
+              ])
+            }
+          >
+            <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="h-9 w-40" />
+            <span className="text-sm text-muted-foreground">to</span>
+            <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="h-9 w-40" />
+          </ReportToolbar>
+
+          {pnl.isLoading && <Skeleton className="h-40" />}
+          {pnl.error && <ErrorState error={pnl.error} onRetry={() => pnl.refetch()} />}
+          {pnl.data && (
+            <TwoColumnLedger
+              leftTitle="Expenses"
+              rightTitle="Income"
+              leftRows={[
+                ...pnl.data.expense_by_account.map(([, name, amt]): LedgerRow => ({ label: name, amount: amt })),
+                { label: "Net profit for the period", amount: pnl.data.net_profit, highlight: true },
+              ]}
+              rightRows={pnl.data.income_by_account.map(([, name, amt]): LedgerRow => ({ label: name, amount: amt }))}
+              leftTotal={(Number(pnl.data.total_expense) + Number(pnl.data.net_profit)).toFixed(2)}
+              rightTotal={pnl.data.total_income}
+            />
+          )}
+        </div>
       )}
 
       {tab === "Balance Sheet" && (
-        <Card>
-          <CardHeader><CardTitle className="text-base">Balance sheet as of {toDate}</CardTitle></CardHeader>
-          <CardContent className="grid gap-6 sm:grid-cols-2">
-            {balanceSheet.isLoading && <Skeleton className="h-40" />}
-            {balanceSheet.error && <ErrorState error={balanceSheet.error} onRetry={() => balanceSheet.refetch()} />}
-            {balanceSheet.data && (
-              <>
-                <div>
-                  <p className="mb-1 text-sm font-medium">Assets</p>
-                  {balanceSheet.data.assets_by_account.map(([code, name, amt]) => (
-                    <div key={code} className="flex justify-between py-1 text-sm"><span className="text-muted-foreground">{name}</span><span>{formatINR(amt)}</span></div>
-                  ))}
-                  <div className="flex justify-between border-t border-border pt-2 text-sm font-semibold"><span>Total assets</span><span>{formatINR(balanceSheet.data.total_assets)}</span></div>
-                </div>
-                <div>
-                  <p className="mb-1 text-sm font-medium">Liabilities &amp; equity</p>
-                  {balanceSheet.data.liabilities_by_account.map(([code, name, amt]) => (
-                    <div key={code} className="flex justify-between py-1 text-sm"><span className="text-muted-foreground">{name}</span><span>{formatINR(amt)}</span></div>
-                  ))}
-                  <div className="flex justify-between py-1 text-sm"><span className="text-muted-foreground">Retained earnings (computed)</span><span>{formatINR(balanceSheet.data.retained_earnings)}</span></div>
-                  <div className="flex justify-between border-t border-border pt-2 text-sm font-semibold"><span>Total</span><span>{formatINR((Number(balanceSheet.data.total_liabilities) + Number(balanceSheet.data.retained_earnings)).toString())}</span></div>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+        <div className="space-y-3">
+          <ReportToolbar
+            dateLabel="At the end of"
+            onDownload={() =>
+              balanceSheet.data &&
+              downloadCsv(`balance-sheet-${toDate}.csv`, [
+                ["Liabilities", "Amount"],
+                ["Profit for the period (computed)", balanceSheet.data.retained_earnings],
+                ...balanceSheet.data.liabilities_by_account.map(([, name, amt]) => [name, amt]),
+                ["Assets", "Amount"],
+                ...balanceSheet.data.assets_by_account.map(([, name, amt]) => [name, amt]),
+              ])
+            }
+          >
+            <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="h-9 w-40" />
+          </ReportToolbar>
+
+          {balanceSheet.isLoading && <Skeleton className="h-40" />}
+          {balanceSheet.error && <ErrorState error={balanceSheet.error} onRetry={() => balanceSheet.refetch()} />}
+          {balanceSheet.data && (
+            <TwoColumnLedger
+              leftTitle="Liabilities"
+              rightTitle="Assets"
+              leftRows={[
+                { label: "Profit for the period (computed)", amount: balanceSheet.data.retained_earnings, highlight: true },
+                ...balanceSheet.data.liabilities_by_account.map(([, name, amt]): LedgerRow => ({ label: name, amount: amt })),
+              ]}
+              rightRows={balanceSheet.data.assets_by_account.map(([, name, amt]): LedgerRow => ({ label: name, amount: amt }))}
+              leftTotal={(Number(balanceSheet.data.total_liabilities) + Number(balanceSheet.data.retained_earnings)).toFixed(2)}
+              rightTotal={balanceSheet.data.total_assets}
+            />
+          )}
+        </div>
       )}
 
       {tab === "Cash Flow" && (
-        <Card>
-          <CardHeader><CardTitle className="text-base">Cash movement, {fromDate} to {toDate}</CardTitle></CardHeader>
-          <CardContent className="space-y-2">
-            <p className="text-xs text-muted-foreground">Cash-basis, by document type. No investing/financing sections are modeled yet (see ADR-008).</p>
-            {cashFlow.isLoading && <Skeleton className="h-40" />}
-            {cashFlow.error && <ErrorState error={cashFlow.error} onRetry={() => cashFlow.refetch()} />}
-            {cashFlow.data && (
-              <>
-                <div className="flex justify-between py-1 text-sm"><span className="text-muted-foreground">Opening balance</span><span>{formatINR(cashFlow.data.opening_balance)}</span></div>
-                {cashFlow.data.by_document_type.map((line) => (
-                  <div key={line.document_type} className="flex justify-between py-1 text-sm"><span className="text-muted-foreground capitalize">{line.document_type.replace("_", " ")}</span><span>{formatINR(line.net_amount)}</span></div>
-                ))}
-                <div className="flex justify-between border-t border-border pt-2 text-sm font-semibold"><span>Closing balance</span><span>{formatINR(cashFlow.data.closing_balance)}</span></div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+        <div className="space-y-3">
+          <ReportToolbar
+            dateLabel="For the period"
+            onDownload={() =>
+              cashFlow.data &&
+              downloadCsv(`cash-flow-${fromDate}_to_${toDate}.csv`, [
+                ["Line", "Amount"],
+                ["Opening balance", cashFlow.data.opening_balance],
+                ...cashFlow.data.by_document_type.map((l) => [l.document_type, l.net_amount]),
+                ["Closing balance", cashFlow.data.closing_balance],
+              ])
+            }
+          >
+            <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="h-9 w-40" />
+            <span className="text-sm text-muted-foreground">to</span>
+            <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="h-9 w-40" />
+          </ReportToolbar>
+
+          <p className="text-xs text-muted-foreground">Cash-basis, by document type. No investing/financing sections are modeled yet (see ADR-008).</p>
+
+          {cashFlow.isLoading && <Skeleton className="h-40" />}
+          {cashFlow.error && <ErrorState error={cashFlow.error} onRetry={() => cashFlow.refetch()} />}
+          {cashFlow.data && (
+            <SingleColumnLedger
+              title="Cash movement"
+              rows={[
+                { label: "Opening balance", amount: cashFlow.data.opening_balance, bold: true },
+                ...cashFlow.data.by_document_type.map(
+                  (l): LedgerRow => ({ label: l.document_type.replace("_", " "), amount: l.net_amount })
+                ),
+              ]}
+              total={cashFlow.data.closing_balance}
+            />
+          )}
+        </div>
       )}
     </div>
   );
