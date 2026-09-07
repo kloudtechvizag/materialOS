@@ -3,16 +3,18 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Plus, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
+import { ItemSelect } from "@/components/items/ItemSelect";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ErrorState } from "@/components/ui/error-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiFetch } from "@/lib/api";
+import type { CategoryLite } from "@/lib/items";
 
 interface Customer { id: string; name: string; }
 interface Project { id: string; customer_id: string; name: string; sites: { id: string; name: string; state: string }[]; }
-interface Item { id: string; name: string; base_uom: string; standard_price: string; }
+interface Item { id: string; name: string; base_uom: string; standard_price: string; category_id: string | null; }
 
 interface Line { item_id: string; qty: string; uom: string; }
 
@@ -21,6 +23,7 @@ export function NewQuotationPage() {
   const { data: customers } = useQuery({ queryKey: ["customers"], queryFn: () => apiFetch<Customer[]>("/customers") });
   const { data: projects } = useQuery({ queryKey: ["projects"], queryFn: () => apiFetch<Project[]>("/projects") });
   const { data: items } = useQuery({ queryKey: ["items"], queryFn: () => apiFetch<Item[]>("/items") });
+  const { data: categories } = useQuery({ queryKey: ["categories"], queryFn: () => apiFetch<CategoryLite[]>("/categories") });
 
   const [customerId, setCustomerId] = useState("");
   const [projectId, setProjectId] = useState("");
@@ -97,17 +100,16 @@ export function NewQuotationPage() {
             const item = items?.find((it) => it.id === line.item_id);
             return (
               <div key={i} className="grid grid-cols-12 items-center gap-2">
-                <select
-                  className="col-span-6 flex h-9 rounded-md border border-input bg-background px-3 text-sm"
+                <ItemSelect
+                  className="col-span-6"
+                  items={items}
+                  categories={categories}
                   value={line.item_id}
-                  onChange={(e) => {
-                    const selected = items?.find((it) => it.id === e.target.value);
-                    updateLine(i, { item_id: e.target.value, uom: selected?.base_uom ?? "" });
+                  onChange={(itemId) => {
+                    const selected = items?.find((it) => it.id === itemId);
+                    updateLine(i, { item_id: itemId, uom: selected?.base_uom ?? "" });
                   }}
-                >
-                  <option value="">Select item</option>
-                  {items?.map((it) => <option key={it.id} value={it.id}>{it.name}</option>)}
-                </select>
+                />
                 <Input className="col-span-2" type="number" placeholder="Qty" value={line.qty} onChange={(e) => updateLine(i, { qty: e.target.value })} />
                 <Input className="col-span-2" placeholder="Unit" value={line.uom || item?.base_uom || ""} onChange={(e) => updateLine(i, { uom: e.target.value })} />
                 <span className="col-span-1 text-sm text-muted-foreground">

@@ -3,6 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Plus, ShoppingCart, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
+import { ItemSelect } from "@/components/items/ItemSelect";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,10 +13,11 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
 import { formatINR } from "@/lib/format";
+import type { CategoryLite } from "@/lib/items";
 
 interface Supplier { id: string; name: string; }
 interface Warehouse { id: string; name: string; }
-interface Item { id: string; name: string; base_uom: string; standard_cost: string; }
+interface Item { id: string; name: string; base_uom: string; standard_cost: string; category_id: string | null; }
 interface PurchaseOrder { id: string; number: string; status: string; subtotal: string; po_date: string; }
 interface Line { item_id: string; qty: string; rate: string; }
 
@@ -36,6 +38,7 @@ export function PurchaseOrdersPage() {
   const { data: suppliers } = useQuery({ queryKey: ["suppliers"], queryFn: () => apiFetch<Supplier[]>("/suppliers") });
   const { data: warehouses } = useQuery({ queryKey: ["warehouses"], queryFn: () => apiFetch<Warehouse[]>("/warehouses") });
   const { data: items } = useQuery({ queryKey: ["items"], queryFn: () => apiFetch<Item[]>("/items") });
+  const { data: categories } = useQuery({ queryKey: ["categories"], queryFn: () => apiFetch<CategoryLite[]>("/categories") });
   const { data: orders, isLoading, error, refetch } = useQuery({
     queryKey: ["purchase-orders"], queryFn: () => apiFetch<PurchaseOrder[]>("/purchase-orders"),
   });
@@ -85,17 +88,16 @@ export function PurchaseOrdersPage() {
 
             {lines.map((line, i) => (
               <div key={i} className="grid grid-cols-12 items-center gap-2">
-                <select
-                  className="col-span-6 flex h-9 rounded-md border border-input bg-background px-3 text-sm"
+                <ItemSelect
+                  className="col-span-6"
+                  items={items}
+                  categories={categories}
                   value={line.item_id}
-                  onChange={(e) => {
-                    const selected = items?.find((it) => it.id === e.target.value);
-                    updateLine(i, { item_id: e.target.value, rate: line.rate || selected?.standard_cost || "" });
+                  onChange={(itemId) => {
+                    const selected = items?.find((it) => it.id === itemId);
+                    updateLine(i, { item_id: itemId, rate: line.rate || selected?.standard_cost || "" });
                   }}
-                >
-                  <option value="">Select item</option>
-                  {items?.map((it) => <option key={it.id} value={it.id}>{it.name}</option>)}
-                </select>
+                />
                 <Input className="col-span-2" type="number" placeholder="Qty" value={line.qty} onChange={(e) => updateLine(i, { qty: e.target.value })} />
                 <Input className="col-span-3" type="number" placeholder="Rate" value={line.rate} onChange={(e) => updateLine(i, { rate: e.target.value })} />
                 <button className="col-span-1 flex justify-end text-muted-foreground hover:text-destructive" onClick={() => setLines((prev) => prev.filter((_, idx) => idx !== i))}>

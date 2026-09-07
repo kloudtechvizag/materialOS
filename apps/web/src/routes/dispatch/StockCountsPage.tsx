@@ -10,9 +10,11 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
+import type { CategoryLite } from "@/lib/items";
+import { groupItemsByCategory } from "@/lib/items";
 
 interface Warehouse { id: string; name: string; }
-interface Item { id: string; name: string; }
+interface Item { id: string; name: string; category_id: string | null; }
 interface StockCount { id: string; warehouse_id: string; count_date: string; status: string; items: { id: string }[]; }
 
 const STATUS_VARIANT: Record<string, "outline" | "secondary" | "success"> = {
@@ -29,6 +31,8 @@ export function StockCountsPage() {
 
   const { data: warehouses } = useQuery({ queryKey: ["warehouses"], queryFn: () => apiFetch<Warehouse[]>("/warehouses") });
   const { data: items } = useQuery({ queryKey: ["items"], queryFn: () => apiFetch<Item[]>("/items") });
+  const { data: categories } = useQuery({ queryKey: ["categories"], queryFn: () => apiFetch<CategoryLite[]>("/categories") });
+  const itemGroups = groupItemsByCategory(items, categories);
   const { data: counts, isLoading, error, refetch } = useQuery({
     queryKey: ["stock-counts"], queryFn: () => apiFetch<StockCount[]>("/stock-counts"),
   });
@@ -68,12 +72,17 @@ export function StockCountsPage() {
               <option value="">Select warehouse</option>
               {warehouses?.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
             </select>
-            <div className="max-h-64 space-y-1 overflow-y-auto rounded-md border border-border p-2">
-              {items?.map((item) => (
-                <label key={item.id} className="flex items-center gap-2 rounded p-1.5 text-sm hover:bg-accent/50">
-                  <input type="checkbox" checked={selectedItems.has(item.id)} onChange={() => toggleItem(item.id)} />
-                  {item.name}
-                </label>
+            <div className="max-h-64 space-y-3 overflow-y-auto rounded-md border border-border p-2">
+              {itemGroups.map((group) => (
+                <div key={group.id}>
+                  <p className="px-1.5 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{group.label}</p>
+                  {group.items.map((item) => (
+                    <label key={item.id} className="flex items-center gap-2 rounded p-1.5 text-sm hover:bg-accent/50">
+                      <input type="checkbox" checked={selectedItems.has(item.id)} onChange={() => toggleItem(item.id)} />
+                      {item.name}
+                    </label>
+                  ))}
+                </div>
               ))}
             </div>
             {createCount.isError && <ErrorState error={createCount.error} />}

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeftRight } from "lucide-react";
 
+import { ItemSelect } from "@/components/items/ItemSelect";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,9 +11,10 @@ import { ErrorState } from "@/components/ui/error-state";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
+import type { CategoryLite } from "@/lib/items";
 
 interface Warehouse { id: string; name: string; }
-interface Item { id: string; name: string; }
+interface Item { id: string; name: string; category_id: string | null; }
 interface TransferItem { id: string; item_id: string; qty: string; }
 interface Transfer { id: string; number: string; from_warehouse_id: string; to_warehouse_id: string; status: string; items: TransferItem[]; }
 
@@ -32,6 +34,7 @@ export function TransfersPage() {
 
   const { data: warehouses } = useQuery({ queryKey: ["warehouses"], queryFn: () => apiFetch<Warehouse[]>("/warehouses") });
   const { data: items } = useQuery({ queryKey: ["items"], queryFn: () => apiFetch<Item[]>("/items") });
+  const { data: categories } = useQuery({ queryKey: ["categories"], queryFn: () => apiFetch<CategoryLite[]>("/categories") });
   const { data: transfers, isLoading, error, refetch } = useQuery({
     queryKey: ["transfers"], queryFn: () => apiFetch<Transfer[]>("/transfers"),
   });
@@ -85,10 +88,7 @@ export function TransfersPage() {
                 <option value="">To warehouse</option>
                 {warehouses?.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
               </select>
-              <select className="col-span-2 flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={itemId} onChange={(e) => setItemId(e.target.value)}>
-                <option value="">Select item</option>
-                {items?.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
-              </select>
+              <ItemSelect className="col-span-2 h-10" items={items} categories={categories} value={itemId} onChange={setItemId} />
               <Input type="number" placeholder="Qty" value={qty} onChange={(e) => setQty(e.target.value)} />
             </div>
             {createTransfer.isError && <ErrorState error={createTransfer.error} />}
