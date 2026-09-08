@@ -148,13 +148,19 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
   },
 ];
 
-/** Filters ALL_NAV_SECTIONS down to what a profile actually enables.
+/** Filters ALL_NAV_SECTIONS down to what a profile actually enables,
+ * and relabels the handful of nav items whose name genuinely varies
+ * by industry (IndustryProfile.terminology, ADR-010) -- "Items" reads
+ * "Medicines" for a pharmacy, "Materials" for a print shop, and so on.
  * `enabledModules === undefined` (profile not loaded yet) shows
  * everything rather than flashing an empty sidebar while it loads. */
-export function buildNavigation(enabledModules: string[] | undefined): NavigationSection[] {
+export function buildNavigation(enabledModules: string[] | undefined, terminology?: Record<string, string>): NavigationSection[] {
+  const itemsLabel = terminology?.items_label;
   return ALL_NAV_SECTIONS.map((section) => ({
     ...section,
-    items: section.items.filter((item) => !item.module || enabledModules === undefined || enabledModules.includes(item.module)),
+    items: section.items
+      .filter((item) => !item.module || enabledModules === undefined || enabledModules.includes(item.module))
+      .map((item) => (item.id === "items" && itemsLabel ? { ...item, label: itemsLabel } : item)),
   })).filter((section) => section.items.length > 0);
 }
 

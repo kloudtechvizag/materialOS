@@ -12,7 +12,8 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
         <div className="flex h-full flex-col items-start justify-between p-10">
           <img src="/brand/logo-dark.png" alt="MaterialOS" className="h-8 w-auto" />
           <p className="max-w-sm text-sm text-brand-navy-muted">
-            One connected operating system for cement, steel, and every other material your business moves.
+            One connected operating system for sales, inventory, accounting, and operations -- configured for
+            your industry, from retail and pharmacy to printing and building materials.
           </p>
         </div>
       </div>

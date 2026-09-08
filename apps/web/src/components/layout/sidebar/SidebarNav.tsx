@@ -15,7 +15,7 @@ import { useSidebarStore } from "@/store/sidebar";
 export function SidebarNav({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
   const location = useLocation();
   const { profile } = useIndustryProfile();
-  const sections = useMemo(() => buildNavigation(profile?.enabled_modules), [profile]);
+  const sections = useMemo(() => buildNavigation(profile?.enabled_modules, profile?.terminology), [profile]);
   const expandedSections = useSidebarStore((s) => s.expandedSections);
   const toggleSection = useSidebarStore((s) => s.toggleSection);
   const expandSection = useSidebarStore((s) => s.expandSection);

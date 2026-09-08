@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
+import { useIndustryProfile } from "@/lib/industryProfile";
 
 interface Supplier { id: string; name: string; gstin: string | null; billing_state: string | null; }
 
@@ -18,6 +19,8 @@ export function SuppliersPage() {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", gstin: "", billing_state: "" });
+  const { profile } = useIndustryProfile();
+  const nameExample = profile?.terminology?.supplier_name_example ?? "Supplier name";
 
   const { data: suppliers, isLoading, error, refetch } = useQuery({
     queryKey: ["suppliers"], queryFn: () => apiFetch<Supplier[]>("/suppliers"),
@@ -49,7 +52,7 @@ export function SuppliersPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Name</Label>
-                <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="UltraTech Cement Distributors" />
+                <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder={nameExample} />
               </div>
               <div className="space-y-1.5">
                 <Label>GSTIN</Label>

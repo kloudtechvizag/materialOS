@@ -34,18 +34,22 @@ def _flags(**overrides: bool) -> dict:
     return base
 
 
-# terminology is stored per ADR-010's scope (nav labels + Customer/Item
-# page headers) but not yet actually consumed anywhere in the frontend
-# beyond displaying it read-only on the Industry Configuration page --
-# left {} on every profile below rather than shipping labels nothing
-# renders. Wiring it into the sidebar/page headers is a follow-up, not
-# a per-profile data problem.
+# ADR-010 addendum: terminology now drives real UI, not just a
+# read-only display on the Industry Configuration page -- item_label/
+# items_label relabel the Items nav entry and page header, and the
+# *_example keys replace the Items/Customers/Suppliers "new record"
+# form placeholders (frontend: lib/navigation.ts's buildNavigation(),
+# routes/ItemsPage.tsx, CustomersPage.tsx, procurement/SuppliersPage.tsx).
+# Every profile below needs real values -- a building-materials example
+# ("UltraTech OPC53 Cement 50KG") showing up as the placeholder for a
+# print shop's own item form is exactly the cross-industry leak this
+# fixes (reported live, ADR-010's second addendum).
 PROFILE_DEFINITIONS: list[dict] = [
     {
         "slug": "building_materials",
         "name": "Building Materials",
         "category": "construction",
-        "terminology": {},
+        "terminology": {"item_label": "Item", "items_label": "Items", "item_name_example": "UltraTech OPC53 Cement 50KG", "item_uom_example": "BAG", "customer_name_example": "Sri Balaji Constructions", "supplier_name_example": "UltraTech Cement Distributors"},
         "enabled_modules": [
             "sales",
             "purchase",
@@ -72,7 +76,7 @@ PROFILE_DEFINITIONS: list[dict] = [
         "slug": "retail",
         "name": "Retail Shop",
         "category": "retail",
-        "terminology": {},
+        "terminology": {"item_label": "Product", "items_label": "Products", "item_name_example": "Nivea Body Lotion 200ml", "item_uom_example": "PCS", "customer_name_example": "Walk-in Customer", "supplier_name_example": "FastMoving Consumer Distributors"},
         "enabled_modules": ["sales", "purchase", "inventory", "pos", "accounting", "gst"],
         "navigation_config": [],
         "dashboard_widgets": POS_WIDGETS,
@@ -83,7 +87,7 @@ PROFILE_DEFINITIONS: list[dict] = [
         "slug": "pharmacy",
         "name": "Pharmacy",
         "category": "healthcare",
-        "terminology": {},
+        "terminology": {"item_label": "Medicine", "items_label": "Medicines", "item_name_example": "Paracetamol 500mg Strip", "item_uom_example": "STRIP", "customer_name_example": "Walk-in Patient", "supplier_name_example": "MedPlus Pharma Distributors"},
         "enabled_modules": ["sales", "purchase", "inventory", "pos", "accounting", "gst"],
         "navigation_config": [],
         "dashboard_widgets": ["todays_sales", "near_expiry", "active_items", "active_customers"],
@@ -105,7 +109,7 @@ PROFILE_DEFINITIONS: list[dict] = [
         "slug": "ecommerce",
         "name": "Ecommerce",
         "category": "ecommerce",
-        "terminology": {},
+        "terminology": {"item_label": "Product", "items_label": "Products", "item_name_example": "Wireless Bluetooth Earbuds", "item_uom_example": "PCS", "customer_name_example": "Online Customer", "supplier_name_example": "Global Import Trading Co"},
         "enabled_modules": ["sales", "purchase", "inventory", "warehouse", "dispatch", "accounting", "gst"],
         "navigation_config": [],
         "dashboard_widgets": DEALER_WIDGETS,
@@ -116,7 +120,7 @@ PROFILE_DEFINITIONS: list[dict] = [
         "slug": "fmcg",
         "name": "FMCG",
         "category": "distribution",
-        "terminology": {},
+        "terminology": {"item_label": "SKU", "items_label": "SKUs", "item_name_example": "Parle-G Biscuit 200g Pack", "item_uom_example": "CTN", "customer_name_example": "City Retail Store", "supplier_name_example": "HUL Regional Distributors"},
         "enabled_modules": [
             "sales", "purchase", "inventory", "warehouse", "dispatch",
             "credit", "collections", "field_sales", "accounting", "gst",
@@ -130,7 +134,7 @@ PROFILE_DEFINITIONS: list[dict] = [
         "slug": "auto_parts",
         "name": "Auto Parts",
         "category": "automotive",
-        "terminology": {},
+        "terminology": {"item_label": "Part", "items_label": "Parts", "item_name_example": "Bosch Brake Pad Set - Swift", "item_uom_example": "SET", "customer_name_example": "City Garage Works", "supplier_name_example": "Bosch Auto Parts Distributors"},
         "enabled_modules": ["sales", "purchase", "inventory", "warehouse", "credit", "collections", "accounting", "gst"],
         "navigation_config": [],
         "dashboard_widgets": DEALER_WIDGETS_WITH_QUOTES,
@@ -141,7 +145,7 @@ PROFILE_DEFINITIONS: list[dict] = [
         "slug": "food_beverage",
         "name": "Food & Beverages",
         "category": "food",
-        "terminology": {},
+        "terminology": {"item_label": "Menu Item", "items_label": "Menu Items", "item_name_example": "Masala Chai 200ml", "item_uom_example": "CUP", "customer_name_example": "Dine-in Customer", "supplier_name_example": "Fresh Farm Suppliers"},
         "enabled_modules": ["sales", "purchase", "inventory", "pos", "accounting", "gst"],
         "navigation_config": [],
         "dashboard_widgets": ["todays_sales", "near_expiry", "todays_cash", "todays_upi", "todays_card", "active_items"],
@@ -152,7 +156,7 @@ PROFILE_DEFINITIONS: list[dict] = [
         "slug": "chemical",
         "name": "Chemical",
         "category": "chemical",
-        "terminology": {},
+        "terminology": {"item_label": "Chemical", "items_label": "Chemicals", "item_name_example": "Sodium Hydroxide 25kg Drum", "item_uom_example": "DRUM", "customer_name_example": "ABC Textile Processors", "supplier_name_example": "Deepak Chemicals Distributors"},
         "enabled_modules": ["sales", "purchase", "inventory", "warehouse", "credit", "collections", "accounting", "gst"],
         "navigation_config": [],
         "dashboard_widgets": DEALER_WIDGETS,
@@ -163,7 +167,7 @@ PROFILE_DEFINITIONS: list[dict] = [
         "slug": "computer_hardware",
         "name": "Computer Hardware",
         "category": "electronics",
-        "terminology": {},
+        "terminology": {"item_label": "Product", "items_label": "Products", "item_name_example": "Logitech Wireless Mouse M235", "item_uom_example": "PCS", "customer_name_example": "Sri Computers Retail", "supplier_name_example": "Rashi Peripherals Distributors"},
         "enabled_modules": ["sales", "purchase", "inventory", "credit", "collections", "accounting", "gst"],
         "navigation_config": [],
         "dashboard_widgets": DEALER_WIDGETS,
@@ -174,7 +178,7 @@ PROFILE_DEFINITIONS: list[dict] = [
         "slug": "furniture",
         "name": "Furniture",
         "category": "furniture",
-        "terminology": {},
+        "terminology": {"item_label": "Item", "items_label": "Items", "item_name_example": "Sheesham Wood Dining Table 6-Seater", "item_uom_example": "PCS", "customer_name_example": "Interior Decor Studio", "supplier_name_example": "Jodhpur Wood Craft Suppliers"},
         "enabled_modules": ["sales", "purchase", "inventory", "projects", "credit", "collections", "accounting", "gst"],
         "navigation_config": [],
         "dashboard_widgets": DEALER_WIDGETS_WITH_QUOTES,
@@ -185,7 +189,7 @@ PROFILE_DEFINITIONS: list[dict] = [
         "slug": "book_publishing",
         "name": "Book Publishing",
         "category": "publishing",
-        "terminology": {},
+        "terminology": {"item_label": "Title", "items_label": "Titles", "item_name_example": "NCERT Mathematics Class 10", "item_uom_example": "PCS", "customer_name_example": "City Book Depot", "supplier_name_example": "National Book Trust Distributors"},
         "enabled_modules": ["sales", "purchase", "inventory", "credit", "collections", "accounting", "gst"],
         "navigation_config": [],
         "dashboard_widgets": DEALER_WIDGETS,
@@ -196,7 +200,7 @@ PROFILE_DEFINITIONS: list[dict] = [
         "slug": "travel",
         "name": "Travel",
         "category": "services",
-        "terminology": {},
+        "terminology": {"item_label": "Package", "items_label": "Packages", "item_name_example": "Goa 4N/5D Family Package", "item_uom_example": "PKG", "customer_name_example": "Individual Traveller", "supplier_name_example": "Local Transport & Hotel Vendor"},
         "enabled_modules": ["sales", "credit", "collections", "accounting", "gst"],
         "navigation_config": [],
         "dashboard_widgets": DEALER_WIDGETS_WITH_QUOTES,
@@ -207,7 +211,7 @@ PROFILE_DEFINITIONS: list[dict] = [
         "slug": "electrical",
         "name": "Electrical",
         "category": "construction",
-        "terminology": {},
+        "terminology": {"item_label": "Item", "items_label": "Items", "item_name_example": "Havells MCB 32A Single Pole", "item_uom_example": "PCS", "customer_name_example": "Local Electrical Contractor", "supplier_name_example": "Havells Regional Distributors"},
         "enabled_modules": [
             "sales", "purchase", "inventory", "warehouse", "dispatch",
             "projects", "credit", "collections", "accounting", "gst",
@@ -221,7 +225,7 @@ PROFILE_DEFINITIONS: list[dict] = [
         "slug": "paper_mill",
         "name": "Paper Mill",
         "category": "manufacturing",
-        "terminology": {},
+        "terminology": {"item_label": "Product", "items_label": "Products", "item_name_example": "80 GSM Copier Paper Reel", "item_uom_example": "MT", "customer_name_example": "Print & Packaging Buyer", "supplier_name_example": "Pulp & Waste Paper Suppliers"},
         "enabled_modules": ["sales", "purchase", "inventory", "warehouse", "dispatch", "credit", "collections", "accounting", "gst"],
         "navigation_config": [],
         "dashboard_widgets": DEALER_WIDGETS,
@@ -232,7 +236,7 @@ PROFILE_DEFINITIONS: list[dict] = [
         "slug": "paint",
         "name": "Paint",
         "category": "construction",
-        "terminology": {},
+        "terminology": {"item_label": "Product", "items_label": "Products", "item_name_example": "Asian Paints Tractor Emulsion 20L", "item_uom_example": "LTR", "customer_name_example": "Local Paint Contractor", "supplier_name_example": "Asian Paints Regional Distributors"},
         "enabled_modules": ["sales", "purchase", "inventory", "warehouse", "credit", "collections", "accounting", "gst"],
         "navigation_config": [],
         "dashboard_widgets": DEALER_WIDGETS,
@@ -243,7 +247,7 @@ PROFILE_DEFINITIONS: list[dict] = [
         "slug": "mobile",
         "name": "Mobile Store",
         "category": "electronics",
-        "terminology": {},
+        "terminology": {"item_label": "Product", "items_label": "Products", "item_name_example": "Samsung Galaxy M14 128GB", "item_uom_example": "PCS", "customer_name_example": "Walk-in Customer", "supplier_name_example": "Samsung Authorized Distributors"},
         "enabled_modules": ["sales", "purchase", "inventory", "pos", "accounting", "gst"],
         "navigation_config": [],
         "dashboard_widgets": POS_WIDGETS_COMPACT,
@@ -254,7 +258,7 @@ PROFILE_DEFINITIONS: list[dict] = [
         "slug": "garments",
         "name": "Garments",
         "category": "fashion",
-        "terminology": {},
+        "terminology": {"item_label": "Style", "items_label": "Styles", "item_name_example": "Men's Cotton Formal Shirt - White", "item_uom_example": "PCS", "customer_name_example": "Retail Boutique Buyer", "supplier_name_example": "Tirupur Garment Manufacturers"},
         "enabled_modules": ["sales", "purchase", "inventory", "pos", "accounting", "gst"],
         "navigation_config": [],
         "dashboard_widgets": POS_WIDGETS,
@@ -265,7 +269,7 @@ PROFILE_DEFINITIONS: list[dict] = [
         "slug": "jewellery",
         "name": "Jewellery",
         "category": "fashion",
-        "terminology": {},
+        "terminology": {"item_label": "Item", "items_label": "Items", "item_name_example": "22K Gold Necklace Set - 25g", "item_uom_example": "PCS", "customer_name_example": "Wedding Customer", "supplier_name_example": "Local Karigar Workshop"},
         "enabled_modules": ["sales", "purchase", "inventory", "pos", "credit", "accounting", "gst"],
         "navigation_config": [],
         "dashboard_widgets": ["todays_sales", "active_items", "active_customers"],
@@ -280,7 +284,7 @@ PROFILE_DEFINITIONS: list[dict] = [
         "slug": "agriculture",
         "name": "Agriculture",
         "category": "agriculture",
-        "terminology": {},
+        "terminology": {"item_label": "Input", "items_label": "Inputs", "item_name_example": "Urea Fertilizer 50kg Bag", "item_uom_example": "BAG", "customer_name_example": "Local Farmer", "supplier_name_example": "IFFCO Regional Distributors"},
         "enabled_modules": ["sales", "purchase", "inventory", "credit", "collections", "accounting", "gst"],
         "navigation_config": [],
         "dashboard_widgets": DEALER_WIDGETS,
@@ -291,7 +295,7 @@ PROFILE_DEFINITIONS: list[dict] = [
         "slug": "stationery",
         "name": "Stationery",
         "category": "retail",
-        "terminology": {},
+        "terminology": {"item_label": "Item", "items_label": "Items", "item_name_example": "Classmate Notebook 172pg Single Line", "item_uom_example": "PCS", "customer_name_example": "School Supplies Buyer", "supplier_name_example": "ITC Stationery Distributors"},
         "enabled_modules": ["sales", "purchase", "inventory", "pos", "accounting", "gst"],
         "navigation_config": [],
         "dashboard_widgets": POS_WIDGETS_COMPACT,
@@ -302,7 +306,7 @@ PROFILE_DEFINITIONS: list[dict] = [
         "slug": "electronics",
         "name": "Electronics",
         "category": "electronics",
-        "terminology": {},
+        "terminology": {"item_label": "Product", "items_label": "Products", "item_name_example": "LG 1.5 Ton Split AC", "item_uom_example": "PCS", "customer_name_example": "Walk-in Customer", "supplier_name_example": "LG Electronics Regional Distributors"},
         "enabled_modules": ["sales", "purchase", "inventory", "pos", "credit", "collections", "accounting", "gst"],
         "navigation_config": [],
         "dashboard_widgets": ["todays_sales", "active_items", "active_customers"],
@@ -313,7 +317,7 @@ PROFILE_DEFINITIONS: list[dict] = [
         "slug": "real_estate",
         "name": "Real Estate",
         "category": "services",
-        "terminology": {},
+        "terminology": {"item_label": "Unit", "items_label": "Units", "item_name_example": "2BHK Flat - Tower A, Floor 5", "item_uom_example": "UNIT", "customer_name_example": "Prospective Buyer", "supplier_name_example": "Building Material Contractor"},
         "enabled_modules": ["sales", "projects", "credit", "collections", "accounting", "gst"],
         "navigation_config": [],
         "dashboard_widgets": ["outstanding", "invoiced", "open_quotations", "active_customers"],
@@ -324,7 +328,7 @@ PROFILE_DEFINITIONS: list[dict] = [
         "slug": "grocery",
         "name": "Grocery",
         "category": "retail",
-        "terminology": {},
+        "terminology": {"item_label": "Product", "items_label": "Products", "item_name_example": "Tata Salt 1kg Pack", "item_uom_example": "PCS", "customer_name_example": "Walk-in Customer", "supplier_name_example": "Local Kirana Wholesale Distributor"},
         "enabled_modules": ["sales", "purchase", "inventory", "pos", "accounting", "gst"],
         "navigation_config": [],
         "dashboard_widgets": POS_WIDGETS_COMPACT,
@@ -344,7 +348,7 @@ PROFILE_DEFINITIONS: list[dict] = [
         "slug": "printing_press",
         "name": "Printing Press & Digital Color Lab",
         "category": "printing",
-        "terminology": {},
+        "terminology": {"item_label": "Material", "items_label": "Materials", "item_name_example": "A4 80GSM Paper Ream", "item_uom_example": "REAM", "customer_name_example": "ABC Corporate Pvt Ltd", "supplier_name_example": "JK Paper Distributors"},
         "enabled_modules": ["printing", "purchase", "inventory", "projects", "credit", "collections", "accounting", "gst"],
         "navigation_config": [],
         "dashboard_widgets": [

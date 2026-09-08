@@ -225,20 +225,25 @@ export function ItemsPage() {
     return items.filter((i) => i.category_id === categoryFilter);
   }, [items, categoryFilter]);
 
+  const itemLabel = profile?.terminology?.item_label ?? "Item";
+  const itemsLabel = profile?.terminology?.items_label ?? "Items";
+  const nameExample = profile?.terminology?.item_name_example ?? "e.g. Product name";
+  const uomExample = profile?.terminology?.item_uom_example ?? "PCS";
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Items</h1>
+          <h1 className="text-2xl font-semibold">{itemsLabel}</h1>
           <p className="text-sm text-muted-foreground">Selling price, cost, and GST rate live here -- quotations read straight from this.</p>
         </div>
-        <Button onClick={() => setShowForm((v) => !v)}>{showForm ? "Cancel" : "Add item"}</Button>
+        <Button onClick={() => setShowForm((v) => !v)}>{showForm ? "Cancel" : `Add ${itemLabel.toLowerCase()}`}</Button>
       </div>
 
       {showForm && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">New item</CardTitle>
+            <CardTitle className="text-base">New {itemLabel.toLowerCase()}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
@@ -248,7 +253,7 @@ export function ItemsPage() {
               </div>
               <div className="col-span-2 space-y-1.5">
                 <Label>Name</Label>
-                <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="UltraTech OPC53 50KG" />
+                <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder={nameExample} />
               </div>
               <div className="space-y-1.5">
                 <Label>Category</Label>
@@ -265,7 +270,7 @@ export function ItemsPage() {
               </div>
               <div className="space-y-1.5">
                 <Label>Base unit</Label>
-                <Input value={form.base_uom} onChange={(e) => setForm((f) => ({ ...f, base_uom: e.target.value }))} placeholder="BAG" />
+                <Input value={form.base_uom} onChange={(e) => setForm((f) => ({ ...f, base_uom: e.target.value }))} placeholder={uomExample} />
               </div>
               <div className="space-y-1.5">
                 <Label>GST %</Label>
@@ -358,7 +363,7 @@ export function ItemsPage() {
       {error && <ErrorState error={error} onRetry={() => refetch()} />}
 
       {items && items.length === 0 && !showForm && (
-        <EmptyState icon={Package} title="No items yet" description="Add your first item, or import your Tally/Busy catalog." actionLabel="Add item" onAction={() => setShowForm(true)} />
+        <EmptyState icon={Package} title={`No ${itemsLabel.toLowerCase()} yet`} description={`Add your first ${itemLabel.toLowerCase()}, or import your Tally/Busy catalog.`} actionLabel={`Add ${itemLabel.toLowerCase()}`} onAction={() => setShowForm(true)} />
       )}
 
       {filteredItems && filteredItems.length > 0 && (

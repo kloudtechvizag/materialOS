@@ -95,7 +95,7 @@ export function SignupPage() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="companyName">Company name</Label>
-              <Input id="companyName" placeholder="Sri Balaji Building Materials" {...register("companyName")} />
+              <Input id="companyName" placeholder="Your company name" {...register("companyName")} />
               {errors.companyName && <p className="text-sm text-destructive">{errors.companyName.message}</p>}
             </div>
             <div className="space-y-1.5">

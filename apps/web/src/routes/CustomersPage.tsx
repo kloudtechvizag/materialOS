@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
 import { formatINR } from "@/lib/format";
+import { useIndustryProfile } from "@/lib/industryProfile";
 
 interface Customer {
   id: string;
@@ -26,6 +27,8 @@ export function CustomersPage() {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", phone: "", billing_state: "", credit_limit: "0", credit_days: "30" });
+  const { profile } = useIndustryProfile();
+  const nameExample = profile?.terminology?.customer_name_example ?? "Customer name";
 
   const { data: customers, isLoading, error, refetch } = useQuery({
     queryKey: ["customers"],
@@ -62,7 +65,7 @@ export function CustomersPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Name</Label>
-                <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="ABC Constructions" />
+                <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder={nameExample} />
               </div>
               <div className="space-y-1.5">
                 <Label>Phone</Label>
