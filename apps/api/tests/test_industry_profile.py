@@ -9,8 +9,44 @@ import uuid
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.services.industry import PROFILE_DEFINITIONS
 
 client = TestClient(app)
+
+VALID_MODULES = {
+    "sales", "purchase", "inventory", "warehouse", "dispatch", "fleet", "credit",
+    "collections", "projects", "field_sales", "accounting", "gst", "pos",
+}
+VALID_WIDGETS = {
+    "outstanding", "invoiced", "open_quotations", "open_sales_orders", "active_items",
+    "active_customers", "todays_sales", "todays_cash", "todays_upi", "todays_card", "near_expiry",
+}
+
+
+def test_all_23_industries_from_the_brief_are_defined_with_no_typos():
+    """Locks in the full catalog (building_materials/retail/pharmacy plus
+    the 20 more added on request) against accidental duplicate/typo'd
+    slugs, and against referencing a module or dashboard widget key that
+    doesn't actually exist on the frontend -- both would silently no-op
+    (buildNavigation()/DASHBOARD_WIDGETS both filter unknown keys rather
+    than erroring), so nothing else would catch it."""
+    slugs = [p["slug"] for p in PROFILE_DEFINITIONS]
+    assert len(slugs) == 23
+    assert len(slugs) == len(set(slugs)), "duplicate slug in PROFILE_DEFINITIONS"
+
+    for p in PROFILE_DEFINITIONS:
+        unknown_modules = set(p["enabled_modules"]) - VALID_MODULES
+        assert not unknown_modules, f"{p['slug']}: unknown module(s) {unknown_modules}"
+        unknown_widgets = set(p["dashboard_widgets"]) - VALID_WIDGETS
+        assert not unknown_widgets, f"{p['slug']}: unknown widget(s) {unknown_widgets}"
+
+
+def test_all_industry_profiles_reachable_via_the_public_endpoint():
+    resp = client.get("/api/v1/industry-profiles")
+    assert resp.status_code == 200, resp.text
+    slugs = {p["slug"] for p in resp.json()}
+    for definition in PROFILE_DEFINITIONS:
+        assert definition["slug"] in slugs, f"{definition['slug']} not returned by GET /industry-profiles"
 
 
 def _signup(slug: str, **overrides) -> dict:

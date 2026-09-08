@@ -20,9 +20,13 @@ attribute engine -- FEFO *enforcement* at the picking level is honestly
 scoped out for now, see ADR-010's addendum for why). The industry
 picker at signup and an Industry Configuration settings page (view the
 active profile, switch to a different one -- a single FK write, no data
-migration) are done too, so the whole engine is complete end to end for
-these three profiles; the remaining ~19 industries from the original brief
-are unbuilt, addable later as pure `IndustryProfile` config entries.
+migration) are done too. All **23 industries** from the original brief
+(the 22-item list plus Building Materials) are now defined and selectable
+-- confirmed cheap to add as plain `PROFILE_DEFINITIONS` entries, no
+migration or new code, per ADR-010's second addendum. Two of them
+(Travel, Real Estate) are honestly scoped to generic sales/accounting
+only, no inventory/POS -- they're project/booking businesses, not
+inventory-item ones, and their real domain models aren't built.
 
 - **Slice 0** (Foundation + Tally/Busy migration): signup, auth, RBAC,
   RLS-isolated tenancy, document numbering, the audit trigger, and the
@@ -213,11 +217,15 @@ Recorded in `docs/decisions/`:
 - **ADR-010**: the Industry Profile Engine's `IndustryProfile` is a
   platform-level catalog (no `tenant_id`, no RLS), seeded like
   `Permission`; only `building_materials` has a migration (it also
-  backfills pre-existing companies), every other profile is a plain
-  `PROFILE_DEFINITIONS` entry; a company can switch to a different
-  whole profile (single FK write, no data migration) but there's no
-  per-*module* override within a profile yet; terminology only covers
-  nav labels and the Customer/Item page headers, not a full-app string
-  sweep.
+  backfills pre-existing companies), every other profile -- all 23,
+  confirmed by adding the remaining 20 in one pass, no migration or
+  code change needed -- is a plain `PROFILE_DEFINITIONS` entry; a
+  company can switch to a different whole profile (single FK write, no
+  data migration) but there's no per-*module* override within a profile
+  yet; Travel/Real Estate are honestly scoped to sales/accounting only
+  (no inventory/POS) since they're project/booking businesses, not
+  inventory-item ones; `terminology` is stored and shown on the
+  Industry Configuration page but not yet consumed anywhere else (nav
+  labels, entity page headers) -- that wiring is still open, not done.
 
 Read these before re-litigating any of them.

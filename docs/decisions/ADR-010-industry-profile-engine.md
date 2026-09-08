@@ -109,3 +109,37 @@ can't be missed by a future reader. Real FEFO enforcement is backlog:
 it needs goods receipt (or some stock-in path) to assign incoming
 stock to a batch, and dispatch/POS picking to consult it -- both
 currently absent for every profile, not a Pharmacy-specific gap.
+
+**Second addendum: the remaining 20 industries, added on request.**
+After Retail and Pharmacy proved the engine (net-new POS module aside),
+the user asked for the full 22-industry list from the original brief.
+Confirmed via `PROFILE_DEFINITIONS`: adding one really is a plain dict
+literal, no migration, no new backend/frontend code -- `ensure_industry_
+profile_catalog` picks it up idempotently at the next app start (a
+`uvicorn --reload` restart counts). Two tests
+(`test_industry_profile.py`) lock the whole batch in: exactly 23 slugs,
+no duplicates, and every `enabled_modules`/`dashboard_widgets` entry
+across all 23 checked against the actual set the frontend understands
+-- both `buildNavigation()` and `DASHBOARD_WIDGETS` silently drop
+unknown keys rather than erroring, so a typo would otherwise render as
+"that module's nav item is just missing," not a failure.
+
+Two of the twenty -- **Travel** and **Real Estate** -- are honestly
+scoped down rather than force-fit: both are project/booking-oriented,
+not inventory-item businesses, per the original spec's own §21/§31. They
+get `enabled_modules: [sales, ...]` with no `inventory`/`purchase`/
+`pos`/`warehouse`/`dispatch`, and `inventory_flags: {}` -- an accurate
+reflection of what actually applies, not a padded module list. Their
+deeper domain entities (Property/Unit/Booking/Payment Schedule;
+Package/Itinerary/Booking) are not built and aren't approximated by
+anything here; a Travel or Real Estate tenant today gets generic
+quotations/invoicing/collections and nothing else, which is honest but
+genuinely thin for those two specifically. The other 18 fit the
+existing generic core (sales + inventory + optionally POS +
+accounting/GST + dynamic attributes for the industry-specific fields)
+well enough to be real, usable configurations, not just placeholders --
+`jewellery`'s `pricing_strategy: "weight_making_wastage"` is likewise
+informational only (see the field's docstring in models/industry.py):
+`resolve_price()` is unchanged for every profile, still rate-contract >
+customer-price > standard_price. A per-profile pricing *formula* engine
+is unbuilt, same honest-gap treatment as FEFO enforcement above.
