@@ -7,11 +7,13 @@ from app.models.field_sales import Visit
 from app.models.fleet import Driver, ProofOfDelivery, Trip, Vehicle
 from app.models.idempotency import IdempotencyKey
 from app.models.importing import ImportBatch, ImportBatchRow
+from app.models.industry import IndustryProfile
 from app.models.inventory import StockBalance, StockLedger, StockReservation
 from app.models.masters import Customer, Item, Supplier
 from app.models.notifications import Notification
 from app.models.numbering import DocNumberCounter, FinancialYear
 from app.models.portal import PortalDocument
+from app.models.pos import WalkInSale
 from app.models.pricing import CustomerItemPrice, RateContract
 from app.models.procurement import (
     GoodsReceipt,
@@ -117,4 +119,6 @@ __all__ = [
     "Notification",
     "ApprovalRule",
     "ApprovalRequest",
+    "IndustryProfile",
+    "WalkInSale",
 ]

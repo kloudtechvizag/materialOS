@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 
@@ -12,9 +13,15 @@ import { Label } from "@/components/ui/label";
 import { apiFetch, ApiError } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 
+interface IndustryProfileOption {
+  slug: string;
+  name: string;
+}
+
 const schema = z.object({
   companyName: z.string().min(1, "Required"),
   companyState: z.string().min(1, "Required -- this decides CGST+SGST vs IGST on every invoice"),
+  industrySlug: z.string().min(1, "Required"),
   tenantSlug: z
     .string()
     .min(3, "At least 3 characters")
@@ -31,11 +38,16 @@ export function SignupPage() {
   const setSession = useAuthStore((s) => s.setSession);
   const [serverError, setServerError] = useState<string | null>(null);
 
+  const { data: industries } = useQuery({
+    queryKey: ["industry-profiles"],
+    queryFn: () => apiFetch<IndustryProfileOption[]>("/industry-profiles", { auth: false }),
+  });
+
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({ resolver: zodResolver(schema) });
+  } = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: { industrySlug: "building_materials" } });
 
   async function onSubmit(values: FormValues) {
     setServerError(null);
@@ -49,6 +61,7 @@ export function SignupPage() {
           company_name: values.companyName,
           company_legal_name: values.companyName,
           company_state: values.companyState,
+          industry_slug: values.industrySlug,
           owner_full_name: values.ownerFullName,
           owner_email: values.ownerEmail,
           owner_password: values.ownerPassword,
@@ -86,6 +99,19 @@ export function SignupPage() {
               <Label htmlFor="companyState">Business state</Label>
               <Input id="companyState" placeholder="Andhra Pradesh" {...register("companyState")} />
               {errors.companyState && <p className="text-sm text-destructive">{errors.companyState.message}</p>}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="industrySlug">Industry</Label>
+              <select
+                id="industrySlug"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                {...register("industrySlug")}
+              >
+                {(industries ?? [{ slug: "building_materials", name: "Building Materials" }]).map((i) => (
+                  <option key={i.slug} value={i.slug}>{i.name}</option>
+                ))}
+              </select>
+              {errors.industrySlug && <p className="text-sm text-destructive">{errors.industrySlug.message}</p>}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="tenantSlug">Workspace URL name</Label>

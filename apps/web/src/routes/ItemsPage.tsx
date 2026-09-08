@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Package, Sparkles } from "lucide-react";
 
+import { DynamicAttributesFieldset, type AttributeSchemaEntry } from "@/components/items/DynamicAttributesFieldset";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch, ApiError } from "@/lib/api";
 import { formatINR } from "@/lib/format";
+import { useIndustryProfile } from "@/lib/industryProfile";
 import { cn } from "@/lib/utils";
 
 interface Item {
@@ -30,7 +32,7 @@ interface Item {
 interface Category {
   id: string;
   name: string;
-  parameter_schema: unknown[];
+  parameter_schema: AttributeSchemaEntry[];
 }
 
 // A building-materials dealer's SKU prefixes are usually already a real
@@ -126,6 +128,8 @@ export function ItemsPage() {
   const [newCategoryName, setNewCategoryName] = useState("");
   const [autoCategorizeStatus, setAutoCategorizeStatus] = useState<string | null>(null);
   const [form, setForm] = useState({ sku: "", name: "", base_uom: "PCS", gst_rate: "18", standard_price: "0", standard_cost: "0", category_id: "" });
+  const [attributes, setAttributes] = useState<Record<string, string>>({});
+  const { profile } = useIndustryProfile();
 
   const { data: items, isLoading, error, refetch } = useQuery({
     queryKey: ["items", q],
@@ -135,6 +139,8 @@ export function ItemsPage() {
     queryKey: ["categories"],
     queryFn: () => apiFetch<Category[]>("/categories"),
   });
+
+  const selectedCategory = categories.find((c) => c.id === form.category_id);
 
   const createItem = useMutation({
     mutationFn: () =>
@@ -146,12 +152,14 @@ export function ItemsPage() {
           gst_rate: Number(form.gst_rate),
           standard_price: Number(form.standard_price),
           standard_cost: Number(form.standard_cost),
+          attributes,
         },
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["items"] });
       setShowForm(false);
       setForm({ sku: "", name: "", base_uom: "PCS", gst_rate: "18", standard_price: "0", standard_cost: "0", category_id: "" });
+      setAttributes({});
     },
   });
 
@@ -271,6 +279,11 @@ export function ItemsPage() {
                 <Label>Cost</Label>
                 <Input type="number" value={form.standard_cost} onChange={(e) => setForm((f) => ({ ...f, standard_cost: e.target.value }))} />
               </div>
+              <DynamicAttributesFieldset
+                schema={selectedCategory?.parameter_schema ?? []}
+                value={attributes}
+                onChange={setAttributes}
+              />
             </div>
             {createItem.isError && <ErrorState error={createItem.error} />}
             <Button onClick={() => createItem.mutate()} disabled={!form.sku || !form.name || createItem.isPending}>
@@ -320,16 +333,20 @@ export function ItemsPage() {
             <Button variant="outline" size="sm" onClick={() => createCategory.mutate(newCategoryName)} disabled={!newCategoryName || createCategory.isPending}>
               Add category
             </Button>
-            <span className="mx-1 h-5 w-px bg-border" />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => { setAutoCategorizeStatus(null); autoCategorize.mutate(); }}
-              disabled={autoCategorize.isPending || uncategorizedCount === 0}
-            >
-              <Sparkles className="h-4 w-4" />
-              {autoCategorize.isPending ? "Categorizing..." : `Auto-categorize by SKU prefix (${uncategorizedCount})`}
-            </Button>
+            {profile?.slug === "building_materials" && (
+              <>
+                <span className="mx-1 h-5 w-px bg-border" />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => { setAutoCategorizeStatus(null); autoCategorize.mutate(); }}
+                  disabled={autoCategorize.isPending || uncategorizedCount === 0}
+                >
+                  <Sparkles className="h-4 w-4" />
+                  {autoCategorize.isPending ? "Categorizing..." : `Auto-categorize by SKU prefix (${uncategorizedCount})`}
+                </Button>
+              </>
+            )}
           </div>
           {autoCategorizeStatus && <p className="text-sm text-muted-foreground">{autoCategorizeStatus}</p>}
         </CardContent>

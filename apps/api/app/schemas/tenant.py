@@ -2,6 +2,8 @@ import uuid
 
 from pydantic import BaseModel, EmailStr
 
+from app.schemas.industry import IndustryProfileOut
+
 
 class TenantSignupRequest(BaseModel):
     tenant_name: str
@@ -12,6 +14,9 @@ class TenantSignupRequest(BaseModel):
     owner_full_name: str
     owner_email: EmailStr
     owner_password: str
+    # Defaults to the flagship profile so existing signup flows/tests that
+    # don't know about industries yet keep working unchanged.
+    industry_slug: str = "building_materials"
 
 
 class TenantSignupResponse(BaseModel):
@@ -31,6 +36,7 @@ class CompanyOut(BaseModel):
     financial_year_start_month: int
     e_invoice_enabled: bool
     e_way_bill_enabled: bool
+    industry_profile: IndustryProfileOut | None
 
     class Config:
         from_attributes = True
@@ -39,6 +45,10 @@ class CompanyOut(BaseModel):
 class CompanyComplianceUpdate(BaseModel):
     e_invoice_enabled: bool | None = None
     e_way_bill_enabled: bool | None = None
+
+
+class CompanyIndustryUpdate(BaseModel):
+    industry_slug: str
 
 
 class BranchOut(BaseModel):

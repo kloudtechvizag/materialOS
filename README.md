@@ -7,6 +7,21 @@ product brief this build follows (it supersedes `dev.md`, the original
 
 **Status:** Slices 0-4 and 6 are built and working end to end (Slice 5, the
 AI assistant, was explicitly skipped for now -- see the brief's Part F).
+A separate, later-stage effort is turning the platform multi-industry via
+an **Industry Profile Engine** (see ADR-010): the engine itself
+(`IndustryProfile` catalog, dynamic sidebar/dashboard/item-attribute
+rendering) is done, Building Materials is formalized as its first
+profile with no regression, and two proof profiles are built end-to-end
+-- **Retail** (a new POS/walk-in-sale module: barcode search -> cart ->
+split cash/UPI/card payment -> real invoice + journal + stock deduction)
+and **Pharmacy** (`Batch.expiry_date`, a near-expiry report/dashboard
+widget, and pharmacy-specific item attributes via the same dynamic
+attribute engine -- FEFO *enforcement* at the picking level is honestly
+scoped out for now, see ADR-010's addendum for why). The industry
+picker at signup and a read-only Industry Configuration settings page
+are done too, so the whole engine is complete end to end for these
+three profiles; the remaining ~19 industries from the original brief
+are unbuilt, addable later as pure `IndustryProfile` config entries.
 
 - **Slice 0** (Foundation + Tally/Busy migration): signup, auth, RBAC,
   RLS-isolated tenancy, document numbering, the audit trigger, and the
@@ -79,10 +94,18 @@ apps/
 docs/
   decisions/   ADRs -- read these before changing a locked decision
 scripts/
-  seed.py      Demo data (Sri Balaji Building Materials): catalog, opening
-               stock, customers/suppliers, and a handful of quotations
-               walked through every real pipeline stage via the actual
-               service functions (no backdated/fabricated history)
+  seed.py           Demo data (Sri Balaji Building Materials, Building
+                    Materials profile): catalog, opening stock,
+                    customers/suppliers, and a handful of quotations
+                    walked through every real pipeline stage via the
+                    actual service functions (no backdated/fabricated
+                    history)
+  seed_retail.py    Small Retail-profile demo tenant (Fashion Hub): a
+                    few items + two real POS sales via create_walk_in_sale
+  seed_pharmacy.py  Small Pharmacy-profile demo tenant (ABC Medicals):
+                    a Medicines category with a real parameter_schema,
+                    a few medicines with those attributes filled in,
+                    and batches (one near-expiry, one not)
 ```
 
 Money is `NUMERIC(18,4)` + Python `Decimal` end to end, never a float.
@@ -112,7 +135,11 @@ DATABASE_URL="postgresql+psycopg://materialos_app:materialos_app_dev_password@lo
 ```
 
 Demo login: `owner@sribalaji-demo.example.com` / `demo-password-123`
-(workspace: `sribalaji-demo`).
+(workspace: `sribalaji-demo`). The same pattern with `seed_retail.py`
+(`owner@fashionhub-demo.example.com`, workspace `fashionhub-demo`) and
+`seed_pharmacy.py` (`owner@abcmedicals-demo.example.com`, workspace
+`abcmedicals-demo`) demonstrates the Industry Profile Engine (ADR-010)
+rendering a genuinely different sidebar/dashboard/item form per profile.
 
 API docs: http://localhost:58000/docs
 
@@ -182,5 +209,12 @@ Recorded in `docs/decisions/`:
   one real trigger today (B25's credit-limit check on sales orders) --
   more `trigger_type`s are additive rows plus one call site each, not a
   schema change.
+- **ADR-010**: the Industry Profile Engine's `IndustryProfile` is a
+  platform-level catalog (no `tenant_id`, no RLS), seeded like
+  `Permission`; only `building_materials` has a migration (it also
+  backfills pre-existing companies), every other profile is a plain
+  `PROFILE_DEFINITIONS` entry; config is profile-level only (no
+  per-company override yet); terminology only covers nav labels and the
+  Customer/Item page headers, not a full-app string sweep.
 
 Read these before re-litigating any of them.

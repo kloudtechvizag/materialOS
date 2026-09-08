@@ -1,11 +1,15 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.deps import get_db_tenant, require_permission
 from app.models.masters import Customer, Item
+from app.models.pos import WalkInSale
 from app.models.sales import Invoice, Quotation, SalesOrder
 from app.services.credit import compute_outstanding
+from app.services.inventory import near_expiry_batches
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -13,7 +17,7 @@ router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 @router.get("/summary")
 def dashboard_summary(
     db: Session = Depends(get_db_tenant),
-    _user=Depends(require_permission("customers.view")),
+    user=Depends(require_permission("customers.view")),
 ) -> dict:
     """dev.md §9/§115: "How is my business doing?" answered on load, not
     with a spinner per widget -- Slice 1 has just enough real data for
@@ -39,6 +43,25 @@ def dashboard_summary(
     ).scalar_one()
     active_customers = len(customer_ids)
 
+    # Retail profile widgets (todays_sales, cash_upi_split) -- harmless
+    # for Building Materials since its dashboard_widgets never reference
+    # these keys.
+    today = date.today()
+    todays_sales = db.execute(
+        select(func.coalesce(func.sum(Invoice.total), 0))
+        .where(Invoice.invoice_date == today, Invoice.status == "posted")
+    ).scalar_one()
+    todays_cash, todays_upi, todays_card = db.execute(
+        select(
+            func.coalesce(func.sum(WalkInSale.cash_amount), 0),
+            func.coalesce(func.sum(WalkInSale.upi_amount), 0),
+            func.coalesce(func.sum(WalkInSale.card_amount), 0),
+        )
+        .join(Invoice, Invoice.id == WalkInSale.invoice_id)
+        .where(Invoice.invoice_date == today)
+    ).one()
+    near_expiry_count = len(near_expiry_batches(db, tenant_id=user.tenant_id, days=60))
+
     return {
         "total_outstanding": str(total_outstanding),
         "total_invoiced": str(invoiced_total),
@@ -47,4 +70,9 @@ def dashboard_summary(
         "posted_invoices": posted_invoices,
         "active_items": active_items,
         "active_customers": active_customers,
+        "todays_sales": str(todays_sales),
+        "todays_cash": str(todays_cash),
+        "todays_upi": str(todays_upi),
+        "todays_card": str(todays_card),
+        "near_expiry_count": near_expiry_count,
     }

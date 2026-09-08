@@ -55,5 +55,11 @@ class Batch(Base, UUIDPk, TenantMixin, TimestampMixin):
     )
     batch_code: Mapped[str] = mapped_column(String(50), nullable=False)
     manufactured_on: Mapped[date | None] = mapped_column(Date, nullable=True)
+    # Generic (not pharmacy-specific naming) -- any perishable good uses
+    # this; FEFO picking (Pharmacy profile) sorts on it when
+    # IndustryProfile.inventory_flags.fefo is set. heat_number stays
+    # steel-specific (accepted debt, see ADR-010) rather than folding into
+    # this or Item.attributes -- it's a harmless nullable column.
+    expiry_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     heat_number: Mapped[str | None] = mapped_column(String(50), nullable=True)
     cost: Mapped[Decimal] = mapped_column(MONEY, nullable=False, default=0)

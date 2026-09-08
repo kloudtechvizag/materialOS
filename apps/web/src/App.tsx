@@ -41,10 +41,12 @@ import { PortalOrdersPage } from "@/routes/portal/PortalOrdersPage";
 import { PortalQuotationDetailPage } from "@/routes/portal/PortalQuotationDetailPage";
 import { PortalQuotationsPage } from "@/routes/portal/PortalQuotationsPage";
 import { PortalStatementPage } from "@/routes/portal/PortalStatementPage";
+import { PosPage } from "@/routes/pos/PosPage";
 import { NewQuotationPage } from "@/routes/quotations/NewQuotationPage";
 import { QuotationDetailPage } from "@/routes/quotations/QuotationDetailPage";
 import { QuotationsPage } from "@/routes/quotations/QuotationsPage";
 import { SalesOrderDetailPage } from "@/routes/SalesOrderDetailPage";
+import { IndustryConfigPage } from "@/routes/settings/IndustryConfigPage";
 import { SignupPage } from "@/routes/SignupPage";
 import { UsersPage } from "@/routes/UsersPage";
 import { useAuthStore } from "@/store/auth";
@@ -105,6 +107,7 @@ export default function App() {
       >
         <Route path="/" element={<DashboardPage />} />
         <Route path="/items" element={<ItemsPage />} />
+        <Route path="/pos" element={<PosPage />} />
         <Route path="/customers" element={<CustomersPage />} />
         <Route path="/customers/:customerId" element={<Customer360Page />} />
         <Route path="/projects" element={<ProjectsPage />} />
@@ -136,6 +139,7 @@ export default function App() {
         <Route path="/gst" element={<GstPage />} />
         <Route path="/approvals" element={<ApprovalsPage />} />
         <Route path="/company-settings" element={<CompanySettingsPage />} />
+        <Route path="/settings/industry" element={<IndustryConfigPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

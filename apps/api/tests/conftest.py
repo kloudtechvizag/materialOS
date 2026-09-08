@@ -10,6 +10,7 @@ from app.db import set_session_context
 from app.models.numbering import FinancialYear
 from app.models.tenant import Branch, Company, Tenant, Warehouse
 from app.services.accounts import ensure_default_accounts
+from app.services.industry import get_profile_by_slug
 
 
 @pytest.fixture(scope="session")
@@ -38,7 +39,17 @@ def tenant_ctx(db):
 
     set_session_context(db, tenant_id=str(tenant.id), user_id=None)
 
-    company = Company(tenant_id=tenant.id, name="Test Co", legal_name="Test Co Pvt Ltd", state="Andhra Pradesh")
+    # building_materials is seeded directly by its introducing migration
+    # (needed to backfill pre-existing companies there), so it's present
+    # even though nothing here triggers app startup's lifespan seeding.
+    industry_profile = get_profile_by_slug(db, "building_materials")
+    company = Company(
+        tenant_id=tenant.id,
+        name="Test Co",
+        legal_name="Test Co Pvt Ltd",
+        state="Andhra Pradesh",
+        industry_profile_id=industry_profile.id if industry_profile else None,
+    )
     db.add(company)
     db.flush()
 

@@ -5,10 +5,11 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.deps import get_db_tenant, require_permission
-from app.models.catalog import Category
+from app.models.catalog import Batch, Category
 from app.models.masters import Item
 from app.models.user import User
-from app.schemas.catalog import CategoryCreate, CategoryOut, ItemCreate, ItemOut, ItemUpdate
+from app.schemas.catalog import BatchCreate, BatchOut, CategoryCreate, CategoryOut, ItemCreate, ItemOut, ItemUpdate
+from app.services.inventory import near_expiry_batches
 
 router = APIRouter(tags=["catalog"])
 
@@ -98,3 +99,35 @@ def update_item(
         setattr(item, field, value)
     db.flush()
     return item
+
+
+# ---------------------------------------------------------------- Batches
+# Pharmacy profile (ADR-010): batch + expiry tracking. See
+# services.inventory.near_expiry_batches for what this does and does not
+# do yet (reporting only, not FEFO-aware picking).
+
+@router.get("/batches", response_model=list[BatchOut])
+def list_batches(
+    item_id: uuid.UUID | None = None,
+    near_expiry_days: int | None = None,
+    db: Session = Depends(get_db_tenant),
+    user: User = Depends(require_permission("items.view")),
+) -> list[Batch]:
+    if near_expiry_days is not None:
+        return near_expiry_batches(db, tenant_id=user.tenant_id, days=near_expiry_days)
+    stmt = select(Batch).order_by(Batch.expiry_date.asc().nulls_last())
+    if item_id:
+        stmt = stmt.where(Batch.item_id == item_id)
+    return db.execute(stmt).scalars().all()
+
+
+@router.post("/batches", response_model=BatchOut, status_code=201)
+def create_batch(
+    payload: BatchCreate,
+    db: Session = Depends(get_db_tenant),
+    user: User = Depends(require_permission("items.create")),
+) -> Batch:
+    batch = Batch(tenant_id=user.tenant_id, **payload.model_dump())
+    db.add(batch)
+    db.flush()
+    return batch

@@ -11,7 +11,7 @@ single row.
 """
 
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 
 from sqlalchemy import func, select, text
@@ -19,6 +19,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
 from app.errors import AppError, ErrorCode
+from app.models.catalog import Batch
 from app.models.inventory import StockBalance, StockLedger, StockReservation
 
 
@@ -235,3 +236,19 @@ def fulfill_reservation(
                 reference_id=reference_id,
             )
         )
+
+
+def near_expiry_batches(db: Session, *, tenant_id: uuid.UUID, days: int = 60) -> list[Batch]:
+    """Pharmacy profile (ADR-010): batches expiring within `days`, oldest
+    first. Read-only -- Batch is not yet a dimension of stock_ledger/
+    stock_balance (no goods-receipt or sale flow assigns stock to a
+    specific batch today), so this reports on batch records that exist,
+    it does not yet drive FEFO picking at the ledger level. That
+    remains backlog until something actually writes batch-scoped stock
+    movements to pick from."""
+    cutoff = date.today() + timedelta(days=days)
+    return db.execute(
+        select(Batch)
+        .where(Batch.tenant_id == tenant_id, Batch.expiry_date.is_not(None), Batch.expiry_date <= cutoff)
+        .order_by(Batch.expiry_date.asc())
+    ).scalars().all()

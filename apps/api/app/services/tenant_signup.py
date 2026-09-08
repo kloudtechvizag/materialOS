@@ -12,6 +12,7 @@ from app.schemas.tenant import TenantSignupRequest
 from app.security import hash_password
 from app.services.accounts import ensure_default_accounts
 from app.services.approvals import ensure_default_approval_rules
+from app.services.industry import get_profile_by_slug
 
 
 def _current_financial_year_code(today: date, start_month: int) -> tuple[str, date, date]:
@@ -34,6 +35,17 @@ def signup_tenant(db: Session, req: TenantSignupRequest) -> dict:
     if existing is not None:
         raise AppError(ErrorCode.CONFLICT, "Tenant slug already in use.", status_code=409)
 
+    # building_materials always exists -- the introducing migration seeds
+    # it directly (it also needs to backfill pre-existing companies).
+    # Any *new* profile added later purely via PROFILE_DEFINITIONS (no
+    # migration) relies on main.py's lifespan having run
+    # ensure_industry_profile_catalog at least once since it was added --
+    # same trust boundary this function already has with Permission (see
+    # `all_permissions` below, seeded the same way, never reseeded here).
+    industry_profile = get_profile_by_slug(db, req.industry_slug)
+    if industry_profile is None:
+        raise AppError(ErrorCode.VALIDATION_ERROR, f"Unknown industry_slug: {req.industry_slug!r}", status_code=422)
+
     tenant = Tenant(name=req.tenant_name, slug=req.tenant_slug, status="active")
     db.add(tenant)
     db.flush()  # need tenant.id before we can set RLS context for its own rows
@@ -46,6 +58,7 @@ def signup_tenant(db: Session, req: TenantSignupRequest) -> dict:
         legal_name=req.company_legal_name,
         state=req.company_state,
         financial_year_start_month=4,
+        industry_profile_id=industry_profile.id,
     )
     db.add(company)
     db.flush()

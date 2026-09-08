@@ -1,45 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
-import { FileText, Package, TrendingUp, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 
+import { DASHBOARD_WIDGETS, DEFAULT_DASHBOARD_WIDGETS, type DashboardSummary } from "@/components/dashboard/widgets";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ErrorState } from "@/components/ui/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
-import { formatINR } from "@/lib/format";
-
-interface Summary {
-  total_outstanding: string;
-  total_invoiced: string;
-  open_quotations: number;
-  open_sales_orders: number;
-  posted_invoices: number;
-  active_items: number;
-  active_customers: number;
-}
-
-function Kpi({ icon: Icon, label, value, to }: { icon: React.ElementType; label: string; value: string | number; to?: string }) {
-  const content = (
-    <Card className={to ? "transition-colors hover:bg-accent/50" : undefined}>
-      <CardContent className="flex items-center gap-4 pt-6">
-        <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 text-primary">
-          <Icon className="h-5 w-5" />
-        </div>
-        <div>
-          <p className="text-xs text-muted-foreground">{label}</p>
-          <p className="text-xl font-semibold">{value}</p>
-        </div>
-      </CardContent>
-    </Card>
-  );
-  return to ? <Link to={to}>{content}</Link> : content;
-}
+import { useIndustryProfile } from "@/lib/industryProfile";
 
 export function DashboardPage() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["dashboard-summary"],
-    queryFn: () => apiFetch<Summary>("/dashboard/summary"),
+    queryFn: () => apiFetch<DashboardSummary>("/dashboard/summary"),
   });
+  const { profile } = useIndustryProfile();
+  const widgetKeys = profile?.dashboard_widgets ?? DEFAULT_DASHBOARD_WIDGETS;
 
   return (
     <div className="space-y-6">
@@ -61,12 +36,7 @@ export function DashboardPage() {
 
       {data && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Kpi icon={TrendingUp} label="Total outstanding" value={formatINR(data.total_outstanding)} to="/customers" />
-          <Kpi icon={TrendingUp} label="Total invoiced" value={formatINR(data.total_invoiced)} />
-          <Kpi icon={FileText} label="Open quotations" value={data.open_quotations} to="/quotations" />
-          <Kpi icon={FileText} label="Open sales orders" value={data.open_sales_orders} />
-          <Kpi icon={Package} label="Active items" value={data.active_items} to="/items" />
-          <Kpi icon={Users} label="Active customers" value={data.active_customers} to="/customers" />
+          {widgetKeys.map((key) => DASHBOARD_WIDGETS[key]?.(data)).filter(Boolean)}
         </div>
       )}
 

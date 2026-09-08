@@ -31,6 +31,13 @@ class Company(Base, UUIDPk, TenantMixin, TimestampMixin):
     pincode: Mapped[str | None] = mapped_column(String(10), nullable=True)
     financial_year_start_month: Mapped[int] = mapped_column(Integer, nullable=False, default=4)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    # Nullable: pre-existing companies are backfilled by the introducing
+    # migration; new signups set this explicitly (see tenant_signup.py).
+    # No RLS implication -- industry_profiles is platform data (see
+    # models/industry.py), this is just an FK on an already-RLS'd table.
+    industry_profile_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("industry_profiles.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     # D2: AATO > 5cr in any FY makes e-invoicing mandatory and permanent
     # once crossed -- that is a compliance fact about the business, not
     # something derivable from data this system has (it needs full,

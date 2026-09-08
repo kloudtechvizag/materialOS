@@ -1,4 +1,5 @@
 import uuid
+from datetime import date
 from decimal import Decimal
 
 from pydantic import BaseModel
@@ -58,3 +59,27 @@ class ItemUpdate(BaseModel):
     is_active: bool | None = None
     category_id: uuid.UUID | None = None
     brand: str | None = None
+
+
+class BatchOut(BaseModel):
+    id: uuid.UUID
+    item_id: uuid.UUID
+    warehouse_id: uuid.UUID
+    batch_code: str
+    manufactured_on: date | None
+    expiry_date: date | None
+    heat_number: str | None
+    cost: Decimal
+
+    class Config:
+        from_attributes = True
+
+
+class BatchCreate(BaseModel):
+    item_id: uuid.UUID
+    warehouse_id: uuid.UUID
+    batch_code: str
+    manufactured_on: date | None = None
+    expiry_date: date | None = None
+    heat_number: str | None = None
+    cost: Decimal = Decimal("0")
