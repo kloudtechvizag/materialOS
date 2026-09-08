@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 import { AppShell } from "@/components/layout/AppShell";
 import { PortalShell } from "@/components/layout/PortalShell";
+import { FeatureGate } from "@/components/billing/FeatureGate";
 import { ApprovalsPage } from "@/routes/ApprovalsPage";
 import { BooksPage } from "@/routes/BooksPage";
 import { BranchesPage } from "@/routes/BranchesPage";
@@ -42,6 +43,7 @@ import { PortalQuotationDetailPage } from "@/routes/portal/PortalQuotationDetail
 import { PortalQuotationsPage } from "@/routes/portal/PortalQuotationsPage";
 import { PortalStatementPage } from "@/routes/portal/PortalStatementPage";
 import { PosPage } from "@/routes/pos/PosPage";
+import { PricingPage } from "@/routes/PricingPage";
 import { PrintJobDetailPage } from "@/routes/printing/PrintJobDetailPage";
 import { PrintJobsPage } from "@/routes/printing/PrintJobsPage";
 import { PrintMachinesPage } from "@/routes/printing/PrintMachinesPage";
@@ -56,6 +58,9 @@ import { NotificationRulesPage } from "@/routes/operations/NotificationRulesPage
 import { SalesOrderDetailPage } from "@/routes/SalesOrderDetailPage";
 import { IndustryConfigPage } from "@/routes/settings/IndustryConfigPage";
 import { SignupPage } from "@/routes/SignupPage";
+import { SubscriptionInvoicesPage } from "@/routes/settings/SubscriptionInvoicesPage";
+import { SubscriptionPage } from "@/routes/settings/SubscriptionPage";
+import { SubscriptionPaymentsPage } from "@/routes/settings/SubscriptionPaymentsPage";
 import { UsersPage } from "@/routes/UsersPage";
 import { useAuthStore } from "@/store/auth";
 
@@ -77,6 +82,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+      <Route path="/pricing" element={<PricingPage />} />
       <Route path="/portal/login" element={<PortalLoginPage />} />
 
       <Route
@@ -115,7 +121,19 @@ export default function App() {
       >
         <Route path="/" element={<DashboardPage />} />
         <Route path="/items" element={<ItemsPage />} />
-        <Route path="/pos" element={<PosPage />} />
+        <Route
+          path="/pos"
+          element={
+            <FeatureGate
+              feature="module.pos"
+              title="Point of sale"
+              description="Barcode/search checkout with split cash, UPI, and card payment."
+              requiredPlan="Starter"
+            >
+              <PosPage />
+            </FeatureGate>
+          }
+        />
         <Route path="/production-board" element={<ProductionBoardPage />} />
         <Route path="/print-jobs" element={<PrintJobsPage />} />
         <Route path="/print-jobs/:jobId" element={<PrintJobDetailPage />} />
@@ -156,6 +174,9 @@ export default function App() {
         <Route path="/operations/backups" element={<BackupPage />} />
         <Route path="/operations/audit-log" element={<AuditLogPage />} />
         <Route path="/operations/notification-rules" element={<NotificationRulesPage />} />
+        <Route path="/settings/subscription" element={<SubscriptionPage />} />
+        <Route path="/settings/subscription/invoices" element={<SubscriptionInvoicesPage />} />
+        <Route path="/settings/subscription/payments" element={<SubscriptionPaymentsPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

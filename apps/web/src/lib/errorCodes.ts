@@ -18,6 +18,10 @@ export const ErrorCode = {
   IMPORT_VALIDATION_FAILED: "IMPORT_VALIDATION_FAILED",
   IDEMPOTENCY_KEY_REQUIRED: "IDEMPOTENCY_KEY_REQUIRED",
   IDEMPOTENCY_KEY_CONFLICT: "IDEMPOTENCY_KEY_CONFLICT",
+  FEATURE_NOT_AVAILABLE: "FEATURE_NOT_AVAILABLE",
+  USAGE_LIMIT_EXCEEDED: "USAGE_LIMIT_EXCEEDED",
+  PLAN_DOWNGRADE_BLOCKED: "PLAN_DOWNGRADE_BLOCKED",
+  PAYMENT_REQUIRED: "PAYMENT_REQUIRED",
   INTERNAL_ERROR: "INTERNAL_ERROR",
 } as const;
 
@@ -42,4 +46,8 @@ export const ERROR_RECOVERY_HINTS: Partial<Record<ErrorCode, string>> = {
   GSTIN_INVALID: "Check the GSTIN format: 15 characters, e.g. 37ABCDE1234F1Z5.",
   IMPORT_FORMAT_UNRECOGNISED: "Upload a Tally XML export or a Busy/Marg CSV export.",
   IMPORT_VALIDATION_FAILED: "Fix the flagged rows, or exclude them, before committing.",
+  FEATURE_NOT_AVAILABLE: "This isn't included in your current plan. Upgrade to unlock it.",
+  USAGE_LIMIT_EXCEEDED: "You've reached your plan's limit for this. Upgrade to add more.",
+  PLAN_DOWNGRADE_BLOCKED: "You're over the target plan's limits. Reduce usage first.",
+  PAYMENT_REQUIRED: "This workspace has no active subscription.",
 };

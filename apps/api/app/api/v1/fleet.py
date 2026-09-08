@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.deps import get_db_tenant, require_permission
 from app.errors import AppError, ErrorCode
 from app.models.fleet import Driver, Trip, Vehicle
+from app.services.entitlements import require_feature
 from app.models.user import User
 from app.schemas.fleet import (
     AssignChallanRequest,
@@ -71,6 +72,7 @@ def get_trip(trip_id: uuid.UUID, db: Session = Depends(get_db_tenant), _user=Dep
 @router.post("/trips", response_model=TripOut, status_code=201)
 def create_trip_endpoint(
     payload: TripCreate, db: Session = Depends(get_db_tenant), user: User = Depends(require_permission("customers.create")),
+    _entitled=Depends(require_feature("module.fleet")),
 ) -> Trip:
     trip = create_trip(db, tenant_id=user.tenant_id, **payload.model_dump())
     return trip

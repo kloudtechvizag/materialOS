@@ -9,6 +9,7 @@ from app.models.sales import Invoice
 from app.models.tenant import Branch, Company
 from app.models.user import User
 from app.schemas.pos import WalkInSaleCreate, WalkInSaleOut, WalkInSaleReceiptOut
+from app.services.entitlements import require_feature
 from app.services.numbering import get_current_financial_year
 from app.services.pos import WalkInSaleLine, create_walk_in_sale
 
@@ -26,6 +27,7 @@ def create_walk_in_sale_endpoint(
     payload: WalkInSaleCreate,
     db: Session = Depends(get_db_tenant),
     user: User = Depends(require_permission("pos.create")),
+    _entitled=Depends(require_feature("module.pos")),
 ) -> WalkInSaleReceiptOut:
     company, branch = _default_company_and_branch(db, user.tenant_id)
     fy = get_current_financial_year(db, company.id)

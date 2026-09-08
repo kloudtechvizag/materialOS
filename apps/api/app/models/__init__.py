@@ -2,6 +2,7 @@ from app.models.accounting import Account, CostCenter, JournalEntry, JournalLine
 from app.models.approvals import ApprovalRequest, ApprovalRule
 from app.models.audit import AuditLog
 from app.models.backup import Backup
+from app.models.billing_plans import AddonOffering, Feature, Plan, PlanFeature, PlanLimit
 from app.models.catalog import Batch, Category, UnitConversion
 from app.models.compliance import EInvoice, EWayBill
 from app.models.field_sales import Visit
@@ -40,6 +41,15 @@ from app.models.sales import (
     Receipt,
     SalesOrder,
     SalesOrderItem,
+)
+from app.models.subscriptions import (
+    BillingAddress,
+    Subscription,
+    SubscriptionAddon,
+    SubscriptionInvoice,
+    SubscriptionInvoiceItem,
+    SubscriptionPayment,
+    UsageRecord,
 )
 from app.models.tenant import Branch, Company, Tenant, Warehouse
 from app.models.user import Permission, Role, RolePermission, User, UserRole
@@ -129,4 +139,16 @@ __all__ = [
     "Backup",
     "NotificationRule",
     "NotificationDelivery",
+    "Feature",
+    "Plan",
+    "PlanFeature",
+    "PlanLimit",
+    "AddonOffering",
+    "Subscription",
+    "SubscriptionAddon",
+    "UsageRecord",
+    "BillingAddress",
+    "SubscriptionInvoice",
+    "SubscriptionInvoiceItem",
+    "SubscriptionPayment",
 ]

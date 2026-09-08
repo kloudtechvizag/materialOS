@@ -7,6 +7,7 @@ from app.errors import AppError, ErrorCode
 from app.models.user import Role, User, UserRole
 from app.schemas.user import UserCreate, UserOut
 from app.security import hash_password
+from app.services.usage import enforce_quota
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -28,6 +29,11 @@ def create_user(
     existing = db.execute(select(User).where(User.email == payload.email)).scalar_one_or_none()
     if existing is not None:
         raise AppError(ErrorCode.CONFLICT, "A user with this email already exists.", status_code=409)
+
+    # ADR-014 (spec sec16's own example): a live COUNT(*), not a period
+    # meter -- deactivating a user should free a seat immediately.
+    current_count = len(db.execute(select(User.id).where(User.tenant_id == current_user.tenant_id, User.is_active == True)).all())  # noqa: E712
+    enforce_quota(db, tenant_id=current_user.tenant_id, limit_key="users", current_count=current_count)
 
     user = User(
         tenant_id=current_user.tenant_id,

@@ -37,6 +37,8 @@ RESOURCES = [
     "backup",
     "system_health",
     "notification_rules",
+    "subscription",
+    "billing",
 ]
 
 ACTIONS = ["view", "create", "edit", "delete", "approve", "export", "restore", "manage"]

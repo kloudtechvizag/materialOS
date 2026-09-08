@@ -12,9 +12,11 @@ from app.schemas.tenant import TenantSignupRequest
 from app.security import hash_password
 from app.services.accounts import ensure_default_accounts
 from app.services.approvals import ensure_default_approval_rules
+from app.services.billing_plans import ensure_plan_catalog
 from app.services.industry import ensure_industry_profile_catalog, get_profile_by_slug
 from app.services.notification_rules import ensure_default_notification_rules
 from app.services.permissions import ensure_permission_catalog
+from app.services.subscriptions import create_subscription_for_new_tenant
 
 
 def _current_financial_year_code(today: date, start_month: int) -> tuple[str, date, date]:
@@ -46,6 +48,7 @@ def signup_tenant(db: Session, req: TenantSignupRequest) -> dict:
     # database with no API process ever having booted.
     ensure_permission_catalog(db)
     ensure_industry_profile_catalog(db)
+    ensure_plan_catalog(db)
 
     industry_profile = get_profile_by_slug(db, req.industry_slug)
     if industry_profile is None:
@@ -108,6 +111,7 @@ def signup_tenant(db: Session, req: TenantSignupRequest) -> dict:
     ensure_default_accounts(db, tenant_id=tenant.id, company_id=company.id)
     ensure_default_approval_rules(db, tenant_id=tenant.id)
     ensure_default_notification_rules(db, tenant_id=tenant.id)
+    create_subscription_for_new_tenant(db, tenant_id=tenant.id)
 
     db.commit()
 

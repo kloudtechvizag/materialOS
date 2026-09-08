@@ -22,7 +22,9 @@ def test_default_rules_seeded_and_idempotent(db, tenant_ctx):
     first_count = len(db.execute(
         select(NotificationRule).where(NotificationRule.tenant_id == tenant.id)
     ).scalars().all())
-    assert first_count == 4  # stock_low, invoice_overdue, credit_limit_exceeded, backup_failed
+    from app.services.notification_rules import DEFAULT_RULES
+
+    assert first_count == len(DEFAULT_RULES)  # ADR-013's original 4 plus ADR-014's billing/usage rules
 
     ensure_default_notification_rules(db, tenant_id=tenant.id)  # idempotent
     second_count = len(db.execute(

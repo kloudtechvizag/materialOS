@@ -6,6 +6,7 @@ from app.api.v1 import (
     audit,
     auth,
     backup,
+    billing,
     branches,
     catalog,
     collections,
@@ -24,10 +25,12 @@ from app.api.v1 import (
     notifications,
     portal,
     pos,
+    pricing,
     printing,
     procurement,
     projects,
     sales,
+    subscription,
     suppliers,
     system_health,
     tally_export,
@@ -72,3 +75,6 @@ api_router.include_router(audit.router)
 api_router.include_router(system_health.router)
 api_router.include_router(backup.router)
 api_router.include_router(command_center.router)
+api_router.include_router(pricing.router)
+api_router.include_router(subscription.router)
+api_router.include_router(billing.router)

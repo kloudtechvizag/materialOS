@@ -23,6 +23,7 @@ from app.schemas.sales import (
 from app.services.dispatch import create_delivery_challan
 from app.services.invoicing import create_invoice_from_challan
 from app.services.numbering import get_current_financial_year
+from app.services.usage import enforce_meter
 from app.services.quotation import create_quotation
 from app.services.receipts import record_receipt
 from app.services.sales_order import create_sales_order_from_quotation
@@ -207,6 +208,10 @@ def invoice_order(
     if challan is None:
         raise AppError(ErrorCode.VALIDATION_ERROR, "This order has not been dispatched yet.")
     fy = get_current_financial_year(db, order.company_id)
+    # ADR-014 (spec sec17's own example): checked+recorded before the
+    # invoice is created -- a blocked call raises here, inside the same
+    # transaction get_db_tenant commits, so nothing is left half-counted.
+    enforce_meter(db, tenant_id=user.tenant_id, metric_key="invoices_per_month")
     invoice = create_invoice_from_challan(
         db, tenant_id=user.tenant_id, delivery_challan_id=challan.id, financial_year_id=fy.id,
     )

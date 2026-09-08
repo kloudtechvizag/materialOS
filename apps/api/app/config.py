@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -45,6 +47,21 @@ class Settings(BaseSettings):
     smtp_username: str | None = None
     smtp_password: str | None = None
     smtp_from_address: str | None = None
+
+    # ADR-014: unset in every environment we actually run in -- same
+    # "sandbox unless genuinely configured AND production" gate as
+    # ADR-007's e-invoice/e-way-bill gateways. The sandbox provider
+    # completes orders deterministically with no network call, still
+    # going through the same webhook-verified activation path.
+    razorpay_key_id: str | None = None
+    razorpay_key_secret: str | None = None
+    razorpay_webhook_secret: str | None = None
+    # MaterialOS's own registered state, for CGST+SGST vs IGST on its
+    # own subscription invoices to tenants (distinct from any tenant's
+    # own company_state, which is for *their* sales).
+    platform_gstin: str | None = None
+    platform_state: str = "Telangana"
+    platform_gst_rate: Decimal = Decimal("18")
 
 
 settings = Settings()

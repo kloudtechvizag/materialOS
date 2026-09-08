@@ -24,6 +24,14 @@ DEFAULT_RULES: list[tuple[str, str, Decimal | None, str, list[str]]] = [
     ("Invoice overdue", "invoice_overdue", None, "warning", ["in_app"]),
     ("Credit limit exceeded", "credit_limit_exceeded", None, "critical", ["in_app"]),
     ("Backup failed", "backup_failed", None, "critical", ["in_app"]),
+    # ADR-014 (spec sec18, sec58): the usage/billing side reuses this
+    # same rule engine rather than a parallel notification mechanism.
+    ("Usage approaching limit", "usage_near_limit", None, "warning", ["in_app"]),
+    ("Usage limit reached", "usage_limit_reached", None, "critical", ["in_app"]),
+    ("Trial ending soon", "trial_ending", None, "warning", ["in_app"]),
+    ("Payment failed", "payment_failed", None, "critical", ["in_app"]),
+    ("Subscription renewed", "subscription_renewed", None, "info", ["in_app"]),
+    ("Subscription cancelled", "subscription_cancelled", None, "warning", ["in_app"]),
 ]
 
 

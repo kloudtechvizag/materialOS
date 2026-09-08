@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.router import api_router
 from app.db import SessionLocal
 from app.errors import register_error_handlers
+from app.services.billing_plans import ensure_plan_catalog
 from app.services.industry import ensure_industry_profile_catalog
 from app.services.permissions import ensure_permission_catalog
 
@@ -16,7 +17,8 @@ async def lifespan(app: FastAPI):
     try:
         ensure_permission_catalog(db)
         ensure_industry_profile_catalog(db)
-        db.commit()  # both are flush-only; this lifespan owns the commit
+        ensure_plan_catalog(db)
+        db.commit()  # all three are flush-only; this lifespan owns the commit
     finally:
         db.close()
     yield

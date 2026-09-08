@@ -134,6 +134,33 @@ notification/audit activity into the one operations screen the spec
 asked for. Live-verified end to end against the running containers,
 including two real bugs the unit suite didn't catch -- see ADR-013.
 
+**Pricing, subscription, entitlement, usage, and billing** (see
+ADR-014) is the monetization platform every plan/feature/limit check
+in the app goes through -- `Plan`/`Feature`/`PlanLimit`/`AddonOffering`
+are a platform catalog (six tiers: Free/Starter/Growth/Business/
+Professional/Enterprise, seeded like `IndustryProfile`), and
+`services/entitlements.py`'s `has_feature()`/`effective_limit()` (never
+`if plan == "growth"`) are wired into four real, live-verified
+enforcement points: `module.pos`/`module.fleet` feature gates and
+`users`/`invoices_per_month` quota/meter limits. New tenants land on a
+14-day Growth trial automatically; upgrade/downgrade compute real
+day-based proration (correctly skipped during a trial, where nothing
+was actually paid for yet -- a real bug this pass caught and fixed);
+downgrade is blocked with the exact violating limits when a tenant is
+over the target plan's caps. Payments go through a provider abstraction
+(`app/billing/gateway.py`, same sandbox/live-refuses-until-configured
+shape as ADR-007's e-invoice gateway) with webhook-verified,
+idempotent activation -- even the sandbox path goes through the same
+`handle_webhook()` a real Razorpay callback would hit, never a
+frontend-trusted shortcut. `/pricing` (public) and Settings ->
+Subscription (usage, invoices, payments, upgrade/downgrade/cancel/
+reactivate) read every number from the backend catalog, nothing
+hardcoded in React. See ADR-014 for what's deferred (a full admin
+pricing console -- blocked on this app having no cross-tenant "platform
+operator" identity concept at all yet -- coupons, AI credits, printing-
+specific usage meters, MRR/ARR analytics) and four real bugs live
+verification caught that the unit suite didn't.
+
 ## Architecture
 
 ```
@@ -339,5 +366,21 @@ Recorded in `docs/decisions/`:
   migration, `a1f4c9e02b7d`) were caught only by calling the live
   endpoints against the running containers, not by the unit suite --
   see the ADR for both.
+- **ADR-014**: pricing/subscription/entitlement/usage/billing is a
+  shared monetization platform, not a static pricing page. Plans and
+  their features/limits are a platform catalog (`Plan` "versions" are
+  new rows, never a mutated price on an existing one -- an existing
+  subscriber's price never silently changes); entitlement checks go
+  through one central service, wired into real enforcement points, not
+  scattered `if plan ==` branches. Proration only applies to a genuinely
+  paid `active` subscription -- an early version amortized a full
+  annual price over a 14-day trial window and fabricated a large,
+  wrong credit, caught live. Payments use the same sandbox/live
+  provider-abstraction shape as ADR-007's e-invoice gateway, with
+  webhook-verified, idempotent activation even in sandbox mode. A full
+  admin pricing console is deferred -- this app has no cross-tenant
+  "platform operator" identity at all yet, and building one is a
+  separate, security-sensitive feature ADR-014 explicitly declines to
+  invent as a side effect of a pricing page.
 
 Read these before re-litigating any of them.

@@ -16,7 +16,7 @@ celery_app = Celery(
     "materialos",
     broker=settings.redis_url,
     backend=settings.redis_url,
-    include=["app.services.backup_tasks", "app.services.notification_delivery"],
+    include=["app.services.backup_tasks", "app.services.notification_delivery", "app.services.billing_tasks"],
 )
 celery_app.conf.update(task_serializer="json", accept_content=["json"], result_serializer="json")
 
@@ -28,5 +28,12 @@ celery_app.conf.beat_schedule = {
     "daily-tenant-backups": {
         "task": "app.services.backup_tasks.run_scheduled_backups_task",
         "schedule": crontab(hour=2, minute=0),  # 02:00 server time, matching sec2's own example
+    },
+    # ADR-014: trial/grace/expiry progression and renewal invoice
+    # generation -- runs after backups so a tenant's own backup exists
+    # before anything billing-related touches their data.
+    "daily-subscription-lifecycle": {
+        "task": "app.services.billing_tasks.run_subscription_lifecycle_task",
+        "schedule": crontab(hour=3, minute=0),
     },
 }
