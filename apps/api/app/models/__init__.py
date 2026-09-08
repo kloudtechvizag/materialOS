@@ -36,6 +36,7 @@ from app.models.payroll import (
 from app.models.portal import PortalDocument
 from app.models.pos import WalkInSale
 from app.models.pricing import CustomerItemPrice, RateContract
+from app.models.receipts import ReceiptSettings
 from app.models.printing import PrintJob, PrintJobArtwork, PrintMachine
 from app.models.procurement import (
     GoodsReceipt,
@@ -188,4 +189,5 @@ __all__ = [
     "PayrollRun",
     "PayrollItem",
     "EmployeeAdvance",
+    "ReceiptSettings",
 ]

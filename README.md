@@ -184,6 +184,27 @@ biometric/geofencing device integration, commission, performance
 management, and cross-module Employee 360 are named and deferred, not
 faked.
 
+**Receipt printing** (see ADR-016) is one configurable template engine,
+not layouts hardcoded per module -- a single `ReceiptRenderer` fed by a
+single normalized `ReceiptData` shape (`GET
+/receipts/{document_type}/{document_id}`) renders POS receipts,
+GST invoices/retail receipts, payment receipts, delivery receipts,
+credit notes, and estimates alike, all governed by one
+`ReceiptSettings` row per company (logo/customer-details/GST-breakdown/
+SKU/cashier-name/UPI-QR toggles, footer, T&Cs, return policy, paper
+width). 58mm/80mm thermal sizing is physically accurate via a
+dynamically-injected `@page` rule; printing goes through a real adapter
+interface (`ReceiptPrinterProvider`) with one real, verified
+implementation -- the browser's own print dialog, the same way most
+production thermal printers actually integrate (as an ordinary OS/USB/
+network printer). A real, scannable UPI QR renders client-side (the
+`qrcode` package, no network call) when a UPI ID is configured. Raw
+ESC/POS/WebUSB/WebBluetooth device control, server-side PDF generation,
+a true barcode image (SKU renders as text today), and per-document-type
+setting overrides are named and deferred, not faked -- see ADR-016 for
+why, plus two print-CSS structural bugs and a file-overwrite near-miss
+caught before/at first live test.
+
 ## Architecture
 
 ```
@@ -351,9 +372,13 @@ Recorded in `docs/decisions/`:
   data migration) but there's no per-*module* override within a profile
   yet; Travel/Real Estate are honestly scoped to sales/accounting only
   (no inventory/POS) since they're project/booking businesses, not
-  inventory-item ones; `terminology` is stored and shown on the
-  Industry Configuration page but not yet consumed anywhere else (nav
-  labels, entity page headers) -- that wiring is still open, not done.
+  inventory-item ones; `terminology` was seeded `{}` for all 24
+  profiles at first (a real cross-industry content-leak bug -- every
+  tenant showed Building-Materials placeholder text regardless of its
+  actual industry, caught live against a Printing Press tenant) --
+  fixed with real per-profile terminology plus a backfill migration,
+  and now drives nav labels and item/customer/supplier form
+  placeholders across the app.
 - **ADR-011**: Printing Press is the one profile backed by real new
   tables (`PrintJob`/`PrintJobArtwork`/`PrintMachine`), not a config
   entry -- the spec driving it is explicit that a print shop is a
@@ -431,5 +456,26 @@ Recorded in `docs/decisions/`:
   Mobile app, real biometric/geofencing hardware, commission,
   performance management, and cross-module Employee 360 are named and
   deferred, not faked.
+- **ADR-016**: receipt printing is one configurable template engine
+  (`ReceiptData` + `ReceiptRenderer`), not per-module layouts -- POS,
+  invoices, quotations, delivery notes, and credit notes all render
+  through the same component, fed by the same
+  `GET /receipts/{document_type}/{document_id}`, controlled by one
+  `ReceiptSettings` row per company. Six assemblers cover all seven
+  named document kinds (POS receipt reuses the invoice assembler, since
+  a walk-in sale already is an invoice under the hood). Thermal
+  58mm/80mm accuracy comes from a real, dynamically-injected `@page`
+  rule. Printer integration is a real adapter interface with one real
+  implementation -- the browser's own print dialog, which is how most
+  production thermal printers actually integrate (USB/network as an
+  ordinary OS printer); raw ESC/POS, WebUSB, and WebBluetooth are
+  named and deferred, not faked, for the same no-real-hardware-to-
+  verify-against reason as ADR-012's cash-drawer control. Two print-CSS
+  structural bugs (a `.no-print`-nested print target that would never
+  have printed; two simultaneous print targets fighting for the page)
+  and one file-overwrite near-miss (a new file written to an existing,
+  load-bearing service path, caught by the app failing to boot, fixed
+  by restoring the original and renaming the new module) were all
+  caught before or immediately upon first live test -- see the ADR.
 
 Read these before re-litigating any of them.

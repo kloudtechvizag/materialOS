@@ -24,6 +24,11 @@ class Company(Base, UUIDPk, TenantMixin, TimestampMixin):
     legal_name: Mapped[str] = mapped_column(String(200), nullable=False)
     gstin: Mapped[str | None] = mapped_column(String(15), nullable=True)
     pan: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    # ADR-016: the receipt/invoice header's own phone/email -- previously
+    # not modeled at all (only a customer/supplier's contact details
+    # existed), so a receipt had no real business phone/email to show.
+    phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    email: Mapped[str | None] = mapped_column(String(255), nullable=True)
     address_line1: Mapped[str | None] = mapped_column(String(200), nullable=True)
     address_line2: Mapped[str | None] = mapped_column(String(200), nullable=True)
     city: Mapped[str | None] = mapped_column(String(100), nullable=True)

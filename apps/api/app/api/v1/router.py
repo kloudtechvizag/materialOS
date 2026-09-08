@@ -33,6 +33,7 @@ from app.api.v1 import (
     printing,
     procurement,
     projects,
+    receipts,
     sales,
     subscription,
     suppliers,
@@ -86,3 +87,4 @@ api_router.include_router(hr.router)
 api_router.include_router(attendance.router)
 api_router.include_router(leave.router)
 api_router.include_router(payroll.router)
+api_router.include_router(receipts.router)

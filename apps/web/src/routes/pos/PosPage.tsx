@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PrintReceiptOverlay } from "@/components/receipts/PrintReceiptOverlay";
 import { apiFetch } from "@/lib/api";
 import { formatINR } from "@/lib/format";
 
@@ -30,7 +31,7 @@ interface CartLine {
 }
 
 interface WalkInSaleReceipt {
-  sale: { change_due: string };
+  sale: { id: string; change_due: string };
   invoice_number: string;
   subtotal: string;
   tax_total: string;
@@ -50,6 +51,7 @@ export function PosPage() {
   const [mode, setMode] = useState<PaymentMode>("cash");
   const [tendered, setTendered] = useState("");
   const [receipt, setReceipt] = useState<WalkInSaleReceipt | null>(null);
+  const [showPrint, setShowPrint] = useState(false);
 
   const { data: warehouses } = useQuery({
     queryKey: ["warehouses"],
@@ -123,7 +125,11 @@ export function PosPage() {
             )}
           </CardContent>
         </Card>
-        <Button className="w-full" onClick={() => setReceipt(null)}>New sale</Button>
+        <Button className="w-full" onClick={() => setShowPrint(true)}>Print receipt</Button>
+        <Button className="w-full" variant="outline" onClick={() => setReceipt(null)}>New sale</Button>
+        {showPrint && (
+          <PrintReceiptOverlay documentType="pos_receipt" documentId={receipt.sale.id} onClose={() => setShowPrint(false)} />
+        )}
       </div>
     );
   }

@@ -144,6 +144,7 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
       { id: "company-settings", label: "Company settings", href: "/company-settings", icon: Settings },
       { id: "industry-config", label: "Industry", href: "/settings/industry", icon: SlidersHorizontal },
       { id: "subscription", label: "Subscription", href: "/settings/subscription", icon: CreditCard, permission: "subscription.view" },
+      { id: "receipt-settings", label: "Receipts", href: "/settings/receipts", icon: Printer, permission: "receipts.manage" },
     ],
   },
 ];

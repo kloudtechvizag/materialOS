@@ -18,6 +18,7 @@ from app.services.industry import ensure_industry_profile_catalog, get_profile_b
 from app.services.leave import ensure_default_leave_types
 from app.services.notification_rules import ensure_default_notification_rules
 from app.services.permissions import ensure_permission_catalog
+from app.services.receipt_templates import ensure_receipt_settings
 from app.services.shifts import ensure_default_shift
 from app.services.subscriptions import create_subscription_for_new_tenant
 
@@ -119,6 +120,7 @@ def signup_tenant(db: Session, req: TenantSignupRequest) -> dict:
     ensure_default_salary_components(db, tenant_id=tenant.id, company_id=company.id)
     ensure_default_leave_types(db, tenant_id=tenant.id, company_id=company.id)
     ensure_default_shift(db, tenant_id=tenant.id, company_id=company.id)
+    ensure_receipt_settings(db, tenant_id=tenant.id, company_id=company.id)
 
     db.commit()
 

@@ -10,6 +10,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PrintReceiptOverlay } from "@/components/receipts/PrintReceiptOverlay";
 import { apiFetch, ApiError } from "@/lib/api";
 import { formatINR } from "@/lib/format";
 
@@ -60,6 +61,7 @@ export function InvoiceDetailPage() {
   const queryClient = useQueryClient();
   const [amount, setAmount] = useState("");
   const [mode, setMode] = useState("bank");
+  const [showThermalPrint, setShowThermalPrint] = useState(false);
 
   const [vehicleNumber, setVehicleNumber] = useState("");
   const [distanceKm, setDistanceKm] = useState("");
@@ -110,8 +112,16 @@ export function InvoiceDetailPage() {
   if (!invoice) return null;
 
   return (
+    <>
     <div className="mx-auto max-w-3xl space-y-6">
-      <div data-print-area className="space-y-6">
+      {/* Conditional, not just present-or-absent styling: with the thermal
+          overlay open, its own [data-print-area] (rendered as a sibling
+          below, outside this whole page so it isn't nested inside this
+          one) must be the ONLY print target -- two simultaneous
+          [data-print-area] elements would both get position:absolute;
+          inset:0 from index.css's print rule and print on top of each
+          other. */}
+      <div {...(!showThermalPrint ? { "data-print-area": true } : {})} className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-semibold">{invoice.number}</h1>
@@ -122,9 +132,14 @@ export function InvoiceDetailPage() {
               is configured; works identically in the Tauri desktop shell
               (ADR-012) with no extra code. Hidden from the printed output
               itself via the .no-print class further down. */}
-          <Button variant="outline" size="sm" className="no-print" onClick={() => window.print()}>
-            <Printer className="h-4 w-4" /> Print
-          </Button>
+          <div className="no-print flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => window.print()}>
+              <Printer className="h-4 w-4" /> Print A4
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setShowThermalPrint(true)}>
+              <Printer className="h-4 w-4" /> Print receipt
+            </Button>
+          </div>
         </div>
 
         <Card>
@@ -249,5 +264,9 @@ export function InvoiceDetailPage() {
         </CardContent>
       </Card>
     </div>
+    {showThermalPrint && (
+      <PrintReceiptOverlay documentType="invoice" documentId={invoice.id} onClose={() => setShowThermalPrint(false)} />
+    )}
+    </>
   );
 }
