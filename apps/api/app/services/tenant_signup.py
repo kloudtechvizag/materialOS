@@ -62,6 +62,7 @@ def signup_tenant(db: Session, req: TenantSignupRequest) -> dict:
         name=req.company_name,
         legal_name=req.company_legal_name,
         state=req.company_state,
+        city=req.company_city,
         financial_year_start_month=4,
         industry_profile_id=industry_profile.id,
     )

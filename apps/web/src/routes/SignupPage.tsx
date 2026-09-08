@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiFetch, ApiError } from "@/lib/api";
+import { INDIAN_STATES } from "@/lib/indianStates";
 import { useAuthStore } from "@/store/auth";
 
 interface IndustryProfileOption {
@@ -21,6 +22,7 @@ interface IndustryProfileOption {
 const schema = z.object({
   companyName: z.string().min(1, "Required"),
   companyState: z.string().min(1, "Required -- this decides CGST+SGST vs IGST on every invoice"),
+  companyCity: z.string().min(1, "Required"),
   industrySlug: z.string().min(1, "Required"),
   tenantSlug: z
     .string()
@@ -61,6 +63,7 @@ export function SignupPage() {
           company_name: values.companyName,
           company_legal_name: values.companyName,
           company_state: values.companyState,
+          company_city: values.companyCity,
           industry_slug: values.industrySlug,
           owner_full_name: values.ownerFullName,
           owner_email: values.ownerEmail,
@@ -97,8 +100,23 @@ export function SignupPage() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="companyState">Business state</Label>
-              <Input id="companyState" placeholder="Andhra Pradesh" {...register("companyState")} />
+              <select
+                id="companyState"
+                defaultValue=""
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                {...register("companyState")}
+              >
+                <option value="" disabled>Select state</option>
+                {INDIAN_STATES.map((state) => (
+                  <option key={state} value={state}>{state}</option>
+                ))}
+              </select>
               {errors.companyState && <p className="text-sm text-destructive">{errors.companyState.message}</p>}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="companyCity">City / Town</Label>
+              <Input id="companyCity" placeholder="Vijayawada" {...register("companyCity")} />
+              {errors.companyCity && <p className="text-sm text-destructive">{errors.companyCity.message}</p>}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="industrySlug">Industry</Label>
