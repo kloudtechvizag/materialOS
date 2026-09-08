@@ -55,6 +55,13 @@ import { AuditLogPage } from "@/routes/operations/AuditLogPage";
 import { BackupPage } from "@/routes/operations/BackupPage";
 import { CommandCenterPage } from "@/routes/operations/CommandCenterPage";
 import { NotificationRulesPage } from "@/routes/operations/NotificationRulesPage";
+import { AttendancePage } from "@/routes/people/AttendancePage";
+import { EmployeeDetailPage } from "@/routes/people/EmployeeDetailPage";
+import { EmployeesPage } from "@/routes/people/EmployeesPage";
+import { LeavePage } from "@/routes/people/LeavePage";
+import { PayrollPage } from "@/routes/people/PayrollPage";
+import { PayrollRunDetailPage } from "@/routes/people/PayrollRunDetailPage";
+import { PeopleOverviewPage } from "@/routes/people/PeopleOverviewPage";
 import { SalesOrderDetailPage } from "@/routes/SalesOrderDetailPage";
 import { IndustryConfigPage } from "@/routes/settings/IndustryConfigPage";
 import { SignupPage } from "@/routes/SignupPage";
@@ -170,6 +177,13 @@ export default function App() {
         <Route path="/approvals" element={<ApprovalsPage />} />
         <Route path="/company-settings" element={<CompanySettingsPage />} />
         <Route path="/settings/industry" element={<IndustryConfigPage />} />
+        <Route path="/people" element={<PeopleOverviewPage />} />
+        <Route path="/people/employees" element={<EmployeesPage />} />
+        <Route path="/people/employees/:employeeId" element={<EmployeeDetailPage />} />
+        <Route path="/people/attendance" element={<AttendancePage />} />
+        <Route path="/people/leave" element={<LeavePage />} />
+        <Route path="/people/payroll" element={<PayrollPage />} />
+        <Route path="/people/payroll/:runId" element={<PayrollRunDetailPage />} />
         <Route path="/operations" element={<CommandCenterPage />} />
         <Route path="/operations/backups" element={<BackupPage />} />
         <Route path="/operations/audit-log" element={<AuditLogPage />} />

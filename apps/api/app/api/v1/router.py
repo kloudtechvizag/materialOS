@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from app.api.v1 import (
     accounting,
     approvals,
+    attendance,
     audit,
     auth,
     backup,
@@ -20,9 +21,12 @@ from app.api.v1 import (
     fleet,
     gst,
     health,
+    hr,
     imports,
     industry,
+    leave,
     notifications,
+    payroll,
     portal,
     pos,
     pricing,
@@ -78,3 +82,7 @@ api_router.include_router(command_center.router)
 api_router.include_router(pricing.router)
 api_router.include_router(subscription.router)
 api_router.include_router(billing.router)
+api_router.include_router(hr.router)
+api_router.include_router(attendance.router)
+api_router.include_router(leave.router)
+api_router.include_router(payroll.router)

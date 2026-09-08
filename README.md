@@ -161,6 +161,29 @@ operator" identity concept at all yet -- coupons, AI credits, printing-
 specific usage meters, MRR/ARR analytics) and four real bugs live
 verification caught that the unit suite didn't.
 
+**People & Payroll** (see ADR-015) is a first-class workforce module --
+Employee/Department/Designation/Shift org structure, attendance
+(self-service clock-in/out plus manager correction review), leave
+(request/approve/balance), and a real payroll engine: per-employee
+salary components (tenant-configurable, never hardcoded statutory
+rates), attendance/leave-driven proration and LOP, a real
+`draft -> calculated -> approved -> locked -> paid` state machine that
+refuses to approve while any employee has a blocking exception (missing
+bank details or salary structure), and a balanced double-entry journal
+posting (Salary Expense / Payroll Payable / Employee Advances,
+cost-centered by department) on lock. `PayrollItem` doubles as the
+payslip -- no separate table. Salary/bank/PAN fields are gated by a
+distinct `employee_compensation.*` permission, separate from
+`employees.*`, per the spec's own RBAC requirement. Five real bugs
+(three permission/journal/branch integrity bugs and two payroll-math
+bugs -- deductions that could exceed earnings and produce a negative
+payslip, and a floor fix that could itself have unbalanced the
+journal) were caught only by live-verifying against the running
+containers, not by the unit suite -- see ADR-015. Mobile app, real
+biometric/geofencing device integration, commission, performance
+management, and cross-module Employee 360 are named and deferred, not
+faked.
+
 ## Architecture
 
 ```
@@ -382,5 +405,22 @@ Recorded in `docs/decisions/`:
   "platform operator" identity at all yet, and building one is a
   separate, security-sensitive feature ADR-014 explicitly declines to
   invent as a side effect of a pricing page.
+- **ADR-015**: People & Payroll is a real workforce module, not
+  employee CRUD. `PayrollItem` doubles as the payslip (no separate
+  table); salary components price relative to the employee's own
+  stored basic/gross, never a circular "basic is X% of gross"
+  definition; `employee_compensation.*` is a distinct permission from
+  `employees.*` so salary/bank access is genuinely separable, per the
+  spec's own RBAC requirement. Payroll approval is blocked, by name,
+  when any employee has a missing-bank-details or missing-salary-
+  structure exception; locking posts a real, balanced double-entry
+  journal (Salary Expense / Payroll Payable / Employee Advances,
+  cost-centered by department). Five real bugs -- including deductions
+  that could exceed earnings and produce a negative payslip, and a
+  floor fix that could itself have unbalanced the journal -- were
+  caught only by live-verifying against the running containers.
+  Mobile app, real biometric/geofencing hardware, commission,
+  performance management, and cross-module Employee 360 are named and
+  deferred, not faked.
 
 Read these before re-litigating any of them.

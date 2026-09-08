@@ -32,6 +32,15 @@ DEFAULT_RULES: list[tuple[str, str, Decimal | None, str, list[str]]] = [
     ("Payment failed", "payment_failed", None, "critical", ["in_app"]),
     ("Subscription renewed", "subscription_renewed", None, "info", ["in_app"]),
     ("Subscription cancelled", "subscription_cancelled", None, "warning", ["in_app"]),
+    # ADR-015 (spec sec66): People & Payroll reuses this same rule
+    # engine rather than a parallel HR notification mechanism.
+    ("Leave submitted", "leave_submitted", None, "info", ["in_app"]),
+    ("Leave approved", "leave_approved", None, "info", ["in_app"]),
+    ("Leave rejected", "leave_rejected", None, "warning", ["in_app"]),
+    ("Attendance correction submitted", "attendance_correction_submitted", None, "info", ["in_app"]),
+    ("Advance approved", "advance_approved", None, "info", ["in_app"]),
+    ("Payroll generated", "payroll_generated", None, "info", ["in_app"]),
+    ("Payslip available", "payslip_available", None, "info", ["in_app"]),
 ]
 
 

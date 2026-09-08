@@ -5,7 +5,9 @@ import {
   Bell,
   Building,
   Building2,
+  CalendarDays,
   ClipboardList,
+  Clock,
   CreditCard,
   Database,
   Factory,
@@ -25,6 +27,7 @@ import {
   Truck,
   UploadCloud,
   Users,
+  Wallet,
 } from "lucide-react";
 
 export interface NavigationItem {
@@ -105,6 +108,17 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
     items: [
       { id: "financial-reports", label: "Financial reports", href: "/books", icon: FileSpreadsheet, module: "accounting" },
       { id: "gst", label: "GST filing", href: "/gst", icon: Receipt, module: "gst" },
+    ],
+  },
+  {
+    id: "people",
+    label: "People & Payroll",
+    items: [
+      { id: "people-overview", label: "Overview", href: "/people", icon: LayoutDashboard, end: true, permission: "employees.view" },
+      { id: "people-employees", label: "Employees", href: "/people/employees", icon: Users, permission: "employees.view" },
+      { id: "people-attendance", label: "Attendance", href: "/people/attendance", icon: Clock, permission: "attendance.view" },
+      { id: "people-leave", label: "Leave", href: "/people/leave", icon: CalendarDays, permission: "leave.view" },
+      { id: "people-payroll", label: "Payroll", href: "/people/payroll", icon: Wallet, permission: "payroll.view" },
     ],
   },
   {

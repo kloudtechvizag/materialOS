@@ -24,6 +24,10 @@ SYSTEM_ACCOUNTS = [
     ("1300-INPUT-CGST", "Input CGST", "asset"),
     ("1310-INPUT-SGST", "Input SGST", "asset"),
     ("1320-INPUT-IGST", "Input IGST", "asset"),
+    # ADR-015: People & Payroll's journal integration (spec sec51).
+    ("5100-SALARY", "Salary Expense", "expense"),
+    ("2200-PAYROLL-PAYABLE", "Payroll Payable", "liability"),
+    ("1400-EMP-ADVANCES", "Employee Advances", "asset"),
 ]
 
 

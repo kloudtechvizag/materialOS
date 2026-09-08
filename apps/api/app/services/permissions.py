@@ -39,9 +39,17 @@ RESOURCES = [
     "notification_rules",
     "subscription",
     "billing",
+    "employees",
+    "employee_compensation",
+    "departments",
+    "shifts",
+    "attendance",
+    "leave",
+    "payroll",
+    "advances",
 ]
 
-ACTIONS = ["view", "create", "edit", "delete", "approve", "export", "restore", "manage"]
+ACTIONS = ["view", "create", "edit", "delete", "approve", "export", "restore", "manage", "calculate", "lock", "pay"]
 
 
 def ensure_permission_catalog(db: Session) -> None:

@@ -6,14 +6,33 @@ from app.models.billing_plans import AddonOffering, Feature, Plan, PlanFeature, 
 from app.models.catalog import Batch, Category, UnitConversion
 from app.models.compliance import EInvoice, EWayBill
 from app.models.field_sales import Visit
+from app.models.attendance import AttendanceCorrection, AttendanceRecord
 from app.models.fleet import Driver, ProofOfDelivery, Trip, Vehicle
+from app.models.hr import (
+    Department,
+    Designation,
+    Employee,
+    EmployeeHistory,
+    Holiday,
+    HolidayCalendar,
+    Shift,
+    ShiftAssignment,
+)
 from app.models.idempotency import IdempotencyKey
 from app.models.importing import ImportBatch, ImportBatchRow
 from app.models.industry import IndustryProfile
 from app.models.inventory import StockBalance, StockLedger, StockReservation
+from app.models.leave import LeaveBalance, LeaveRequest, LeaveType
 from app.models.masters import Customer, Item, Supplier
 from app.models.notifications import Notification, NotificationDelivery, NotificationRule
 from app.models.numbering import DocNumberCounter, FinancialYear
+from app.models.payroll import (
+    EmployeeAdvance,
+    EmployeeSalaryAssignment,
+    PayrollItem,
+    PayrollRun,
+    SalaryComponent,
+)
 from app.models.portal import PortalDocument
 from app.models.pos import WalkInSale
 from app.models.pricing import CustomerItemPrice, RateContract
@@ -151,4 +170,22 @@ __all__ = [
     "SubscriptionInvoice",
     "SubscriptionInvoiceItem",
     "SubscriptionPayment",
+    "Department",
+    "Designation",
+    "Employee",
+    "EmployeeHistory",
+    "Shift",
+    "ShiftAssignment",
+    "HolidayCalendar",
+    "Holiday",
+    "AttendanceRecord",
+    "AttendanceCorrection",
+    "LeaveType",
+    "LeaveBalance",
+    "LeaveRequest",
+    "SalaryComponent",
+    "EmployeeSalaryAssignment",
+    "PayrollRun",
+    "PayrollItem",
+    "EmployeeAdvance",
 ]
