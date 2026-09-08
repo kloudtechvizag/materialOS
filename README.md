@@ -266,6 +266,15 @@ See ADR-012 for what desktop-specific capability exists today (local
 printing) versus what's deferred (cash-drawer/scale device access,
 offline-first sync) and why.
 
+**There is no hosted MaterialOS server.** Every install -- desktop or
+web -- points at a backend you run yourself (the `docker-compose up`
+steps above). The downloaded desktop app defaults to
+`http://localhost:58000/api/v1`; if your backend runs elsewhere (a
+different machine on your network, a different port), open **Server
+settings** from the app's own Login or Signup screen to point it at
+the right address -- this is a runtime setting stored per-install, not
+something that requires rebuilding the app.
+
 ## Database migrations
 
 Migrations run as the Postgres **superuser** role (`materialos`); the
