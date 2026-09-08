@@ -332,9 +332,11 @@ Recorded in `docs/decisions/`:
   dead letters rather than vanishing. Audit log exposure required no
   new capture code (the DB trigger has run since Slice 0) -- only new
   read endpoints. `GET /command-center` aggregates all of the above
-  into the one operations screen the spec asked for. Two real bugs
-  (an `information_schema` privilege gap, and two permission codes
-  never seeded into the catalog) were caught only by calling the live
+  into the one operations screen the spec asked for. Three real bugs
+  (an `information_schema` privilege gap, two permission codes never
+  seeded into the catalog, and every pre-existing tenant's owner role
+  missing the new permissions entirely -- fixed by a one-time backfill
+  migration, `a1f4c9e02b7d`) were caught only by calling the live
   endpoints against the running containers, not by the unit suite --
   see the ADR for both.
 

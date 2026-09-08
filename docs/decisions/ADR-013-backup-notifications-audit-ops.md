@@ -123,9 +123,9 @@ that gap.
 ## Bugs found only by live verification against the running containers
 
 Consistent with this project's standing practice (every prior slice was
-verified against real running services, not just unit tests), two real
-bugs surfaced only when the new endpoints were actually called end to
-end after the migration was applied and the containers were live:
+verified against real running services, not just unit tests), three
+real bugs surfaced only when the new endpoints were actually called end
+to end after the migration was applied and the containers were live:
 
 1. **`information_schema.constraint_column_usage` silently returns 0
    rows** under this app's unprivileged `materialos_app` DB role, even
@@ -153,9 +153,29 @@ end after the migration was applied and the containers were live:
    full-cross-product pattern -- a few now-unused codes like
    `companies.manage` exist too, same as `companies.approve` already
    did before this change).
+3. **Bug 2's fix only covers new signups.** `tenant_signup.py` grants a
+   brand-new owner role every `Permission` row that exists *at signup
+   time*; it does not, and structurally cannot, reach back and grant
+   newly-added permissions to a tenant that signed up earlier. Every
+   tenant in this dev database predates `audit`/`backup`/
+   `system_health`/`notification_rules` entirely -- their owners got a
+   real `Missing permission: audit.view` calling the new
+   `/audit-logs` endpoint, reported live by an actual user of the demo
+   tenant, not found in testing. Fixed with a one-time data migration
+   (`a1f4c9e02b7d_backfill_owner_role_permissions.py`) that grants
+   every currently-cataloged `Permission` to every tenant's `owner`
+   role (`is_system = true AND name = 'owner'` only -- custom roles a
+   tenant created themselves are deliberately left untouched, since
+   they were never meant to hold every permission). This is accepted
+   as a one-time catch-up, not a general fix: the next time a genuinely
+   new resource is added to `RESOURCES`, existing tenants' owners will
+   have the identical gap again until either this migration pattern is
+   repeated or a proper "keep owner roles in sync with the permission
+   catalog" job is built -- recorded here as backlog, not solved.
 
-Neither bug was caught by the unit test suite (mocked/isolated enough
-to route around both), only by running actual HTTP requests against the
+None of the three bugs were caught by the unit test suite (each test
+signs up its own fresh tenant, so bug 3 in particular is structurally
+invisible to it), only by running actual HTTP requests against the
 live Postgres-backed containers -- reaffirmed the value of that
 verification step for this kind of cross-cutting, DB-introspection-heavy
 work.
