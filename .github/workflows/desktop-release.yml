@@ -93,5 +93,9 @@ jobs:
           projectPath: apps/desktop
           tagName: ${{ github.ref_name }}
           releaseName: "MaterialOS Desktop ${{ github.ref_name }}"
-          releaseDraft: true
+          # Published immediately, not draft: the point is a real,
+          # downloadable release on the repo's Releases page (a draft
+          # is invisible to anyone but repo admins, defeating that).
+          # Still genuinely unsigned -- see this file's header comment.
+          releaseDraft: false
           prerelease: false
