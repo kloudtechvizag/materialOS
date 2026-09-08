@@ -33,6 +33,14 @@ on:
 
 jobs:
   build:
+    # The build itself needs no special access; creating/uploading to a
+    # GitHub Release does. Without this, the default GITHUB_TOKEN this
+    # workflow gets is read-only and tauri-action's release step fails
+    # with "Resource not accessible by integration" -- confirmed from
+    # an actual run: both builds succeeded (real .msi/.deb/.rpm/
+    # .AppImage artifacts), only the release-creation call failed.
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:
