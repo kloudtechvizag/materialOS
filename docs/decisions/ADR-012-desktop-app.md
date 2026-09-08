@@ -83,17 +83,23 @@ project's Rust code. The actual compile-and-link verification happens
 in CI (`ci.yml`'s new `desktop-check` job, on every push, `cargo check`
 only -- fast) and real installer builds happen in
 `desktop-release.yml` (`tauri-apps/tauri-action`, one native runner
-per OS, triggered on `desktop-v*` tags) -- both run on GitHub-hosted
-runners with real root access and the real prerequisite packages,
-which is also how the overwhelming majority of real Tauri projects
-actually produce their Windows/macOS/Linux installers (nobody
+per OS, triggered on `desktop-v*` tags or manual dispatch) -- both run
+on GitHub-hosted runners with real root access and the real
+prerequisite packages, which is also how the overwhelming majority of
+real Tauri projects actually produce their installers (nobody
 hand-builds a Windows `.msi` on a Linux dev box either).
+`desktop-release.yml`'s matrix is Windows (`.msi`) and Linux
+(`.deb`/`.AppImage`) only -- macOS wasn't requested and GitHub-hosted
+macOS runners carry a 10x per-minute cost multiplier on private repos;
+re-adding it is one matrix entry, not a structural change (the
+workflow's own comments have the exact `--target` values it used
+before).
 
 **Unsigned by default.** `desktop-release.yml` has no code-signing
-secrets configured -- an unsigned build triggers Windows SmartScreen
-and macOS Gatekeeper warnings on first launch. Faking a signature
-isn't possible without a real certificate; this is named in the
-workflow's own comments rather than silently shipped as a surprise.
+secrets configured -- an unsigned `.msi` triggers a Windows
+SmartScreen warning on first launch. Faking a signature isn't possible
+without a real certificate; this is named in the workflow's own
+comments rather than silently shipped as a surprise.
 
 **Reversibility:** all of the above are additive. Cash-drawer/scale
 device access, offline-first sync, and code signing all slot in

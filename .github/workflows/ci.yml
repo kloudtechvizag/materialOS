@@ -56,9 +56,9 @@ jobs:
   # release tag. This is exactly the `cargo check` this repo's own dev
   # environment could not run locally (no root to install
   # libwebkit2gtk-4.1-dev etc.) -- a real GitHub Actions runner has it.
-  # The actual Windows/macOS/Linux installer builds live in
-  # desktop-release.yml, only on version tags -- they're too slow for
-  # every PR.
+  # The actual Windows/Linux installer builds live in
+  # desktop-release.yml, only on version tags (or manual dispatch) --
+  # they're too slow for every PR.
   desktop-check:
     runs-on: ubuntu-22.04
     steps:

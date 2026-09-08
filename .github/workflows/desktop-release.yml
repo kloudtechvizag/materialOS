@@ -1,21 +1,29 @@
 name: desktop-release
 
-# ADR-012: builds real, installable Windows/macOS/Linux binaries via
-# the official tauri-apps/tauri-action, one native runner per target
-# (Tauri apps are not cross-compiled -- Windows needs WebView2 on a
-# Windows runner, macOS needs WKWebView on a macOS runner). Triggered
-# on desktop-v* tags rather than every push: this is a slow job
-# (fresh Rust dependency compile per OS) and produces install artifacts,
+# ADR-012: builds real, installable Windows (.msi) and Linux (.deb +
+# .AppImage) binaries via the official tauri-apps/tauri-action, one
+# native runner per target (Tauri apps are not cross-compiled --
+# Windows needs WebView2 on a Windows runner). Triggered on
+# desktop-v* tags rather than every push: this is a slow job (fresh
+# Rust dependency compile per OS) and produces install artifacts,
 # unlike ci.yml's desktop-check, which just proves it compiles.
+# workflow_dispatch is also enabled so a build can be requested
+# on-demand without cutting a tag first.
+#
+# macOS is intentionally not in this matrix -- not asked for, and
+# macOS GitHub-hosted runners carry a 10x per-minute cost multiplier
+# on private repos. Re-adding it is one matrix entry (see git history
+# on this file / ADR-012 for the exact `--target aarch64-apple-darwin`
+# / `x86_64-apple-darwin` entries this file had before), not a
+# structural change.
 #
 # Publishing is unsigned by default (no code-signing certificates are
-# configured in this repo's secrets) -- Windows SmartScreen and macOS
-# Gatekeeper will warn on an unsigned build. That's an intentional gap,
-# not an oversight: faking a signature or skipping the warning isn't
-# possible without a real certificate, and this workflow doesn't
-# pretend otherwise. Add TAURI_SIGNING_PRIVATE_KEY (updater signing)
-# and platform code-signing secrets when this is ready to distribute
-# outside the team.
+# configured in this repo's secrets) -- Windows SmartScreen will warn
+# on an unsigned .msi. That's an intentional gap, not an oversight:
+# faking a signature isn't possible without a real certificate, and
+# this workflow doesn't pretend otherwise. Add
+# TAURI_SIGNING_PRIVATE_KEY (updater signing) and a code-signing
+# certificate secret when this is ready to distribute outside the team.
 
 on:
   push:
@@ -28,15 +36,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - platform: macos-latest
-            args: "--target aarch64-apple-darwin"
-          - platform: macos-latest
-            args: "--target x86_64-apple-darwin"
-          - platform: ubuntu-22.04
-            args: ""
-          - platform: windows-latest
-            args: ""
+        platform: [ubuntu-22.04, windows-latest]
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -51,8 +51,6 @@ jobs:
         working-directory: apps/web
 
       - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
       - uses: Swatinem/rust-cache@v2
         with:
@@ -73,4 +71,3 @@ jobs:
           releaseName: "MaterialOS Desktop ${{ github.ref_name }}"
           releaseDraft: true
           prerelease: false
-          args: ${{ matrix.args }}

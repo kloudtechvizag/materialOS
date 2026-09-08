@@ -111,8 +111,10 @@ works today via the browser-standard `window.print()` (wired to
 drawer raw ESC/POS control and offline-first sync are named as
 deferred, not faked -- see ADR-012. **Not compiled in this dev
 sandbox** (no root to install Tauri's Linux prerequisite system
-libraries) -- `ci.yml`'s `desktop-check` job and `desktop-release.yml`
-(real installers on tagged releases) do the actual verified build on
+libraries) -- `ci.yml`'s `desktop-check` job (compile-check, every
+push) and `desktop-release.yml` (real Windows `.msi` + Linux
+`.deb`/`.AppImage` installers, on `desktop-v*` tags or manual dispatch
+-- macOS not included, not requested) do the actual verified build on
 GitHub-hosted runners; ADR-012 has the detail on exactly how far local
 verification got and why it stopped there.
 
