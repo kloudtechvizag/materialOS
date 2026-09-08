@@ -4,8 +4,8 @@
   "version": "0.1.0",
   "identifier": "com.materialos.app",
   "build": {
-    "beforeDevCommand": "npm --prefix ../../web run dev",
-    "beforeBuildCommand": "npm --prefix ../../web run build",
+    "beforeDevCommand": "npm --prefix ../web run dev",
+    "beforeBuildCommand": "npm --prefix ../web run build",
     "devUrl": "http://localhost:5173",
     "frontendDist": "../../web/dist"
   },

@@ -105,3 +105,30 @@ comments rather than silently shipped as a surprise.
 device access, offline-first sync, and code signing all slot in
 without touching the shell's existing structure -- the same "minimal
 now, reversible seam later" pattern as every ADR in this project.
+
+**Real bugs found only by actually running this in CI, not by local
+`cargo check`.** Three, all in `desktop-release.yml`/`tauri.conf.json`,
+none catchable by `cargo check` alone (a compile-check never invokes
+`npm run tauri build`, so it never exercises the Tauri CLI's own
+install/hook/publish behavior):
+1. `tauri-action` runs `npm run tauri build` in `projectPath` but
+   never installs that project's own dependencies -- `apps/desktop`'s
+   `npm ci` step was missing, so the `tauri` binary from
+   `@tauri-apps/cli` didn't exist on `PATH`.
+2. `tauri.conf.json`'s `beforeDevCommand`/`beforeBuildCommand` run
+   with cwd = the app directory (`apps/desktop`, wherever `npm run
+   tauri` was invoked from) -- **not** the directory containing
+   `tauri.conf.json` (`src-tauri`). `frontendDist` and other config
+   *values*, by contrast, genuinely are resolved relative to
+   `tauri.conf.json` itself. Those are two different resolution rules
+   for two different kinds of setting, easy to conflate, and this repo
+   did: `beforeBuildCommand` was written as `../../web` (correct if it
+   resolved like `frontendDist`) and needed `../web` (correct for
+   where it actually runs).
+3. `releaseDraft: true` meant even a fully successful build produced a
+   release invisible to anyone but repo admins -- silently defeating
+   the entire point of this workflow. Now `false`.
+
+None of these were guessed at or fixed speculatively -- each was
+reproduced from a real failed GitHub Actions run's actual log output
+before being changed.
