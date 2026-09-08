@@ -27,6 +27,18 @@ migration or new code, per ADR-010's second addendum. Two of them
 (Travel, Real Estate) are honestly scoped to generic sales/accounting
 only, no inventory/POS -- they're project/booking businesses, not
 inventory-item ones, and their real domain models aren't built.
+A 24th profile, **Printing Press & Digital Color Lab** (see ADR-011),
+is the one industry that genuinely needed new code rather than a config
+entry: a real `PrintJob`/`PrintJobArtwork`/`PrintMachine` schema, a
+production Kanban board, and an artwork-approval gate that actually
+blocks production on an unapproved version -- live-verified end to end
+(job created → blocked → artwork uploaded → still blocked → approved →
+production → costed → invoiced with a real journal and media stock
+deduction → job profitability). Everything reusable was reused (paper/
+ink as ordinary Items, outsourcing via Supplier, billing via Invoice);
+what wasn't built (an N-up costing formula, RIP integration, AI
+production planning, customer-portal artwork upload) is named as such
+in ADR-011, not approximated.
 
 - **Slice 0** (Foundation + Tally/Busy migration): signup, auth, RBAC,
   RLS-isolated tenancy, document numbering, the audit trigger, and the
@@ -227,5 +239,17 @@ Recorded in `docs/decisions/`:
   inventory-item ones; `terminology` is stored and shown on the
   Industry Configuration page but not yet consumed anywhere else (nav
   labels, entity page headers) -- that wiring is still open, not done.
+- **ADR-011**: Printing Press is the one profile backed by real new
+  tables (`PrintJob`/`PrintJobArtwork`/`PrintMachine`), not a config
+  entry -- the spec driving it is explicit that a print shop is a
+  job/production business, not products-in-a-cart. Everything reusable
+  was reused (media/paper as ordinary `Item`s, project-based printing
+  via `Project`, outsourcing via `Supplier`, billing via
+  `Invoice`/the journal); an N-up costing calculator, RIP/color-
+  management integration, AI production planning, and customer-portal
+  artwork upload are named as deferred, not faked. The one explicitly-
+  required rule -- production blocked until the latest artwork version
+  is approved -- is actually enforced in `update_job_status()`, not
+  just documented.
 
 Read these before re-litigating any of them.

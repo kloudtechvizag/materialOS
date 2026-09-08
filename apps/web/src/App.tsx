@@ -42,6 +42,10 @@ import { PortalQuotationDetailPage } from "@/routes/portal/PortalQuotationDetail
 import { PortalQuotationsPage } from "@/routes/portal/PortalQuotationsPage";
 import { PortalStatementPage } from "@/routes/portal/PortalStatementPage";
 import { PosPage } from "@/routes/pos/PosPage";
+import { PrintJobDetailPage } from "@/routes/printing/PrintJobDetailPage";
+import { PrintJobsPage } from "@/routes/printing/PrintJobsPage";
+import { PrintMachinesPage } from "@/routes/printing/PrintMachinesPage";
+import { ProductionBoardPage } from "@/routes/printing/ProductionBoardPage";
 import { NewQuotationPage } from "@/routes/quotations/NewQuotationPage";
 import { QuotationDetailPage } from "@/routes/quotations/QuotationDetailPage";
 import { QuotationsPage } from "@/routes/quotations/QuotationsPage";
@@ -108,6 +112,10 @@ export default function App() {
         <Route path="/" element={<DashboardPage />} />
         <Route path="/items" element={<ItemsPage />} />
         <Route path="/pos" element={<PosPage />} />
+        <Route path="/production-board" element={<ProductionBoardPage />} />
+        <Route path="/print-jobs" element={<PrintJobsPage />} />
+        <Route path="/print-jobs/:jobId" element={<PrintJobDetailPage />} />
+        <Route path="/print-machines" element={<PrintMachinesPage />} />
         <Route path="/customers" element={<CustomersPage />} />
         <Route path="/customers/:customerId" element={<Customer360Page />} />
         <Route path="/projects" element={<ProjectsPage />} />

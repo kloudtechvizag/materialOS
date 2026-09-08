@@ -21,6 +21,7 @@ from app.api.v1 import (
     notifications,
     portal,
     pos,
+    printing,
     procurement,
     projects,
     sales,
@@ -47,6 +48,7 @@ api_router.include_router(customers.router)
 api_router.include_router(projects.router)
 api_router.include_router(sales.router)
 api_router.include_router(pos.router)
+api_router.include_router(printing.router)
 api_router.include_router(dashboard.router)
 api_router.include_router(fleet.router)
 api_router.include_router(dispatch.router)

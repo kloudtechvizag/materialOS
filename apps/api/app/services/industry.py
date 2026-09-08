@@ -331,6 +331,32 @@ PROFILE_DEFINITIONS: list[dict] = [
         "inventory_flags": _flags(batch_tracking=True, expiry_tracking=True, fefo=True, weight_tracking=True),
         "pricing_strategy": "pos_mrp_discount",
     },
+    # -- Printing Press / Digital Color Lab (ADR-011). Unlike every
+    # profile above, this one is NOT config-only: "printing" is a real
+    # module backed by new tables (PrintJob/PrintJobArtwork/PrintMachine)
+    # and a real job-lifecycle service, because the spec driving it is
+    # explicit that a print shop is Customer->Job->Artwork->Prepress->
+    # Production->Finishing->QC->Delivery->Invoice->Profitability, not
+    # products-in-a-cart -- forcing it through the generic sales/pos
+    # module set the way Retail/Grocery/etc. were would have been
+    # dishonest, not just under-scoped.
+    {
+        "slug": "printing_press",
+        "name": "Printing Press & Digital Color Lab",
+        "category": "printing",
+        "terminology": {},
+        "enabled_modules": ["printing", "purchase", "inventory", "projects", "credit", "collections", "accounting", "gst"],
+        "navigation_config": [],
+        "dashboard_widgets": [
+            "jobs_due_today", "jobs_overdue", "jobs_in_production", "outstanding", "active_customers",
+        ],
+        # weight/batch/expiry/fefo don't apply to a print shop's own
+        # stock (paper/ink, tracked as ordinary Items) the way they do
+        # for a pharmacy or grocer -- left at the _flags() defaults
+        # (all False) rather than padded with irrelevant flags.
+        "inventory_flags": _flags(),
+        "pricing_strategy": "job_costing",
+    },
 ]
 
 

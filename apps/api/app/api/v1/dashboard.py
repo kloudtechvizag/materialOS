@@ -7,9 +7,11 @@ from sqlalchemy.orm import Session
 from app.deps import get_db_tenant, require_permission
 from app.models.masters import Customer, Item
 from app.models.pos import WalkInSale
+from app.models.printing import PrintJob
 from app.models.sales import Invoice, Quotation, SalesOrder
 from app.services.credit import compute_outstanding
 from app.services.inventory import near_expiry_batches
+from app.services.printing import PRODUCTION_STATUSES
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -62,6 +64,22 @@ def dashboard_summary(
     ).one()
     near_expiry_count = len(near_expiry_batches(db, tenant_id=user.tenant_id, days=60))
 
+    # Printing profile widgets (sec23/45) -- harmless for every other
+    # profile since none of them reference these dashboard_widgets keys.
+    open_job_statuses = list(PRODUCTION_STATUSES) + [
+        "draft", "quoted", "approved", "artwork_pending", "prepress",
+        "rework", "ready_for_pickup", "dispatched",
+    ]
+    jobs_due_today = db.execute(
+        select(func.count()).select_from(PrintJob).where(PrintJob.due_date == today, PrintJob.status.in_(open_job_statuses))
+    ).scalar_one()
+    jobs_overdue = db.execute(
+        select(func.count()).select_from(PrintJob).where(PrintJob.due_date < today, PrintJob.status.in_(open_job_statuses))
+    ).scalar_one()
+    jobs_in_production = db.execute(
+        select(func.count()).select_from(PrintJob).where(PrintJob.status.in_(PRODUCTION_STATUSES))
+    ).scalar_one()
+
     return {
         "total_outstanding": str(total_outstanding),
         "total_invoiced": str(invoiced_total),
@@ -75,4 +93,7 @@ def dashboard_summary(
         "todays_upi": str(todays_upi),
         "todays_card": str(todays_card),
         "near_expiry_count": near_expiry_count,
+        "jobs_due_today": jobs_due_today,
+        "jobs_overdue": jobs_overdue,
+        "jobs_in_production": jobs_in_production,
     }

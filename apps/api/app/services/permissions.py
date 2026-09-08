@@ -22,6 +22,7 @@ RESOURCES = [
     "stock",
     "approvals",
     "pos",
+    "printing",
 ]
 
 ACTIONS = ["view", "create", "edit", "delete", "approve", "export"]

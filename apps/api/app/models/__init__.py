@@ -15,6 +15,7 @@ from app.models.numbering import DocNumberCounter, FinancialYear
 from app.models.portal import PortalDocument
 from app.models.pos import WalkInSale
 from app.models.pricing import CustomerItemPrice, RateContract
+from app.models.printing import PrintJob, PrintJobArtwork, PrintMachine
 from app.models.procurement import (
     GoodsReceipt,
     GoodsReceiptItem,
@@ -121,4 +122,7 @@ __all__ = [
     "ApprovalRequest",
     "IndustryProfile",
     "WalkInSale",
+    "PrintJob",
+    "PrintJobArtwork",
+    "PrintMachine",
 ]

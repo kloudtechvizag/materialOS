@@ -9,9 +9,11 @@ import {
   Factory,
   FileSpreadsheet,
   FileText,
+  KanbanSquare,
   LayoutDashboard,
   MapPin,
   Package,
+  Printer,
   Receipt,
   Settings,
   ShieldCheck,
@@ -64,6 +66,15 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
       { id: "collections", label: "Collections", href: "/collections", icon: Banknote, module: "collections" },
       { id: "field-sales", label: "Field sales", href: "/field-sales", icon: MapPin, module: "field_sales" },
       { id: "approvals", label: "Approvals", href: "/approvals", icon: ShieldCheck },
+    ],
+  },
+  {
+    id: "printing",
+    label: "Printing",
+    items: [
+      { id: "production-board", label: "Production board", href: "/production-board", icon: KanbanSquare, module: "printing" },
+      { id: "print-jobs", label: "Print jobs", href: "/print-jobs", icon: Printer, module: "printing" },
+      { id: "print-machines", label: "Machines", href: "/print-machines", icon: Factory, module: "printing" },
     ],
   },
   {
