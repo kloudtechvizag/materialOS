@@ -24,11 +24,16 @@ profiles from scratch exists yet; adding an industry is still a code
 change (a list entry), just a small, additive, config-shaped one --
 not a schema migration and not a scattered conditional.
 
-**Config scope: profile-level only, no per-company override table.**
+**Config scope: whole-profile switch, no per-module override table.**
 A company gets exactly the modules/nav/dashboard/terminology its
-`IndustryProfile` defines. The 22-industry spec's "Settings > Industry
-Configuration" is read-only in this phase (view the active profile);
-per-company toggles beyond the profile default are deferred. Minimal
+`IndustryProfile` defines. `PATCH /companies/{id}/industry-profile`
+(and the Settings > Industry Configuration page) let a company switch
+to a *different whole profile* -- a single FK write, no data migration,
+since sidebar/dashboard/item-attribute rendering all read the profile
+live off `Company.industry_profile_id` already. What's still deferred
+is a *per-module* override within a profile (e.g. Building Materials
+minus `fleet`) -- that needs a second table (profile default +
+company-level overrides layered on top) and wasn't asked for. Minimal
 now, reversible seam later -- same discipline as every prior ADR here.
 
 **Terminology scope: nav labels + Customer/Item page headers, not a

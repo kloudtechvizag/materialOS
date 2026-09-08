@@ -57,3 +57,44 @@ def test_signup_with_unknown_industry_slug_is_rejected():
     resp = _signup(slug, industry_slug="not_a_real_industry")
     assert resp.status_code == 422, resp.text
     assert resp.json()["error"]["code"] == "VALIDATION_ERROR"
+
+
+def _signed_up_token(slug: str, industry_slug: str = "building_materials") -> str:
+    _signup(slug, industry_slug=industry_slug)
+    login_resp = client.post(
+        "/api/v1/auth/login",
+        json={"tenant_slug": slug, "email": f"owner-{slug}@example.com", "password": "correct-horse-battery-staple"},
+    )
+    return login_resp.json()["access_token"]
+
+
+def test_company_can_switch_industry_profile():
+    slug = f"industry-switch-{uuid.uuid4().hex[:8]}"
+    token = _signed_up_token(slug)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    company = client.get("/api/v1/companies", headers=headers).json()[0]
+    assert company["industry_profile"]["slug"] == "building_materials"
+
+    switch_resp = client.patch(
+        f"/api/v1/companies/{company['id']}/industry-profile", json={"industry_slug": "retail"}, headers=headers
+    )
+    assert switch_resp.status_code == 200, switch_resp.text
+    assert switch_resp.json()["industry_profile"]["slug"] == "retail"
+
+    # Sticks -- re-fetching sees the switched profile, not the original.
+    refetched = client.get("/api/v1/companies", headers=headers).json()[0]
+    assert refetched["industry_profile"]["slug"] == "retail"
+
+
+def test_switching_to_unknown_industry_slug_is_rejected():
+    slug = f"industry-switch-bad-{uuid.uuid4().hex[:8]}"
+    token = _signed_up_token(slug)
+    headers = {"Authorization": f"Bearer {token}"}
+    company = client.get("/api/v1/companies", headers=headers).json()[0]
+
+    resp = client.patch(
+        f"/api/v1/companies/{company['id']}/industry-profile", json={"industry_slug": "not_a_real_industry"}, headers=headers
+    )
+    assert resp.status_code == 422, resp.text
+    assert resp.json()["error"]["code"] == "VALIDATION_ERROR"

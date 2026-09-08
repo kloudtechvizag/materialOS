@@ -18,9 +18,10 @@ and **Pharmacy** (`Batch.expiry_date`, a near-expiry report/dashboard
 widget, and pharmacy-specific item attributes via the same dynamic
 attribute engine -- FEFO *enforcement* at the picking level is honestly
 scoped out for now, see ADR-010's addendum for why). The industry
-picker at signup and a read-only Industry Configuration settings page
-are done too, so the whole engine is complete end to end for these
-three profiles; the remaining ~19 industries from the original brief
+picker at signup and an Industry Configuration settings page (view the
+active profile, switch to a different one -- a single FK write, no data
+migration) are done too, so the whole engine is complete end to end for
+these three profiles; the remaining ~19 industries from the original brief
 are unbuilt, addable later as pure `IndustryProfile` config entries.
 
 - **Slice 0** (Foundation + Tally/Busy migration): signup, auth, RBAC,
@@ -213,8 +214,10 @@ Recorded in `docs/decisions/`:
   platform-level catalog (no `tenant_id`, no RLS), seeded like
   `Permission`; only `building_materials` has a migration (it also
   backfills pre-existing companies), every other profile is a plain
-  `PROFILE_DEFINITIONS` entry; config is profile-level only (no
-  per-company override yet); terminology only covers nav labels and the
-  Customer/Item page headers, not a full-app string sweep.
+  `PROFILE_DEFINITIONS` entry; a company can switch to a different
+  whole profile (single FK write, no data migration) but there's no
+  per-*module* override within a profile yet; terminology only covers
+  nav labels and the Customer/Item page headers, not a full-app string
+  sweep.
 
 Read these before re-litigating any of them.

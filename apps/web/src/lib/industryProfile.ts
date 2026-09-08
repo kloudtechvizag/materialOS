@@ -39,6 +39,7 @@ export function useIndustryProfile() {
 
   return {
     profile: query.data?.[0]?.industry_profile ?? null,
+    companyId: query.data?.[0]?.id ?? null,
     isLoading: query.isLoading,
   };
 }

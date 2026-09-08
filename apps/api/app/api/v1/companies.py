@@ -9,7 +9,8 @@ from app.errors import AppError, ErrorCode
 from app.models.industry import IndustryProfile
 from app.models.tenant import Company
 from app.schemas.industry import IndustryProfileOut
-from app.schemas.tenant import CompanyComplianceUpdate, CompanyOut
+from app.schemas.tenant import CompanyComplianceUpdate, CompanyIndustryUpdate, CompanyOut
+from app.services.industry import get_profile_by_slug
 
 router = APIRouter(prefix="/companies", tags=["companies"])
 
@@ -56,5 +57,33 @@ def update_compliance_settings(
         raise AppError(ErrorCode.NOT_FOUND, "Company not found.", status_code=404)
     for field, value in payload.model_dump(exclude_unset=True, exclude_none=True).items():
         setattr(company, field, value)
+    db.flush()
+    return _to_company_out(db, company)
+
+
+@router.patch("/{company_id}/industry-profile", response_model=CompanyOut)
+def update_industry_profile(
+    company_id: uuid.UUID,
+    payload: CompanyIndustryUpdate,
+    db: Session = Depends(get_db_tenant),
+    _user=Depends(require_permission("companies.edit")),
+) -> CompanyOut:
+    """ADR-010: profile switch is a single FK write -- the sidebar,
+    dashboard, and item-attribute rendering are all read live off
+    Company.industry_profile via useIndustryProfile(), so nothing else
+    needs to change for the switch to take effect. No data migration:
+    existing items/customers/etc. are untouched, only which
+    modules/widgets/terminology are shown changes. Audited automatically
+    by the existing companies audit trigger (old/new industry_profile_id
+    on the row), same as any other company edit."""
+    company = db.get(Company, company_id)
+    if company is None:
+        raise AppError(ErrorCode.NOT_FOUND, "Company not found.", status_code=404)
+    profile = get_profile_by_slug(db, payload.industry_slug)
+    if profile is None:
+        raise AppError(
+            ErrorCode.VALIDATION_ERROR, f"Unknown industry_slug: {payload.industry_slug!r}", status_code=422
+        )
+    company.industry_profile_id = profile.id
     db.flush()
     return _to_company_out(db, company)
