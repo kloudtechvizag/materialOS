@@ -23,6 +23,10 @@ export const ErrorCode = {
   PLAN_DOWNGRADE_BLOCKED: "PLAN_DOWNGRADE_BLOCKED",
   PAYMENT_REQUIRED: "PAYMENT_REQUIRED",
   INTERNAL_ERROR: "INTERNAL_ERROR",
+  // Frontend-only -- never sent by the backend (see lib/api.ts's fetch()
+  // catch block). Kept in the same enum so ErrorState/ERROR_RECOVERY_HINTS
+  // don't need a second code system for "the request never reached a server."
+  NETWORK_ERROR: "NETWORK_ERROR",
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -50,4 +54,5 @@ export const ERROR_RECOVERY_HINTS: Partial<Record<ErrorCode, string>> = {
   USAGE_LIMIT_EXCEEDED: "You've reached your plan's limit for this. Upgrade to add more.",
   PLAN_DOWNGRADE_BLOCKED: "You're over the target plan's limits. Reduce usage first.",
   PAYMENT_REQUIRED: "This workspace has no active subscription.",
+  NETWORK_ERROR: "Check Server Settings -- the address may be wrong, or the server may not be running.",
 };

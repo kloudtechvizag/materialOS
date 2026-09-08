@@ -63,6 +63,7 @@ import { PayrollPage } from "@/routes/people/PayrollPage";
 import { PayrollRunDetailPage } from "@/routes/people/PayrollRunDetailPage";
 import { PeopleOverviewPage } from "@/routes/people/PeopleOverviewPage";
 import { SalesOrderDetailPage } from "@/routes/SalesOrderDetailPage";
+import { ServerSettingsPage } from "@/routes/ServerSettingsPage";
 import { IndustryConfigPage } from "@/routes/settings/IndustryConfigPage";
 import { SignupPage } from "@/routes/SignupPage";
 import { SubscriptionInvoicesPage } from "@/routes/settings/SubscriptionInvoicesPage";
@@ -89,6 +90,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+      <Route path="/server-settings" element={<ServerSettingsPage />} />
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/portal/login" element={<PortalLoginPage />} />
 

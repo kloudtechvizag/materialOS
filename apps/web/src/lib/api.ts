@@ -1,7 +1,6 @@
+import { getApiBase } from "@/lib/serverConfig";
 import { useAuthStore } from "@/store/auth";
 import type { ApiErrorBody } from "@/lib/errorCodes";
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:58000/api/v1";
 
 export class ApiError extends Error {
   code: string;
@@ -38,11 +37,30 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
     if (token) headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_BASE}${path}`, {
-    method,
-    headers,
-    body: body === undefined ? undefined : isFormData ? (body as FormData) : JSON.stringify(body),
-  });
+  const apiBase = getApiBase();
+  let res: Response;
+  try {
+    res = await fetch(`${apiBase}${path}`, {
+      method,
+      headers,
+      body: body === undefined ? undefined : isFormData ? (body as FormData) : JSON.stringify(body),
+    });
+  } catch {
+    // fetch() itself throws (connection refused, DNS failure, offline)
+    // rather than resolving with a non-ok Response -- without this,
+    // that propagated as a raw, uncaught TypeError every caller's
+    // `err instanceof ApiError` check failed to recognize, falling
+    // back to a generic "Something went wrong"-style message that
+    // gave no hint the real problem was an unreachable server address.
+    throw new ApiError(0, {
+      error: {
+        code: "NETWORK_ERROR",
+        message: `Could not reach the MaterialOS server at ${apiBase}. Check your server settings.`,
+        details: { apiBase },
+        retryable: true,
+      },
+    });
+  }
 
   if (!res.ok) {
     let errorBody: ApiErrorBody;

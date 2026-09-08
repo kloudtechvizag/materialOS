@@ -96,6 +96,9 @@ export function LoginPage() {
               Sign in to the customer portal
             </Link>
           </p>
+          <p className="mt-3 text-center text-xs text-muted-foreground">
+            <Link to="/server-settings" className="underline-offset-4 hover:underline">Server settings</Link>
+          </p>
         </CardContent>
       </Card>
     </AuthLayout>
