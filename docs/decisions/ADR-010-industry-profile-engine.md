@@ -17,12 +17,37 @@ migration (`892b9921b956`) because it also needs to backfill every
 pre-existing `Company.industry_profile_id`. Every other profile
 (Retail, Pharmacy, and future ones) ships as a new entry in
 `services/industry.py`'s `PROFILE_DEFINITIONS`, seeded idempotently by
-`ensure_industry_profile_catalog` at app startup -- exactly
-`ensure_permission_catalog`'s existing pattern, chosen for consistency
-over inventing a second seeding mechanism. No admin UI to author new
-profiles from scratch exists yet; adding an industry is still a code
-change (a list entry), just a small, additive, config-shaped one --
-not a schema migration and not a scattered conditional.
+`ensure_industry_profile_catalog` -- exactly `ensure_permission_catalog`'s
+existing pattern, chosen for consistency over inventing a second
+seeding mechanism. No admin UI to author new profiles from scratch
+exists yet; adding an industry is still a code change (a list entry),
+just a small, additive, config-shaped one -- not a schema migration
+and not a scattered conditional.
+
+**Correction after a real CI failure**: this ADR originally said both
+catalogs are seeded "at app startup" and trusted that. That's wrong in
+general -- nothing guarantees `main.py`'s lifespan has run before the
+first request, and concretely does not hold for FastAPI's `TestClient`
+used without an explicit `with` block, which is how this entire test
+suite is written. Locally this was invisible: the dev Postgres
+container had already been seeded by many prior `docker-compose up`
+runs, so tests always found the catalogs already populated. CI runs
+`pytest` against a freshly migrated database with no API process ever
+having booted, and the industry-profile tests (being the first in this
+codebase to sign up over HTTP and then call a `require_permission`-
+gated endpoint) were the first to expose it: empty `Permission` table,
+`industry_profiles` holding only the migration-seeded
+`building_materials` row. Fixed by making both `ensure_*_catalog`
+functions flush-only (composable with any caller's transaction, not
+commit-then-walk-away) and calling them from three places: `main.py`'s
+lifespan (commits explicitly, since it owns that transaction), inside
+`tenant_signup.py` (folded into its existing commit -- a signup must
+be correct regardless of whether the process has "started up" in the
+traditional sense), and defensively inside `GET /industry-profiles`
+itself (the one endpoint reachable with zero other state, so it can't
+assume anything ran before it either). Verified against a genuinely
+fresh, never-booted Postgres instance (not the long-lived dev
+container), not just re-run against already-seeded data.
 
 **Config scope: whole-profile switch, no per-module override table.**
 A company gets exactly the modules/nav/dashboard/terminology its

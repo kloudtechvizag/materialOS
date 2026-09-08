@@ -16,6 +16,7 @@ async def lifespan(app: FastAPI):
     try:
         ensure_permission_catalog(db)
         ensure_industry_profile_catalog(db)
+        db.commit()  # both are flush-only; this lifespan owns the commit
     finally:
         db.close()
     yield

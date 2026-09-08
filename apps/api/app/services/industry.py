@@ -361,11 +361,16 @@ PROFILE_DEFINITIONS: list[dict] = [
 
 
 def ensure_industry_profile_catalog(db: Session) -> None:
+    """Flush-only, not commit -- same reasoning as
+    services/permissions.py::ensure_permission_catalog, which this
+    mirrors exactly: composable with any caller's own transaction
+    (main.py's lifespan, tenant_signup.py, or the industry-profiles
+    list endpoint), each of which commits on its own terms."""
     existing_slugs = {p.slug for p in db.execute(select(IndustryProfile)).scalars().all()}
     for definition in PROFILE_DEFINITIONS:
         if definition["slug"] not in existing_slugs:
             db.add(IndustryProfile(**definition))
-    db.commit()
+    db.flush()
 
 
 def get_profile_by_slug(db: Session, slug: str) -> IndustryProfile | None:

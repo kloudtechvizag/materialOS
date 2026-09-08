@@ -12,7 +12,8 @@ from app.schemas.tenant import TenantSignupRequest
 from app.security import hash_password
 from app.services.accounts import ensure_default_accounts
 from app.services.approvals import ensure_default_approval_rules
-from app.services.industry import get_profile_by_slug
+from app.services.industry import ensure_industry_profile_catalog, get_profile_by_slug
+from app.services.permissions import ensure_permission_catalog
 
 
 def _current_financial_year_code(today: date, start_month: int) -> tuple[str, date, date]:
@@ -35,13 +36,16 @@ def signup_tenant(db: Session, req: TenantSignupRequest) -> dict:
     if existing is not None:
         raise AppError(ErrorCode.CONFLICT, "Tenant slug already in use.", status_code=409)
 
-    # building_materials always exists -- the introducing migration seeds
-    # it directly (it also needs to backfill pre-existing companies).
-    # Any *new* profile added later purely via PROFILE_DEFINITIONS (no
-    # migration) relies on main.py's lifespan having run
-    # ensure_industry_profile_catalog at least once since it was added --
-    # same trust boundary this function already has with Permission (see
-    # `all_permissions` below, seeded the same way, never reseeded here).
+    # Both flush-only (see their docstrings) -- safe to call here and
+    # folded into this function's own commit below. Signup must not
+    # trust main.py's lifespan having run first: nothing guarantees
+    # that in general, and concretely does not hold for FastAPI
+    # TestClient without an explicit `with` block, which is most of
+    # this test suite -- CI runs pytest against a freshly migrated
+    # database with no API process ever having booted.
+    ensure_permission_catalog(db)
+    ensure_industry_profile_catalog(db)
+
     industry_profile = get_profile_by_slug(db, req.industry_slug)
     if industry_profile is None:
         raise AppError(ErrorCode.VALIDATION_ERROR, f"Unknown industry_slug: {req.industry_slug!r}", status_code=422)
