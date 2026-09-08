@@ -9,11 +9,11 @@ from app.models.notifications import Notification
 
 def notify(
     db: Session, *, tenant_id: uuid.UUID, notification_type: str, title: str, message: str,
-    entity_type: str | None = None, entity_id: uuid.UUID | None = None,
+    entity_type: str | None = None, entity_id: uuid.UUID | None = None, priority: str = "info",
 ) -> Notification:
     notification = Notification(
         tenant_id=tenant_id, notification_type=notification_type, title=title, message=message,
-        entity_type=entity_type, entity_id=entity_id,
+        entity_type=entity_type, entity_id=entity_id, priority=priority,
     )
     db.add(notification)
     db.flush()

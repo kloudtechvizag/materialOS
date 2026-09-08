@@ -118,6 +118,22 @@ push) and `desktop-release.yml` (real Windows `.msi` + Linux
 GitHub-hosted runners; ADR-012 has the detail on exactly how far local
 verification got and why it stopped there.
 
+**Backup, notifications, audit & platform operations** (see ADR-013)
+are shared services every module and every industry profile uses, not
+per-module features. Tenant-scoped logical backups (never a raw
+`pg_dump`, since RLS is what makes a "backup" mean "this tenant's own
+rows") run on demand or nightly via a Celery `beat` schedule, with a
+real FK-topological-sort restore that excludes company/branch/
+warehouse/user rows from the delete/re-insert cycle on purpose. The
+notification rule engine has one real delivery channel today (email);
+WhatsApp/SMS/push are named as deferred, same reasoning as ADR-007's
+compliance-gateway gap, not faked. The audit log (populated by a DB
+trigger since Slice 0) is now readable via `/audit-logs`, and
+`/command-center` aggregates live system health plus backup/
+notification/audit activity into the one operations screen the spec
+asked for. Live-verified end to end against the running containers,
+including two real bugs the unit suite didn't catch -- see ADR-013.
+
 ## Architecture
 
 ```
@@ -156,8 +172,11 @@ projects on the same machine: API on `58000`, web on `5173`, Postgres on
 
 ```bash
 docker-compose -p materialos up -d db redis
-docker-compose -p materialos up -d api worker web
+docker-compose -p materialos up -d api worker beat web
 ```
+
+`beat` runs the daily scheduled backup (ADR-013) -- `worker` alone
+executes jobs handed to it but never triggers the schedule on its own.
 
 Then either sign up a fresh workspace at http://localhost:5173/signup,
 or load the demo tenant:
@@ -301,5 +320,22 @@ Recorded in `docs/decisions/`:
   (`desktop-check` on every push, full installer builds in
   `desktop-release.yml` on tagged releases), which is also how most
   real Tauri projects ship anyway.
+- **ADR-013**: backup/recovery, notifications, audit, and system health
+  are shared platform services, not per-module features. Backups are
+  tenant-scoped logical dumps (RLS filters the `SELECT`s), never a raw
+  `pg_dump`; restore uses a real FK-topological sort (`pg_constraint`,
+  not the privilege-restricted `information_schema` view) and never
+  touches `companies`/`branches`/`warehouses`/`users`/roles. The
+  notification rule engine has one real delivery channel (email) with
+  WhatsApp/SMS/push deferred for the same "no fake credentials" reason
+  as ADR-007; failed deliveries land as visible, manually-retryable
+  dead letters rather than vanishing. Audit log exposure required no
+  new capture code (the DB trigger has run since Slice 0) -- only new
+  read endpoints. `GET /command-center` aggregates all of the above
+  into the one operations screen the spec asked for. Two real bugs
+  (an `information_schema` privilege gap, and two permission codes
+  never seeded into the catalog) were caught only by calling the live
+  endpoints against the running containers, not by the unit suite --
+  see the ADR for both.
 
 Read these before re-litigating any of them.

@@ -81,3 +81,8 @@ class Item(Base, UUIDPk, TenantMixin, TimestampMixin):
     # Landed cost without a Purchase module (that's Slice 3): manually
     # maintained, seeded from the importer's opening rate where known.
     standard_cost: Mapped[Decimal] = mapped_column(MONEY, nullable=False, default=0)
+    # ADR-013's "stock_low" notification rule trigger (dev.md §20's own
+    # example: "WHEN Stock < Reorder Level"). NULL = not tracked for
+    # this item, never treated as zero -- an unset reorder level must
+    # not silently fire a low-stock alert on every item that has none.
+    reorder_level: Mapped[Decimal | None] = mapped_column(MONEY, nullable=True)

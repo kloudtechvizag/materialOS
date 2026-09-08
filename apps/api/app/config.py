@@ -31,5 +31,20 @@ class Settings(BaseSettings):
     ewaybill_nic_client_id: str | None = None
     ewaybill_nic_client_secret: str | None = None
 
+    # ADR-013: unset in dev (services/backup.py falls back to a
+    # deterministic, non-secret dev-only key); required in production,
+    # where backups refuse to run without it rather than silently using
+    # the dev key.
+    backup_encryption_key: str | None = None
+    # ADR-013: unset means the email channel honestly reports
+    # "not configured" per delivery attempt rather than pretending to
+    # send -- same reasoning as the WhatsApp gap (ADR-009) and the
+    # e-invoice/e-way-bill gateways (ADR-007).
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    smtp_from_address: str | None = None
+
 
 settings = Settings()

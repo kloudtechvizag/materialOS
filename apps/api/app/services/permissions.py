@@ -33,9 +33,13 @@ RESOURCES = [
     "approvals",
     "pos",
     "printing",
+    "audit",
+    "backup",
+    "system_health",
+    "notification_rules",
 ]
 
-ACTIONS = ["view", "create", "edit", "delete", "approve", "export"]
+ACTIONS = ["view", "create", "edit", "delete", "approve", "export", "restore", "manage"]
 
 
 def ensure_permission_catalog(db: Session) -> None:

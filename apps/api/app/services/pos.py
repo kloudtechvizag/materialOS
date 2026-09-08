@@ -28,6 +28,7 @@ from app.models.tenant import Company
 from app.services.inventory import apply_ledger_movement
 from app.services.invoicing import _post_invoice_journal
 from app.services.money import round_invoice_total
+from app.services.notification_rules import check_stock_low_and_notify
 from app.services.numbering import next_document_number
 from app.services.receipts import record_receipt
 from app.services.sales_common import price_line, resolve_place_of_supply
@@ -160,6 +161,7 @@ def create_walk_in_sale(
             db, tenant_id=tenant_id, warehouse_id=warehouse_id, item_id=item.id, qty=line.qty,
             rate=priced.unit_price, invoice_id=invoice.id, user_id=user_id,
         )
+        check_stock_low_and_notify(db, tenant_id=tenant_id, warehouse_id=warehouse_id, item_id=item.id)
         db.add(
             InvoiceItem(
                 tenant_id=tenant_id, invoice_id=invoice.id, item_id=item.id, qty=line.qty, uom=line.uom,

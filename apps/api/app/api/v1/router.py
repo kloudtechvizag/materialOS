@@ -3,10 +3,13 @@ from fastapi import APIRouter
 from app.api.v1 import (
     accounting,
     approvals,
+    audit,
     auth,
+    backup,
     branches,
     catalog,
     collections,
+    command_center,
     companies,
     compliance,
     customers,
@@ -26,6 +29,7 @@ from app.api.v1 import (
     projects,
     sales,
     suppliers,
+    system_health,
     tally_export,
     tenants,
     users,
@@ -64,3 +68,7 @@ api_router.include_router(tally_export.router)
 api_router.include_router(portal.router)
 api_router.include_router(notifications.router)
 api_router.include_router(approvals.router)
+api_router.include_router(audit.router)
+api_router.include_router(system_health.router)
+api_router.include_router(backup.router)
+api_router.include_router(command_center.router)

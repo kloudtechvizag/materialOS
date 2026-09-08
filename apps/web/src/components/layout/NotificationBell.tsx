@@ -11,8 +11,16 @@ interface Notification {
   title: string;
   message: string;
   is_read: boolean;
+  priority: string;
   created_at: string;
 }
+
+const PRIORITY_DOT: Record<string, string> = {
+  critical: "bg-destructive",
+  warning: "bg-amber-500",
+  success: "bg-emerald-500",
+  info: "bg-muted-foreground",
+};
 
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
@@ -81,10 +89,13 @@ export function NotificationBell() {
                 )}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-medium">{n.title}</span>
+                  <span className="flex items-center gap-1.5 font-medium">
+                    <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", PRIORITY_DOT[n.priority] ?? PRIORITY_DOT.info)} />
+                    {n.title}
+                  </span>
                   {!n.is_read && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />}
                 </div>
-                <p className="mt-0.5 text-xs text-muted-foreground">{n.message}</p>
+                <p className="mt-0.5 pl-3 text-xs text-muted-foreground">{n.message}</p>
               </button>
             ))}
           </div>

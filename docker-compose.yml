@@ -57,6 +57,24 @@ services:
       - ./apps/api:/app
     command: celery -A app.celery_app worker --loglevel=info
 
+  # ADR-013: runs the daily backup schedule (celery_app.py's
+  # beat_schedule). The worker above only executes jobs it's handed --
+  # without this process, on-demand backups/notification retries still
+  # work, but nothing ever triggers the scheduled daily backup.
+  beat:
+    build:
+      context: ./apps/api
+    env_file:
+      - ./apps/api/.env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./apps/api:/app
+    command: celery -A app.celery_app beat --loglevel=info -s /tmp/celerybeat-schedule
+
   web:
     build:
       context: ./apps/web

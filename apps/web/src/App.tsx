@@ -49,6 +49,10 @@ import { ProductionBoardPage } from "@/routes/printing/ProductionBoardPage";
 import { NewQuotationPage } from "@/routes/quotations/NewQuotationPage";
 import { QuotationDetailPage } from "@/routes/quotations/QuotationDetailPage";
 import { QuotationsPage } from "@/routes/quotations/QuotationsPage";
+import { AuditLogPage } from "@/routes/operations/AuditLogPage";
+import { BackupPage } from "@/routes/operations/BackupPage";
+import { CommandCenterPage } from "@/routes/operations/CommandCenterPage";
+import { NotificationRulesPage } from "@/routes/operations/NotificationRulesPage";
 import { SalesOrderDetailPage } from "@/routes/SalesOrderDetailPage";
 import { IndustryConfigPage } from "@/routes/settings/IndustryConfigPage";
 import { SignupPage } from "@/routes/SignupPage";
@@ -148,6 +152,10 @@ export default function App() {
         <Route path="/approvals" element={<ApprovalsPage />} />
         <Route path="/company-settings" element={<CompanySettingsPage />} />
         <Route path="/settings/industry" element={<IndustryConfigPage />} />
+        <Route path="/operations" element={<CommandCenterPage />} />
+        <Route path="/operations/backups" element={<BackupPage />} />
+        <Route path="/operations/audit-log" element={<AuditLogPage />} />
+        <Route path="/operations/notification-rules" element={<NotificationRulesPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

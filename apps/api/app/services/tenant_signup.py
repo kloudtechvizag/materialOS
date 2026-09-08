@@ -13,6 +13,7 @@ from app.security import hash_password
 from app.services.accounts import ensure_default_accounts
 from app.services.approvals import ensure_default_approval_rules
 from app.services.industry import ensure_industry_profile_catalog, get_profile_by_slug
+from app.services.notification_rules import ensure_default_notification_rules
 from app.services.permissions import ensure_permission_catalog
 
 
@@ -105,6 +106,7 @@ def signup_tenant(db: Session, req: TenantSignupRequest) -> dict:
 
     ensure_default_accounts(db, tenant_id=tenant.id, company_id=company.id)
     ensure_default_approval_rules(db, tenant_id=tenant.id)
+    ensure_default_notification_rules(db, tenant_id=tenant.id)
 
     db.commit()
 
