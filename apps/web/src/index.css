@@ -43,3 +43,29 @@
     @apply bg-background text-foreground antialiased;
   }
 }
+
+/* Desktop-shell local printing (ADR-012): window.print() is a standard
+   web API, works in the Tauri webview exactly as in a browser, no
+   Tauri plugin needed. This is the generic "print just this one
+   element" trick -- hide everything, then re-reveal only the marked
+   print area and lift it out of the app shell's layout so the sidebar/
+   header don't leave blank space. Opt in per page via data-print-area,
+   not a page-specific stylesheet. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  [data-print-area], [data-print-area] * {
+    visibility: visible;
+  }
+  [data-print-area] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+  }
+  /* Controls inside a print area (e.g. the Print button itself)
+     shouldn't appear on the printed page. */
+  .no-print {
+    display: none !important;
+  }
+}

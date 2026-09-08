@@ -102,12 +102,27 @@ in ADR-011, not approximated.
 Slice 5 (the AI assistant) is not started; see the brief's Part F for
 what's next and why the order matters.
 
+A **desktop app** (`apps/desktop`, see ADR-012) wraps this same web app
+in a native Tauri shell for Windows/macOS/Linux -- no second frontend,
+`apps/web`'s existing build output is what ships. A4/local printing
+works today via the browser-standard `window.print()` (wired to
+`InvoiceDetailPage`); barcode scanners already work with zero code
+(they're keyboard-wedge HID devices, same as in any browser tab). Cash-
+drawer raw ESC/POS control and offline-first sync are named as
+deferred, not faked -- see ADR-012. **Not compiled in this dev
+sandbox** (no root to install Tauri's Linux prerequisite system
+libraries) -- `ci.yml`'s `desktop-check` job and `desktop-release.yml`
+(real installers on tagged releases) do the actual verified build on
+GitHub-hosted runners; ADR-012 has the detail on exactly how far local
+verification got and why it stopped there.
+
 ## Architecture
 
 ```
 apps/
-  api/    FastAPI + SQLAlchemy 2 + Alembic + PostgreSQL 16, RLS-isolated per tenant
-  web/    React + TypeScript (strict) + Vite + Tailwind + TanStack Query + Zustand
+  api/      FastAPI + SQLAlchemy 2 + Alembic + PostgreSQL 16, RLS-isolated per tenant
+  web/      React + TypeScript (strict) + Vite + Tailwind + TanStack Query + Zustand
+  desktop/  Tauri v2 shell around apps/web -- see ADR-012
 docs/
   decisions/   ADRs -- read these before changing a locked decision
 scripts/
@@ -159,6 +174,26 @@ Demo login: `owner@sribalaji-demo.example.com` / `demo-password-123`
 rendering a genuinely different sidebar/dashboard/item form per profile.
 
 API docs: http://localhost:58000/docs
+
+### Running the desktop app
+
+Needs the Rust toolchain (`rustup.rs`) plus Tauri's Linux prerequisite
+packages if developing on Linux
+(https://tauri.app/start/prerequisites/ -- `libwebkit2gtk-4.1-dev` and
+friends; not needed on Windows/macOS, which use the OS's built-in
+WebView2/WKWebView). With the API running (above):
+
+```bash
+cd apps/desktop
+npm install
+npm run dev    # launches the app window, auto-starts apps/web's dev server
+```
+
+`npm run build` produces a real installer (`.msi`/`.dmg`/`.deb`/
+`.AppImage` depending on platform) in `apps/desktop/src-tauri/target/release/bundle/`.
+See ADR-012 for what desktop-specific capability exists today (local
+printing) versus what's deferred (cash-drawer/scale device access,
+offline-first sync) and why.
 
 ## Database migrations
 
@@ -251,5 +286,18 @@ Recorded in `docs/decisions/`:
   required rule -- production blocked until the latest artwork version
   is approved -- is actually enforced in `update_job_status()`, not
   just documented.
+- **ADR-012**: the desktop app (`apps/desktop`) is a Tauri v2 shell
+  around `apps/web`'s existing build output, not a second frontend.
+  Real capability: `window.print()` for A4/local printing (a standard
+  web API, zero Tauri plugin code) and barcode scanners (already work,
+  zero code -- they're keyboard-wedge HID devices). Deferred: raw
+  ESC/POS cash-drawer control, weighing-scale device access, offline-
+  first sync. Not locally compiled in this dev sandbox (no root for
+  Tauri's Linux system-library prerequisites) -- `rustup`/`cargo`
+  install and resolve real dependencies before hitting that wall, and
+  the actual verified compile/link/bundle happens in CI
+  (`desktop-check` on every push, full installer builds in
+  `desktop-release.yml` on tagged releases), which is also how most
+  real Tauri projects ship anyway.
 
 Read these before re-litigating any of them.

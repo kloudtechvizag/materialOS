@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
+import { Printer } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -110,42 +111,54 @@ export function InvoiceDetailPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">{invoice.number}</h1>
-        <p className="text-sm text-muted-foreground">{invoice.invoice_date} · Place of supply: {invoice.place_of_supply_state}</p>
-      </div>
-
-      <Card>
-        <CardHeader><CardTitle className="text-base">Lines</CardTitle></CardHeader>
-        <CardContent>
-          <table className="w-full text-sm">
-            <thead className="text-left text-muted-foreground">
-              <tr><th className="pb-2">Qty</th><th className="pb-2">Rate</th><th className="pb-2">Taxable</th><th className="pb-2">CGST</th><th className="pb-2">SGST</th><th className="pb-2">IGST</th><th className="pb-2">Total</th></tr>
-            </thead>
-            <tbody>
-              {invoice.items.map((line) => (
-                <tr key={line.id} className="border-t border-border">
-                  <td className="py-2">{line.qty} {line.uom}</td>
-                  <td className="py-2">{formatINR(line.rate)}</td>
-                  <td className="py-2">{formatINR(line.taxable_value)}</td>
-                  <td className="py-2 text-muted-foreground">{formatINR(line.cgst_amount)}</td>
-                  <td className="py-2 text-muted-foreground">{formatINR(line.sgst_amount)}</td>
-                  <td className="py-2 text-muted-foreground">{formatINR(line.igst_amount)}</td>
-                  <td className="py-2 font-medium">{formatINR(line.line_total)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <div className="mt-4 flex justify-end">
-            <div className="w-48 space-y-1 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{formatINR(invoice.subtotal)}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Tax</span><span>{formatINR(invoice.tax_total)}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Round off</span><span>{formatINR(invoice.round_off)}</span></div>
-              <div className="flex justify-between border-t border-border pt-1 font-semibold"><span>Total</span><span>{formatINR(invoice.total)}</span></div>
-            </div>
+      <div data-print-area className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold">{invoice.number}</h1>
+            <p className="text-sm text-muted-foreground">{invoice.invoice_date} · Place of supply: {invoice.place_of_supply_state}</p>
           </div>
-        </CardContent>
-      </Card>
+          {/* window.print() -- standard web API, opens the OS print dialog
+              against whatever a real (A4 or thermal-as-OS-printer) printer
+              is configured; works identically in the Tauri desktop shell
+              (ADR-012) with no extra code. Hidden from the printed output
+              itself via the .no-print class further down. */}
+          <Button variant="outline" size="sm" className="no-print" onClick={() => window.print()}>
+            <Printer className="h-4 w-4" /> Print
+          </Button>
+        </div>
+
+        <Card>
+          <CardHeader><CardTitle className="text-base">Lines</CardTitle></CardHeader>
+          <CardContent>
+            <table className="w-full text-sm">
+              <thead className="text-left text-muted-foreground">
+                <tr><th className="pb-2">Qty</th><th className="pb-2">Rate</th><th className="pb-2">Taxable</th><th className="pb-2">CGST</th><th className="pb-2">SGST</th><th className="pb-2">IGST</th><th className="pb-2">Total</th></tr>
+              </thead>
+              <tbody>
+                {invoice.items.map((line) => (
+                  <tr key={line.id} className="border-t border-border">
+                    <td className="py-2">{line.qty} {line.uom}</td>
+                    <td className="py-2">{formatINR(line.rate)}</td>
+                    <td className="py-2">{formatINR(line.taxable_value)}</td>
+                    <td className="py-2 text-muted-foreground">{formatINR(line.cgst_amount)}</td>
+                    <td className="py-2 text-muted-foreground">{formatINR(line.sgst_amount)}</td>
+                    <td className="py-2 text-muted-foreground">{formatINR(line.igst_amount)}</td>
+                    <td className="py-2 font-medium">{formatINR(line.line_total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="mt-4 flex justify-end">
+              <div className="w-48 space-y-1 text-sm">
+                <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{formatINR(invoice.subtotal)}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Tax</span><span>{formatINR(invoice.tax_total)}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Round off</span><span>{formatINR(invoice.round_off)}</span></div>
+                <div className="flex justify-between border-t border-border pt-1 font-semibold"><span>Total</span><span>{formatINR(invoice.total)}</span></div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       <Card>
         <CardHeader><CardTitle className="text-base">Compliance</CardTitle></CardHeader>

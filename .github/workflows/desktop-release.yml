@@ -1,0 +1,76 @@
+name: desktop-release
+
+# ADR-012: builds real, installable Windows/macOS/Linux binaries via
+# the official tauri-apps/tauri-action, one native runner per target
+# (Tauri apps are not cross-compiled -- Windows needs WebView2 on a
+# Windows runner, macOS needs WKWebView on a macOS runner). Triggered
+# on desktop-v* tags rather than every push: this is a slow job
+# (fresh Rust dependency compile per OS) and produces install artifacts,
+# unlike ci.yml's desktop-check, which just proves it compiles.
+#
+# Publishing is unsigned by default (no code-signing certificates are
+# configured in this repo's secrets) -- Windows SmartScreen and macOS
+# Gatekeeper will warn on an unsigned build. That's an intentional gap,
+# not an oversight: faking a signature or skipping the warning isn't
+# possible without a real certificate, and this workflow doesn't
+# pretend otherwise. Add TAURI_SIGNING_PRIVATE_KEY (updater signing)
+# and platform code-signing secrets when this is ready to distribute
+# outside the team.
+
+on:
+  push:
+    tags:
+      - "desktop-v*"
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            args: "--target aarch64-apple-darwin"
+          - platform: macos-latest
+            args: "--target x86_64-apple-darwin"
+          - platform: ubuntu-22.04
+            args: ""
+          - platform: windows-latest
+            args: ""
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install web dependencies
+        run: npm ci
+        working-directory: apps/web
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri
+
+      - name: Install Tauri Linux build dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libjavascriptcoregtk-4.1-dev libsoup-3.0-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: apps/desktop
+          tagName: ${{ github.ref_name }}
+          releaseName: "MaterialOS Desktop ${{ github.ref_name }}"
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}

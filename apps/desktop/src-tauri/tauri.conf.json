@@ -1,0 +1,42 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "MaterialOS",
+  "version": "0.1.0",
+  "identifier": "com.materialos.app",
+  "build": {
+    "beforeDevCommand": "npm --prefix ../../web run dev",
+    "beforeBuildCommand": "npm --prefix ../../web run build",
+    "devUrl": "http://localhost:5173",
+    "frontendDist": "../../web/dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "MaterialOS",
+        "width": 1360,
+        "height": 860,
+        "minWidth": 1024,
+        "minHeight": 640
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "publisher": "MaterialOS",
+    "category": "Business",
+    "shortDescription": "AI-powered building materials business operating system",
+    "longDescription": "MaterialOS desktop client -- the same web application (React + TypeScript, apps/web) wrapped in a native shell for Windows, macOS, and Linux. See docs/decisions/ADR-012 for what desktop-specific capability this build does and does not add.",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}

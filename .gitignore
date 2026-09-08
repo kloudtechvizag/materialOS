@@ -19,3 +19,7 @@ storage_data/
 !apps/web/.env.example
 .DS_Store
 *.log
+
+# Rust/Tauri
+apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/gen/

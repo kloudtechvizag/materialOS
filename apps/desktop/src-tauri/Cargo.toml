@@ -1,0 +1,28 @@
+[package]
+name = "materialos-desktop"
+version = "0.1.0"
+description = "MaterialOS desktop client -- native shell around apps/web"
+authors = ["MaterialOS"]
+edition = "2021"
+
+[lib]
+# Tauri v2 convention: main.rs stays a thin binary entrypoint, lib.rs
+# holds the actual app builder -- this is what lets the same setup code
+# be reused by a future mobile target without duplicating it.
+name = "materialos_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true
