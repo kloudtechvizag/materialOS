@@ -50,6 +50,17 @@ jobs:
         run: npm ci
         working-directory: apps/web
 
+      - name: Install desktop (Tauri CLI) dependencies
+        # tauri-action doesn't install this for you -- it just runs
+        # `npm run tauri build` in projectPath and expects the `tauri`
+        # binary (from @tauri-apps/cli, apps/desktop's own
+        # package.json) to already be on PATH via node_modules/.bin.
+        # Without this step that script fails immediately with
+        # "'tauri' is not recognized" on Windows / "command not found"
+        # on Linux, before Rust or the frontend build ever run.
+        run: npm ci
+        working-directory: apps/desktop
+
       - uses: dtolnay/rust-toolchain@stable
 
       - uses: Swatinem/rust-cache@v2
