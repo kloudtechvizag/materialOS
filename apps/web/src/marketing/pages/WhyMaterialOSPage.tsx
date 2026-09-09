@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Seo } from "@/components/marketing/Seo";
 import { Breadcrumbs, breadcrumbJsonLd } from "@/components/marketing/Breadcrumbs";
+import { paletteColor } from "@/marketing/palette";
 
 const BREADCRUMB_ITEMS = [{ label: "Home", href: "/" }, { label: "Why MaterialOS" }];
 
@@ -74,15 +75,20 @@ export function WhyMaterialOSPage() {
 
       <section className="mt-12">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {PILLARS.map((pillar) => (
-            <Card key={pillar.title}>
-              <CardContent className="p-6">
-                <pillar.icon className="h-6 w-6 text-[#7C3AED]" />
-                <h2 className="mt-3 font-semibold">{pillar.title}</h2>
-                <p className="mt-2 text-sm text-muted-foreground">{pillar.description}</p>
-              </CardContent>
-            </Card>
-          ))}
+          {PILLARS.map((pillar, i) => {
+            const color = paletteColor(i);
+            return (
+              <Card key={pillar.title} className="border-[#E2E8F0]">
+                <CardContent className="p-6">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-lg" style={{ backgroundColor: color.bg }}>
+                    <pillar.icon className="h-5 w-5" style={{ color: color.fg }} />
+                  </div>
+                  <h2 className="mt-4 font-semibold">{pillar.title}</h2>
+                  <p className="mt-2 text-sm text-muted-foreground">{pillar.description}</p>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </section>
 

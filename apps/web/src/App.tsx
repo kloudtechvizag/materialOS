@@ -111,7 +111,13 @@ function RequirePortalAuth({ children }: { children: React.ReactNode }) {
  * marketing homepage instead of being redirected to /login. */
 function RootRoute() {
   const accessToken = useAuthStore((s) => s.accessToken);
-  if (accessToken) return <DashboardPage />;
+  if (accessToken) {
+    return (
+      <AppShell>
+        <DashboardPage />
+      </AppShell>
+    );
+  }
   return (
     <MarketingLayout>
       <MarketingHomePage />

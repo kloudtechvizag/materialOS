@@ -12,7 +12,7 @@ import { useAuthStore } from "@/store/auth";
 import { useCommandPaletteStore } from "@/store/commandPalette";
 import { useSidebarStore } from "@/store/sidebar";
 
-export function AppShell() {
+export function AppShell({ children }: { children?: React.ReactNode } = {}) {
   const navigate = useNavigate();
   const clearSession = useAuthStore((s) => s.clearSession);
   const tenantSlug = useAuthStore((s) => s.tenantSlug);
@@ -70,7 +70,7 @@ export function AppShell() {
           </div>
         </header>
         <main className="flex-1 overflow-auto p-4 md:p-6">
-          <Outlet />
+          {children ?? <Outlet />}
         </main>
       </div>
       <CommandPalette />

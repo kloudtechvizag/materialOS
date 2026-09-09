@@ -6,8 +6,11 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Seo } from "@/components/marketing/Seo";
+import { BrowserFrame } from "@/components/marketing/BrowserFrame";
 import { Breadcrumbs, breadcrumbJsonLd } from "@/components/marketing/Breadcrumbs";
 import { FEATURES } from "@/marketing/content/features";
+import { FEATURE_ICONS } from "@/marketing/icons";
+import { paletteColor } from "@/marketing/palette";
 
 const BREADCRUMB_ITEMS = [{ label: "Home", href: "/" }, { label: "Product" }];
 
@@ -49,32 +52,48 @@ export function ProductOverviewPage() {
         </p>
       </header>
 
-      <section className="mt-12">
+      <section className="mt-10">
+        <BrowserFrame src="/screenshots/dashboard.webp" alt="MaterialOS dashboard" />
+      </section>
+
+      <section className="mt-14">
         <h2 className="text-xl font-semibold">Core modules</h2>
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map((feature) => (
-            <Link key={feature.slug} to={`/features/${feature.slug}`}>
-              <Card className="h-full transition-shadow hover:shadow-md">
-                <CardContent className="p-6">
-                  <h3 className="font-semibold">{feature.name}</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">{feature.solutionSummary}</p>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+          {FEATURES.map((feature, i) => {
+            const Icon = FEATURE_ICONS[feature.slug];
+            const color = paletteColor(i);
+            return (
+              <Link key={feature.slug} to={`/features/${feature.slug}`}>
+                <Card className="h-full border-[#E2E8F0] transition-shadow hover:shadow-md">
+                  <CardContent className="p-6">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-lg" style={{ backgroundColor: color.bg }}>
+                      <Icon className="h-5 w-5" style={{ color: color.fg }} />
+                    </div>
+                    <h3 className="mt-4 font-semibold">{feature.name}</h3>
+                    <p className="mt-2 text-sm text-muted-foreground">{feature.solutionSummary}</p>
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       </section>
 
-      <section className="mt-12">
+      <section className="mt-14">
         <h2 className="text-xl font-semibold">Also included</h2>
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {MORE_MODULES.map((module) => (
-            <div key={module.name} className="rounded-lg border border-[#E2E8F0] bg-white p-5">
-              <module.icon className="h-5 w-5 text-[#7C3AED]" />
-              <h3 className="mt-3 text-sm font-semibold">{module.name}</h3>
-              <p className="mt-1.5 text-sm text-muted-foreground">{module.description}</p>
-            </div>
-          ))}
+          {MORE_MODULES.map((module, i) => {
+            const color = paletteColor(i + 3);
+            return (
+              <div key={module.name} className="rounded-lg border border-[#E2E8F0] bg-white p-5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ backgroundColor: color.bg }}>
+                  <module.icon className="h-5 w-5" style={{ color: color.fg }} />
+                </div>
+                <h3 className="mt-3 text-sm font-semibold">{module.name}</h3>
+                <p className="mt-1.5 text-sm text-muted-foreground">{module.description}</p>
+              </div>
+            );
+          })}
         </div>
       </section>
 

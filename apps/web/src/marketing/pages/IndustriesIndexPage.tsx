@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Seo } from "@/components/marketing/Seo";
 import { Breadcrumbs, breadcrumbJsonLd } from "@/components/marketing/Breadcrumbs";
 import { ALL_INDUSTRIES, getIndustryBySlug } from "@/marketing/content/industries";
+import { CATEGORY_ICONS, DEFAULT_ICON } from "@/marketing/icons";
+import { paletteColor } from "@/marketing/palette";
 
 const BREADCRUMB_ITEMS = [{ label: "Home", href: "/" }, { label: "Industries" }];
 
@@ -29,15 +31,20 @@ export function IndustriesIndexPage() {
       </p>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {ALL_INDUSTRIES.map((industry) => {
+        {ALL_INDUSTRIES.map((industry, i) => {
           const content = getIndustryBySlug(industry.slug);
+          const Icon = CATEGORY_ICONS[industry.category] ?? DEFAULT_ICON;
+          const color = paletteColor(i);
           const card = (
-            <Card className={content ? "h-full transition-shadow hover:shadow-md" : "h-full opacity-60"}>
+            <Card className={content ? "h-full border-[#E2E8F0] transition-shadow hover:shadow-md" : "h-full border-[#E2E8F0] opacity-60"}>
               <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <h2 className="font-semibold">{industry.name}</h2>
+                <div className="flex items-start justify-between">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-lg" style={{ backgroundColor: color.bg }}>
+                    <Icon className="h-5 w-5" style={{ color: color.fg }} />
+                  </div>
                   {!content && <Badge variant="outline" className="text-xs">Coming soon</Badge>}
                 </div>
+                <h2 className="mt-4 font-semibold">{industry.name}</h2>
                 <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">{industry.category}</p>
               </CardContent>
             </Card>

@@ -3,15 +3,27 @@ import { ArrowRight, Check } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Seo } from "@/components/marketing/Seo";
+import { BrowserFrame } from "@/components/marketing/BrowserFrame";
 import { Breadcrumbs, breadcrumbJsonLd } from "@/components/marketing/Breadcrumbs";
 import { Faq, faqJsonLd } from "@/components/marketing/Faq";
 import { getFeatureBySlug } from "@/marketing/content/features";
 import { getIndustryBySlug } from "@/marketing/content/industries";
 import { NotFoundPage } from "./NotFoundPage";
 
+/** Real screenshots (apps/web/public/screenshots/*, captured from the
+ * actual running app) for the features where one exists -- not every
+ * feature has a clean one yet, so this stays a partial map rather than
+ * requiring one per feature. */
+const FEATURE_SCREENSHOTS: Record<string, string> = {
+  "inventory-management": "/screenshots/inventory.webp",
+  "sales-quotation-management": "/screenshots/quotations.webp",
+  "credit-management": "/screenshots/customers.webp",
+  "report-builder": "/screenshots/reports.webp",
+};
+
 /** Reusable template for every flagship feature page (§108): Problem /
  * Solution / How It Works / Benefits / Workflow / Industries / FAQs /
- * CTA. No screenshots (no real capture pipeline exists). */
+ * CTA. */
 export function FeaturePage() {
   const { slug } = useParams<{ slug: string }>();
   const feature = slug ? getFeatureBySlug(slug) : undefined;
@@ -43,6 +55,12 @@ export function FeaturePage() {
           </Button>
         </div>
       </header>
+
+      {FEATURE_SCREENSHOTS[feature.slug] && (
+        <div className="mt-10">
+          <BrowserFrame src={FEATURE_SCREENSHOTS[feature.slug]} alt={`${feature.name} in MaterialOS`} />
+        </div>
+      )}
 
       <section className="mt-12">
         <h2 className="text-xl font-semibold">The problem</h2>

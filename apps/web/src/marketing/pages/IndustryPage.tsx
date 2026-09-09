@@ -3,17 +3,28 @@ import { ArrowRight, Check } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Seo } from "@/components/marketing/Seo";
+import { BrowserFrame } from "@/components/marketing/BrowserFrame";
 import { Breadcrumbs, breadcrumbJsonLd } from "@/components/marketing/Breadcrumbs";
 import { Faq, faqJsonLd } from "@/components/marketing/Faq";
 import { getFeatureBySlug } from "@/marketing/content/features";
 import { getIndustryBySlug } from "@/marketing/content/industries";
 import { NotFoundPage } from "./NotFoundPage";
 
+/** Real screenshots, only where the actual demo data genuinely matches
+ * the industry's own claims (building_materials' demo tenant really is
+ * a cement/steel/paint dealer) -- not force-fit onto industries whose
+ * specific claims (e.g. pharmacy's batch/expiry) this generic item list
+ * doesn't actually demonstrate. */
+const INDUSTRY_SCREENSHOTS: Record<string, string> = {
+  building_materials: "/screenshots/inventory.webp",
+};
+
 /** Reusable template for every flagship industry landing page (§106):
  * Hero / Problems / Solution / Capabilities / Workflow / Use Cases /
  * FAQs / Related / CTA. Dashboard-Preview and AI-Features sections from
  * the spec's own example are deliberately omitted -- no real screenshot
- * pipeline exists, and the AI layer is out of scope right now. */
+ * pipeline exists for a per-industry render, and the AI layer is out of
+ * scope right now. */
 export function IndustryPage() {
   const { slug } = useParams<{ slug: string }>();
   const industry = slug ? getIndustryBySlug(slug) : undefined;
@@ -47,6 +58,12 @@ export function IndustryPage() {
           </Button>
         </div>
       </header>
+
+      {INDUSTRY_SCREENSHOTS[industry.slug] && (
+        <div className="mt-10">
+          <BrowserFrame src={INDUSTRY_SCREENSHOTS[industry.slug]} alt={`${industry.name} inventory in MaterialOS`} />
+        </div>
+      )}
 
       <section className="mt-12">
         <h2 className="text-xl font-semibold">The problems {industry.name.toLowerCase()} businesses run into</h2>
