@@ -31,6 +31,7 @@ import {
   UploadCloud,
   Users,
   Wallet,
+  Webhook,
 } from "lucide-react";
 
 export interface NavigationItem {
@@ -151,6 +152,7 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
       { id: "industry-config", label: "Industry", href: "/settings/industry", icon: SlidersHorizontal },
       { id: "subscription", label: "Subscription", href: "/settings/subscription", icon: CreditCard, permission: "subscription.view" },
       { id: "receipt-settings", label: "Receipts", href: "/settings/receipts", icon: Printer, permission: "receipts.manage" },
+      { id: "webhooks", label: "Webhooks", href: "/settings/webhooks", icon: Webhook, permission: "webhooks.view" },
     ],
   },
 ];

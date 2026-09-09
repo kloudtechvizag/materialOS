@@ -20,6 +20,7 @@ from app.services.accounts import get_account
 from app.services.money import round_invoice_total
 from app.services.numbering import next_document_number
 from app.services.sales_common import resolve_place_of_supply
+from app.services.webhooks import emit_event
 from app.tax.resolve import resolve_tax
 
 
@@ -130,6 +131,11 @@ def create_invoice_from_challan(
 
     order.status = "invoiced"
     db.flush()
+
+    emit_event(
+        db, tenant_id=tenant_id, event_type="invoice.created",
+        payload={"id": str(invoice.id), "number": invoice.number, "customer_id": str(invoice.customer_id), "total": str(invoice.total)},
+    )
     return invoice
 
 

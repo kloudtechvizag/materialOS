@@ -39,6 +39,7 @@ from app.api.v1 import (
     search,
     serial,
     subscription,
+    webhooks,
     suppliers,
     system_health,
     tally_export,
@@ -94,3 +95,4 @@ api_router.include_router(payroll.router)
 api_router.include_router(receipts.router)
 api_router.include_router(search.router)
 api_router.include_router(serial.router)
+api_router.include_router(webhooks.router)

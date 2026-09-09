@@ -16,7 +16,7 @@ celery_app = Celery(
     "materialos",
     broker=settings.redis_url,
     backend=settings.redis_url,
-    include=["app.services.backup_tasks", "app.services.notification_delivery", "app.services.billing_tasks"],
+    include=["app.services.backup_tasks", "app.services.notification_delivery", "app.services.billing_tasks", "app.services.webhooks"],
 )
 celery_app.conf.update(task_serializer="json", accept_content=["json"], result_serializer="json")
 

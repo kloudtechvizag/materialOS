@@ -72,6 +72,7 @@ import { SignupPage } from "@/routes/SignupPage";
 import { SubscriptionInvoicesPage } from "@/routes/settings/SubscriptionInvoicesPage";
 import { SubscriptionPage } from "@/routes/settings/SubscriptionPage";
 import { ReceiptSettingsPage } from "@/routes/settings/ReceiptSettingsPage";
+import { WebhooksPage } from "@/routes/settings/WebhooksPage";
 import { SubscriptionPaymentsPage } from "@/routes/settings/SubscriptionPaymentsPage";
 import { UsersPage } from "@/routes/UsersPage";
 import { useAuthStore } from "@/store/auth";
@@ -201,6 +202,7 @@ export default function App() {
         <Route path="/settings/subscription/invoices" element={<SubscriptionInvoicesPage />} />
         <Route path="/settings/subscription/payments" element={<SubscriptionPaymentsPage />} />
         <Route path="/settings/receipts" element={<ReceiptSettingsPage />} />
+        <Route path="/settings/webhooks" element={<WebhooksPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

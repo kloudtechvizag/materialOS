@@ -8,6 +8,7 @@ from app.models.sales import Quotation, QuotationItem, SalesOrder, SalesOrderIte
 from app.services.approvals import check_credit_with_approval
 from app.services.inventory import reserve_stock
 from app.services.numbering import next_document_number
+from app.services.webhooks import emit_event
 
 
 def create_sales_order_from_quotation(
@@ -92,4 +93,9 @@ def create_sales_order_from_quotation(
     order.status = "reserved"
     quotation.status = "converted"
     db.flush()
+
+    emit_event(
+        db, tenant_id=tenant_id, event_type="sales_order.created",
+        payload={"id": str(order.id), "number": order.number, "customer_id": str(order.customer_id), "total": str(order.total)},
+    )
     return order
