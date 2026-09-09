@@ -3,8 +3,10 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
 const NAV_LINKS = [
+  { label: "Product", href: "/product" },
   { label: "Industries", href: "/industries" },
   { label: "Features", href: "/features" },
+  { label: "Why MaterialOS", href: "/why-materialos" },
   { label: "Pricing", href: "/pricing" },
 ];
 
@@ -12,8 +14,11 @@ const FOOTER_SECTIONS = [
   {
     title: "Product",
     links: [
+      { label: "Product overview", href: "/product" },
       { label: "Industries", href: "/industries" },
       { label: "Features", href: "/features" },
+      { label: "Why MaterialOS", href: "/why-materialos" },
+      { label: "Compare", href: "/compare" },
       { label: "Pricing", href: "/pricing" },
     ],
   },

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Seo } from "@/components/marketing/Seo";
 import { apiFetch } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import type { PlanOut } from "@/lib/subscription";
@@ -69,6 +70,11 @@ export function PricingPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-16 px-6 py-16">
+      <Seo
+        title="Pricing -- Plans That Grow With Your Business"
+        description="Transparent monthly and yearly pricing for MaterialOS -- start free, add capabilities as your business grows, no forced enterprise plan."
+        path="/pricing"
+      />
       {/* Hero */}
       <div className="space-y-4 text-center">
         <h1 className="text-4xl font-semibold tracking-tight">One intelligent operating system for every business.</h1>

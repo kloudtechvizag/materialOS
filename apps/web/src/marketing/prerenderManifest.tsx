@@ -3,12 +3,15 @@ import { ALL_INDUSTRIES, INDUSTRIES } from "@/marketing/content/industries";
 import { FEATURES } from "@/marketing/content/features";
 import { AboutPage } from "@/marketing/pages/AboutPage";
 import { BookDemoPage } from "@/marketing/pages/BookDemoPage";
+import { ComparePage } from "@/marketing/pages/ComparePage";
 import { ContactPage } from "@/marketing/pages/ContactPage";
 import { FeaturePage } from "@/marketing/pages/FeaturePage";
 import { FeaturesIndexPage } from "@/marketing/pages/FeaturesIndexPage";
 import { HomePage } from "@/marketing/pages/HomePage";
 import { IndustriesIndexPage } from "@/marketing/pages/IndustriesIndexPage";
 import { IndustryPage } from "@/marketing/pages/IndustryPage";
+import { ProductOverviewPage } from "@/marketing/pages/ProductOverviewPage";
+import { WhyMaterialOSPage } from "@/marketing/pages/WhyMaterialOSPage";
 
 export interface PrerenderEntry {
   /** Concrete URL to render/write, e.g. "/industries/pharmacy". */
@@ -39,9 +42,17 @@ export const PRERENDER_ENTRIES: PrerenderEntry[] = [
   ...FEATURES.map((feature) => ({
     path: `/features/${feature.slug}`, routePath: "/features/:slug", element: wrap(<FeaturePage />),
   })),
+  { path: "/why-materialos", routePath: "/why-materialos", element: wrap(<WhyMaterialOSPage />) },
+  { path: "/compare", routePath: "/compare", element: wrap(<ComparePage />) },
+  { path: "/product", routePath: "/product", element: wrap(<ProductOverviewPage />) },
   { path: "/about", routePath: "/about", element: wrap(<AboutPage />) },
   { path: "/contact", routePath: "/contact", element: wrap(<ContactPage />) },
   { path: "/book-demo", routePath: "/book-demo", element: wrap(<BookDemoPage />) },
+  // /pricing is deliberately NOT prerendered -- it renders live plan/
+  // addon data via react-query; baking today's prices into a static
+  // file would go stale the moment an admin changes a price. It still
+  // gets <Seo> client-side (see routes/PricingPage.tsx) and is listed
+  // in the sitemap via scripts/prerender.mjs's extraPublicPaths.
 ];
 
 export { ALL_INDUSTRIES };

@@ -6,6 +6,7 @@ import { MarketingLayout } from "@/components/marketing/MarketingLayout";
 import { FeatureGate } from "@/components/billing/FeatureGate";
 import { AboutPage as MarketingAboutPage } from "@/marketing/pages/AboutPage";
 import { BookDemoPage } from "@/marketing/pages/BookDemoPage";
+import { ComparePage } from "@/marketing/pages/ComparePage";
 import { ContactPage as MarketingContactPage } from "@/marketing/pages/ContactPage";
 import { FeaturePage as MarketingFeaturePage } from "@/marketing/pages/FeaturePage";
 import { FeaturesIndexPage } from "@/marketing/pages/FeaturesIndexPage";
@@ -13,6 +14,8 @@ import { HomePage as MarketingHomePage } from "@/marketing/pages/HomePage";
 import { IndustryPage as MarketingIndustryPage } from "@/marketing/pages/IndustryPage";
 import { IndustriesIndexPage } from "@/marketing/pages/IndustriesIndexPage";
 import { NotFoundPage } from "@/marketing/pages/NotFoundPage";
+import { ProductOverviewPage } from "@/marketing/pages/ProductOverviewPage";
+import { WhyMaterialOSPage } from "@/marketing/pages/WhyMaterialOSPage";
 import { ApprovalsPage } from "@/routes/ApprovalsPage";
 import { BooksPage } from "@/routes/BooksPage";
 import { BranchesPage } from "@/routes/BranchesPage";
@@ -122,7 +125,7 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/server-settings" element={<ServerSettingsPage />} />
-      <Route path="/pricing" element={<PricingPage />} />
+      <Route path="/pricing" element={<MarketingLayout><PricingPage /></MarketingLayout>} />
       <Route path="/portal/login" element={<PortalLoginPage />} />
 
       <Route path="/" element={<RootRoute />} />
@@ -130,6 +133,9 @@ export default function App() {
       <Route path="/industries/:slug" element={<MarketingLayout><MarketingIndustryPage /></MarketingLayout>} />
       <Route path="/features" element={<MarketingLayout><FeaturesIndexPage /></MarketingLayout>} />
       <Route path="/features/:slug" element={<MarketingLayout><MarketingFeaturePage /></MarketingLayout>} />
+      <Route path="/why-materialos" element={<MarketingLayout><WhyMaterialOSPage /></MarketingLayout>} />
+      <Route path="/compare" element={<MarketingLayout><ComparePage /></MarketingLayout>} />
+      <Route path="/product" element={<MarketingLayout><ProductOverviewPage /></MarketingLayout>} />
       <Route path="/about" element={<MarketingLayout><MarketingAboutPage /></MarketingLayout>} />
       <Route path="/contact" element={<MarketingLayout><MarketingContactPage /></MarketingLayout>} />
       <Route path="/book-demo" element={<MarketingLayout><BookDemoPage /></MarketingLayout>} />
