@@ -77,7 +77,10 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
         <div className="pointer-events-none absolute left-1/3 top-1/3 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-500/10 blur-[100px]" />
 
         <div className="relative flex h-full flex-col justify-between p-10 lg:p-12">
-          <img src="/brand/logo-dark.svg" alt="MaterialOS" className="h-10 w-auto" />
+          <div className="flex items-center gap-2.5">
+            <img src="/brand/symbol.svg" alt="" className="h-10 w-10" />
+            <span className="text-2xl font-semibold text-white">MaterialOS</span>
+          </div>
 
           <NodeNetwork />
 

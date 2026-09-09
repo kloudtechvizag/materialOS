@@ -47,9 +47,9 @@ export function MarketingLayout({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen flex-col bg-white">
       <header className="border-b border-[#E2E8F0]">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link to="/" className="flex items-center gap-2">
-            <img src="/brand/symbol.svg" alt="" className="h-8 w-8" />
-            <span className="text-lg font-semibold text-foreground">MaterialOS</span>
+          <Link to="/" className="flex items-center gap-2.5">
+            <img src="/brand/symbol.svg" alt="" className="h-10 w-10" />
+            <span className="text-xl font-semibold text-foreground">MaterialOS</span>
           </Link>
           <nav className="hidden items-center gap-6 text-sm font-medium text-muted-foreground md:flex">
             {NAV_LINKS.map((link) => (
@@ -75,8 +75,8 @@ export function MarketingLayout({ children }: { children: React.ReactNode }) {
         <div className="mx-auto grid max-w-6xl gap-8 px-6 py-12 sm:grid-cols-2 md:grid-cols-4">
           <div>
             <div className="flex items-center gap-2">
-              <img src="/brand/symbol.svg" alt="" className="h-7 w-7" />
-              <span className="text-base font-semibold text-foreground">MaterialOS</span>
+              <img src="/brand/symbol.svg" alt="" className="h-8 w-8" />
+              <span className="text-lg font-semibold text-foreground">MaterialOS</span>
             </div>
             <p className="mt-3 max-w-xs text-sm text-muted-foreground">One intelligent operating system for every business.</p>
           </div>
