@@ -13,8 +13,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.errors import AppError, ErrorCode
-from app.models.billing_plans import Plan, PlanLimit
-from app.models.subscriptions import BillingAddress, Subscription
+from app.models.billing_plans import AddonOffering, Plan, PlanLimit
+from app.models.subscriptions import BillingAddress, Subscription, SubscriptionAddon
 from app.services.billing_plans import LIMIT_KEYS, get_default_signup_plan, get_plan_by_slug
 from app.services.entitlements import get_subscription
 from app.services.notification_rules import fire_trigger
@@ -247,6 +247,81 @@ def reactivate_subscription(db: Session, *, tenant_id: uuid.UUID) -> tuple[Subsc
         billing_period_start=now.date(), billing_period_end=period_end(subscription.billing_cycle, now).date(),
     )
     return subscription, invoice
+
+
+def list_active_addons(db: Session, *, tenant_id: uuid.UUID) -> list[SubscriptionAddon]:
+    subscription = get_subscription(db, tenant_id)
+    if subscription is None:
+        return []
+    return db.execute(
+        select(SubscriptionAddon)
+        .where(SubscriptionAddon.subscription_id == subscription.id, SubscriptionAddon.is_active == True)  # noqa: E712
+        .order_by(SubscriptionAddon.created_at)
+    ).scalars().all()
+
+
+def purchase_addon(db: Session, *, tenant_id: uuid.UUID, addon_offering_id: uuid.UUID, billing_cycle: str) -> tuple[SubscriptionAddon, "SubscriptionInvoice"]:  # noqa: F821
+    """A capability-marketplace "install": snapshots the offering's
+    price/feature/limit_delta onto a new SubscriptionAddon row (so a
+    later catalog price change never reprices something already bought
+    -- same reasoning as Plan versioning, see AddonOffering's
+    docstring), grants the entitlement immediately (has_feature() sees
+    it as soon as this flushes), and bills for it the same way a plan
+    upgrade does: generate an invoice, hand it to /billing/checkout."""
+    subscription = get_subscription(db, tenant_id)
+    if subscription is None:
+        raise AppError(ErrorCode.NOT_FOUND, "No subscription found for this tenant.", status_code=404)
+
+    offering = db.get(AddonOffering, addon_offering_id)
+    if offering is None or not offering.is_active:
+        raise AppError(ErrorCode.VALIDATION_ERROR, "Unknown or inactive add-on.", status_code=422)
+
+    if billing_cycle not in ("monthly", "yearly"):
+        raise AppError(ErrorCode.VALIDATION_ERROR, "billing_cycle must be 'monthly' or 'yearly'.", status_code=422)
+
+    already_active = db.execute(
+        select(SubscriptionAddon.id).where(
+            SubscriptionAddon.subscription_id == subscription.id,
+            SubscriptionAddon.addon_offering_id == offering.id,
+            SubscriptionAddon.is_active == True,  # noqa: E712
+        )
+    ).first()
+    if already_active is not None:
+        raise AppError(ErrorCode.VALIDATION_ERROR, f"'{offering.name}' is already active on this subscription.", status_code=409)
+
+    price = offering.monthly_price if billing_cycle == "monthly" else offering.yearly_price
+    addon = SubscriptionAddon(
+        tenant_id=tenant_id, subscription_id=subscription.id, addon_offering_id=offering.id,
+        code=offering.code, name=offering.name, feature_id=offering.feature_id,
+        limit_key=offering.limit_key, limit_delta=offering.limit_delta,
+        price=price, billing_cycle=billing_cycle, is_active=True,
+    )
+    db.add(addon)
+    db.flush()
+
+    billing_address = get_billing_address(db, tenant_id)
+    now = datetime.now(timezone.utc)
+    invoice = generate_invoice(
+        db, subscription=subscription, tenant_id=tenant_id,
+        tenant_state=billing_address.state if billing_address else None,
+        line_items=[(f"Add-on: {offering.name}", Decimal("1"), price)],
+        billing_period_start=now.date(), billing_period_end=period_end(billing_cycle, now).date(),
+    )
+    return addon, invoice
+
+
+def cancel_addon(db: Session, *, tenant_id: uuid.UUID, addon_id: uuid.UUID) -> SubscriptionAddon:
+    subscription = get_subscription(db, tenant_id)
+    if subscription is None:
+        raise AppError(ErrorCode.NOT_FOUND, "No subscription found for this tenant.", status_code=404)
+
+    addon = db.get(SubscriptionAddon, addon_id)
+    if addon is None or addon.subscription_id != subscription.id or not addon.is_active:
+        raise AppError(ErrorCode.NOT_FOUND, "Active add-on not found.", status_code=404)
+
+    addon.is_active = False
+    db.flush()
+    return addon
 
 
 def run_subscription_lifecycle(db: Session, *, tenant_id: uuid.UUID) -> None:

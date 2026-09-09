@@ -72,6 +72,7 @@ import { IndustryConfigPage } from "@/routes/settings/IndustryConfigPage";
 import { SignupPage } from "@/routes/SignupPage";
 import { SubscriptionInvoicesPage } from "@/routes/settings/SubscriptionInvoicesPage";
 import { SubscriptionPage } from "@/routes/settings/SubscriptionPage";
+import { CapabilityMarketplacePage } from "@/routes/settings/CapabilityMarketplacePage";
 import { ReceiptSettingsPage } from "@/routes/settings/ReceiptSettingsPage";
 import { WebhooksPage } from "@/routes/settings/WebhooksPage";
 import { SubscriptionPaymentsPage } from "@/routes/settings/SubscriptionPaymentsPage";
@@ -201,6 +202,7 @@ export default function App() {
         <Route path="/operations/audit-log" element={<AuditLogPage />} />
         <Route path="/operations/notification-rules" element={<NotificationRulesPage />} />
         <Route path="/settings/subscription" element={<SubscriptionPage />} />
+        <Route path="/settings/capabilities" element={<CapabilityMarketplacePage />} />
         <Route path="/settings/subscription/invoices" element={<SubscriptionInvoicesPage />} />
         <Route path="/settings/subscription/payments" element={<SubscriptionPaymentsPage />} />
         <Route path="/settings/receipts" element={<ReceiptSettingsPage />} />

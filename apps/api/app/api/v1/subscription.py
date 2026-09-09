@@ -10,10 +10,13 @@ from app.models.billing_plans import Plan
 from app.models.subscriptions import BillingAddress, SubscriptionInvoice, SubscriptionPayment
 from app.models.user import User
 from app.schemas.subscriptions import (
+    AddonPurchaseRequest,
     BillingAddressIn,
     BillingAddressOut,
     CancelRequest,
     DowngradeRequest,
+    SubscriptionAddonOut,
+    SubscriptionAddonPurchaseOut,
     SubscriptionChangeOut,
     SubscriptionInvoiceOut,
     SubscriptionOut,
@@ -98,6 +101,24 @@ def reactivate(db: Session = Depends(get_db_tenant), user: User = Depends(requir
         subscription=_subscription_out(db, subscription),
         invoice=_invoice_out(invoice),
     )
+
+
+@router.get("/addons", response_model=list[SubscriptionAddonOut])
+def list_addons(db: Session = Depends(get_db_tenant), _user=Depends(require_permission("subscription.view"))) -> list[SubscriptionAddonOut]:
+    return subscription_service.list_active_addons(db, tenant_id=_user.tenant_id)
+
+
+@router.post("/addons", response_model=SubscriptionAddonPurchaseOut, status_code=201)
+def purchase_addon(payload: AddonPurchaseRequest, db: Session = Depends(get_db_tenant), user: User = Depends(require_permission("subscription.manage"))):
+    addon, invoice = subscription_service.purchase_addon(
+        db, tenant_id=user.tenant_id, addon_offering_id=payload.addon_offering_id, billing_cycle=payload.billing_cycle,
+    )
+    return SubscriptionAddonPurchaseOut(addon=SubscriptionAddonOut.model_validate(addon), invoice=_invoice_out(invoice))
+
+
+@router.post("/addons/{addon_id}/cancel", response_model=SubscriptionAddonOut)
+def cancel_addon(addon_id: uuid.UUID, db: Session = Depends(get_db_tenant), user: User = Depends(require_permission("subscription.manage"))):
+    return subscription_service.cancel_addon(db, tenant_id=user.tenant_id, addon_id=addon_id)
 
 
 @router.get("/usage", response_model=list[UsageRow])

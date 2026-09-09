@@ -41,6 +41,27 @@ class CancelRequest(BaseModel):
     at_period_end: bool = True
 
 
+class AddonPurchaseRequest(BaseModel):
+    addon_offering_id: uuid.UUID
+    billing_cycle: str = "yearly"
+
+
+class SubscriptionAddonOut(BaseModel):
+    id: uuid.UUID
+    addon_offering_id: uuid.UUID | None
+    code: str
+    name: str
+    feature_id: uuid.UUID | None
+    limit_key: str | None
+    limit_delta: int | None
+    price: Decimal
+    billing_cycle: str
+    is_active: bool
+
+    class Config:
+        from_attributes = True
+
+
 class SubscriptionInvoiceItemOut(BaseModel):
     description: str
     quantity: Decimal
@@ -137,3 +158,11 @@ class SubscriptionChangeOut(BaseModel):
 
     subscription: SubscriptionOut
     invoice: SubscriptionInvoiceOut | None
+
+
+class SubscriptionAddonPurchaseOut(BaseModel):
+    """Same "granted immediately, billed via the returned invoice"
+    contract as SubscriptionChangeOut."""
+
+    addon: SubscriptionAddonOut
+    invoice: SubscriptionInvoiceOut
