@@ -287,6 +287,13 @@ See ADR-012 for what desktop-specific capability exists today (local
 printing) versus what's deferred (cash-drawer/scale device access,
 offline-first sync) and why.
 
+**Windows: if the taskbar/Start icon still looks like an old version
+after upgrading**, that's Windows' own icon cache (`IconCache.db`),
+not a bad install -- it caches icons per file path and can hold onto a
+stale bitmap across an in-place upgrade. Sign out and back in, or run
+`ie4uinit.exe -show` (or delete `%LocalAppData%\IconCache.db` and
+restart `explorer.exe`) to force it to re-read the new one.
+
 **There is no hosted MaterialOS server.** Every install -- desktop or
 web -- points at a backend you run yourself (the `docker-compose up`
 steps above). The downloaded desktop app defaults to

@@ -23,10 +23,29 @@
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    #[cfg(windows)]
+    set_app_user_model_id();
+
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![app_info])
         .run(tauri::generate_context!())
         .expect("error while running the MaterialOS desktop shell");
+}
+
+/// Without this, a taskbar-pinned shortcut can fall back to Explorer's
+/// default per-process grouping/icon resolution instead of using this
+/// app's own identity -- must run before window creation. Matches
+/// tauri.conf.json's `identifier`. Best-effort: a failure here (e.g. an
+/// already-set AppUserModelID on an unusual host) shouldn't block
+/// startup, so the HRESULT is intentionally not unwrapped.
+#[cfg(windows)]
+fn set_app_user_model_id() {
+    use windows_sys::Win32::UI::Shell::SetCurrentProcessExplicitAppUserModelID;
+
+    let wide: Vec<u16> = "com.materialos.app\0".encode_utf16().collect();
+    unsafe {
+        SetCurrentProcessExplicitAppUserModelID(wide.as_ptr());
+    }
 }
 
 #[derive(serde::Serialize)]

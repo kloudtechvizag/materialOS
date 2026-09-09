@@ -1,6 +1,6 @@
 [package]
 name = "materialos-desktop"
-version = "0.2.4"
+version = "0.2.5"
 description = "MaterialOS desktop client -- native shell around apps/web"
 authors = ["MaterialOS"]
 edition = "2021"
@@ -19,6 +19,12 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = [] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+
+# Windows-only: SetCurrentProcessExplicitAppUserModelID (lib.rs) -- so a
+# taskbar-pinned shortcut groups under this app's own identity/icon
+# instead of Explorer's default fallback grouping.
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.59", features = ["Win32_UI_Shell", "Win32_Foundation"] }
 
 [profile.release]
 panic = "abort"
