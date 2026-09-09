@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import { apiFetch, ApiError } from "@/lib/api";
 import { INDIAN_STATES } from "@/lib/indianStates";
 import { useAuthStore } from "@/store/auth";
@@ -85,9 +86,10 @@ export function SignupPage() {
 
   return (
     <AuthLayout>
-      <Card className="w-full max-w-md rounded-2xl shadow-xl">
+      <div className="w-full max-w-md">
+      <Card className="rounded-2xl border-slate-200 shadow-sm">
         <CardHeader>
-          <img src="/brand/symbol.svg" alt="" className="mb-2 h-8 w-8 lg:hidden" />
+          <img src="/brand/symbol.svg" alt="" className="mb-2 h-8 w-8 md:hidden" />
           <CardTitle>Create your MaterialOS workspace</CardTitle>
           <CardDescription>Takes about a minute. You can import your Tally data right after.</CardDescription>
         </CardHeader>
@@ -148,25 +150,26 @@ export function SignupPage() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="ownerPassword">Password</Label>
-              <Input id="ownerPassword" type="password" {...register("ownerPassword")} />
+              <PasswordInput id="ownerPassword" {...register("ownerPassword")} />
               {errors.ownerPassword && <p className="text-sm text-destructive">{errors.ownerPassword.message}</p>}
             </div>
             {serverError && <p className="text-sm text-destructive">{serverError}</p>}
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+            <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? "Creating workspace..." : "Create workspace"}
             </Button>
           </form>
           <p className="mt-4 text-center text-sm text-muted-foreground">
             Already have a workspace?{" "}
-            <Link to="/login" className="text-primary underline-offset-4 hover:underline">
+            <Link to="/login" className="font-medium text-primary underline-offset-4 hover:underline">
               Sign in
             </Link>
           </p>
-          <p className="mt-3 text-center text-xs text-muted-foreground">
-            <Link to="/server-settings" className="underline-offset-4 hover:underline">Server settings</Link>
-          </p>
         </CardContent>
       </Card>
+      <p className="mt-4 text-center text-xs text-muted-foreground/70">
+        <Link to="/server-settings" className="underline-offset-4 hover:underline">Server settings</Link>
+      </p>
+      </div>
     </AuthLayout>
   );
 }

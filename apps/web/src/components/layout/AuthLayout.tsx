@@ -1,10 +1,10 @@
 import { Bot, Layers, Package, Warehouse } from "lucide-react";
 
 const NODES = [
-  { id: "cement", label: "Cement", icon: Package, top: "20%", left: "14%" },
-  { id: "steel", label: "Steel TMT", icon: Layers, top: "50%", left: "40%" },
-  { id: "warehouse", label: "Warehouse", icon: Warehouse, top: "28%", left: "68%" },
-  { id: "dispatch", label: "AI Dispatch", icon: Bot, top: "76%", left: "82%" },
+  { id: "cement", label: "Cement", icon: Package, top: "22%", left: "10%" },
+  { id: "steel", label: "Steel TMT", icon: Layers, top: "46%", left: "36%" },
+  { id: "warehouse", label: "Warehouse", icon: Warehouse, top: "30%", left: "64%" },
+  { id: "dispatch", label: "AI Dispatch", icon: Bot, top: "58%", left: "90%" },
 ] as const;
 
 const LINKS: [(typeof NODES)[number]["id"], (typeof NODES)[number]["id"]][] = [
@@ -18,27 +18,18 @@ function byId(id: string) {
 }
 
 /** Coded in place of a flat exported image so it always matches the live
- * brand palette (teal/navy/slate) and never drifts the way a baked PNG
- * did -- the old login-artwork.png was still the previous brand's raw
- * cyan-on-navy wireframe after the mark itself was replaced. */
+ * brand palette and never drifts the way a baked PNG did. Kept
+ * deliberately restrained (thin lines, low glow) -- this is brand
+ * texture behind a sign-in form, not a dashboard. */
 function NodeNetwork() {
   return (
-    <div className="relative h-64 w-full max-w-md">
-      <div className="pointer-events-none absolute left-[15%] top-[15%] h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#028090]/30 blur-3xl" />
-      <div className="pointer-events-none absolute left-[80%] top-[70%] h-48 w-48 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#028090]/25 blur-3xl" />
+    <div className="relative hidden h-56 w-full max-w-md lg:block">
       <svg className="absolute inset-0 h-full w-full overflow-visible" aria-hidden="true">
         <defs>
           <linearGradient id="linkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#00A896" />
-            <stop offset="100%" stopColor="#2DD4BF" />
+            <stop offset="0%" stopColor="#0EA5E9" stopOpacity={0.7} />
+            <stop offset="100%" stopColor="#00A896" stopOpacity={0.7} />
           </linearGradient>
-          <filter id="linkGlow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
         </defs>
         {LINKS.map(([fromId, toId]) => {
           const from = byId(fromId);
@@ -51,9 +42,7 @@ function NodeNetwork() {
               x2={to.left}
               y2={to.top}
               stroke="url(#linkGrad)"
-              strokeWidth={1.5}
-              opacity={0.7}
-              filter="url(#linkGlow)"
+              strokeWidth={1}
             />
           );
         })}
@@ -61,41 +50,49 @@ function NodeNetwork() {
       {NODES.map(({ id, label, icon: Icon, top, left }) => (
         <div
           key={id}
-          className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.06] px-2.5 py-1.5 shadow-[0_0_16px_-4px_rgba(45,212,191,0.5)] backdrop-blur-sm"
+          className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5 backdrop-blur-sm"
           style={{ top, left }}
         >
-          <Icon className="h-3.5 w-3.5 shrink-0 text-teal-300" />
-          <span className="whitespace-nowrap text-xs font-medium text-white/90">{label}</span>
+          <Icon className="h-3.5 w-3.5 shrink-0 text-slate-300" />
+          <span className="whitespace-nowrap text-xs font-medium text-slate-200">{label}</span>
         </div>
       ))}
     </div>
   );
 }
 
-/** Shared shell for Login/Signup: a branded panel on wide screens, the
- * real form on top of a plain background everywhere else. The hero is
- * decorative only -- the functional form is always our own component,
- * never baked into an image. */
+/** Shared shell for Login/Signup/Portal login: a branded panel on
+ * tablet+ (reduced to just logo/tagline on md, the full node network
+ * joins at lg), the real form on top of a soft off-white background
+ * everywhere. The hero is decorative only -- the functional form is
+ * always our own component, never baked into an image. */
 export function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen">
-      <div className="relative hidden w-1/2 shrink-0 overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 lg:block">
+      <div className="relative hidden shrink-0 overflow-hidden bg-[#081426] md:flex md:w-[38%] lg:w-[45%]">
         <div
-          className="absolute inset-0 opacity-40"
-          style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.15) 1px, transparent 1px)", backgroundSize: "28px 28px" }}
+          className="absolute inset-0 opacity-[0.07]"
+          style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.4) 1px, transparent 1px)", backgroundSize: "32px 32px" }}
         />
+        <div className="pointer-events-none absolute left-1/3 top-1/3 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky-500/10 blur-[100px]" />
 
-        <div className="relative flex h-full flex-col items-start justify-between p-10">
-          <img src="/brand/logo-dark.svg" alt="MaterialOS" className="h-12 w-auto" />
+        <div className="relative flex h-full flex-col justify-between p-10 lg:p-12">
+          <img src="/brand/logo-dark.svg" alt="MaterialOS" className="h-10 w-auto" />
+
           <NodeNetwork />
-          <p className="max-w-sm text-sm text-slate-400">
-            One connected operating system for sales, inventory, accounting, and operations -- configured for
-            your industry, from retail and pharmacy to printing and building materials.
-          </p>
+
+          <div className="max-w-sm space-y-2">
+            <p className="text-xl font-semibold leading-snug text-white">
+              One connected operating system for your business.
+            </p>
+            <p className="text-sm leading-relaxed text-slate-400">
+              Manage sales, inventory, purchasing, finance, operations and AI from one powerful platform.
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="flex flex-1 items-center justify-center bg-slate-100 p-4">
+      <div className="flex flex-1 items-center justify-center bg-[#F8FAFC] p-6">
         {children}
       </div>
     </div>

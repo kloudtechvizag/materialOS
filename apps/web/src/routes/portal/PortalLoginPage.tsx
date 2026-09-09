@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import { apiFetch, ApiError } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 
@@ -61,42 +62,44 @@ export function PortalLoginPage() {
 
   return (
     <AuthLayout>
-      <Card className="w-full max-w-sm rounded-2xl shadow-xl">
-        <CardHeader>
-          <img src="/brand/symbol.svg" alt="" className="mb-2 h-8 w-8 lg:hidden" />
-          <CardTitle>Customer portal sign-in</CardTitle>
-          <CardDescription>Enter the workspace, email, and password given to you by your supplier.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="tenantSlug">Workspace</Label>
-              <Input id="tenantSlug" placeholder="sribalaji" {...register("tenantSlug")} />
-              {errors.tenantSlug && <p className="text-sm text-destructive">{errors.tenantSlug.message}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" {...register("email")} />
-              {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" {...register("password")} />
-              {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
-            </div>
-            {serverError && <p className="text-sm text-destructive">{serverError}</p>}
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Signing in..." : "Sign in"}
-            </Button>
-          </form>
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            Staff member?{" "}
-            <Link to="/login" className="text-primary underline-offset-4 hover:underline">
-              Go to staff sign-in
-            </Link>
-          </p>
-        </CardContent>
-      </Card>
+      <div className="w-full max-w-md">
+        <Card className="rounded-2xl border-slate-200 shadow-sm">
+          <CardHeader>
+            <img src="/brand/symbol.svg" alt="" className="mb-2 h-8 w-8 md:hidden" />
+            <CardTitle>Customer portal sign-in</CardTitle>
+            <CardDescription>Enter the workspace, email, and password given to you by your supplier.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="tenantSlug">Workspace</Label>
+                <Input id="tenantSlug" className="h-11" placeholder="sribalaji" {...register("tenantSlug")} />
+                {errors.tenantSlug && <p className="text-sm text-destructive">{errors.tenantSlug.message}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" type="email" className="h-11" {...register("email")} />
+                {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="password">Password</Label>
+                <PasswordInput id="password" className="h-11" {...register("password")} />
+                {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
+              </div>
+              {serverError && <p className="text-sm text-destructive">{serverError}</p>}
+              <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? "Signing in..." : "Sign in"}
+              </Button>
+            </form>
+            <p className="mt-5 text-center text-sm text-muted-foreground">
+              Staff member?{" "}
+              <Link to="/login" className="font-medium text-primary underline-offset-4 hover:underline">
+                Go to staff sign-in
+              </Link>
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     </AuthLayout>
   );
 }
