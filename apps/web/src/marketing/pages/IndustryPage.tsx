@@ -6,6 +6,7 @@ import { Seo } from "@/components/marketing/Seo";
 import { BrowserFrame } from "@/components/marketing/BrowserFrame";
 import { Breadcrumbs, breadcrumbJsonLd } from "@/components/marketing/Breadcrumbs";
 import { Faq, faqJsonLd } from "@/components/marketing/Faq";
+import { PhotoBanner } from "@/components/marketing/PhotoBanner";
 import { getFeatureBySlug } from "@/marketing/content/features";
 import { getIndustryBySlug } from "@/marketing/content/industries";
 import { NotFoundPage } from "./NotFoundPage";
@@ -17,6 +18,19 @@ import { NotFoundPage } from "./NotFoundPage";
  * doesn't actually demonstrate. */
 const INDUSTRY_SCREENSHOTS: Record<string, string> = {
   building_materials: "/screenshots/inventory.webp",
+};
+
+/** Real, specific, relevant photos (Unsplash License -- free for any
+ * use, no attribution required) -- one per flagship industry where a
+ * genuinely fitting, non-generic photo exists. Deliberately no photo
+ * for "mobile" -- every reasonable search kept surfacing Apple Store
+ * imagery, which would misleadingly imply a partnership that doesn't
+ * exist; skipped rather than force a bad fit. */
+const INDUSTRY_PHOTOS: Record<string, { src: string; alt: string }> = {
+  building_materials: { src: "/photos/building_materials.webp", alt: "A real building materials warehouse with racked stock and a forklift" },
+  retail: { src: "/photos/retail.webp", alt: "A real retail store's stocked shelves" },
+  pharmacy: { src: "/photos/pharmacy.webp", alt: "A real pharmacy shelf of medicine bottles" },
+  printing_press: { src: "/photos/printing_press.webp", alt: "A real industrial printing press in operation" },
 };
 
 /** Reusable template for every flagship industry landing page (§106):
@@ -44,6 +58,12 @@ export function IndustryPage() {
         jsonLd={[breadcrumbJsonLd(breadcrumbItems, path), ...(industry.faqs.length > 0 ? [faqJsonLd(industry.faqs)] : [])]}
       />
       <Breadcrumbs items={breadcrumbItems} />
+
+      {INDUSTRY_PHOTOS[industry.slug] && (
+        <div className="mt-4">
+          <PhotoBanner src={INDUSTRY_PHOTOS[industry.slug].src} alt={INDUSTRY_PHOTOS[industry.slug].alt} credit="Photo: Unsplash" />
+        </div>
+      )}
 
       <header className="mt-4">
         <p className="text-sm font-medium uppercase tracking-wide text-[#7C3AED]">{industry.category}</p>

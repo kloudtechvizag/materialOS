@@ -80,8 +80,8 @@ export function WhyMaterialOSPage() {
             return (
               <Card key={pillar.title} className="border-[#E2E8F0]">
                 <CardContent className="p-6">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-lg" style={{ backgroundColor: color.bg }}>
-                    <pillar.icon className="h-5 w-5" style={{ color: color.fg }} />
+                  <div className="flex h-14 w-14 items-center justify-center rounded-xl" style={{ backgroundColor: color.bg }}>
+                    <pillar.icon className="h-7 w-7" style={{ color: color.fg }} />
                   </div>
                   <h2 className="mt-4 font-semibold">{pillar.title}</h2>
                   <p className="mt-2 text-sm text-muted-foreground">{pillar.description}</p>

@@ -8,18 +8,8 @@ import { Breadcrumbs, breadcrumbJsonLd } from "@/components/marketing/Breadcrumb
 import { Faq, faqJsonLd } from "@/components/marketing/Faq";
 import { getFeatureBySlug } from "@/marketing/content/features";
 import { getIndustryBySlug } from "@/marketing/content/industries";
+import { FEATURE_SCREENSHOTS } from "@/marketing/screenshots";
 import { NotFoundPage } from "./NotFoundPage";
-
-/** Real screenshots (apps/web/public/screenshots/*, captured from the
- * actual running app) for the features where one exists -- not every
- * feature has a clean one yet, so this stays a partial map rather than
- * requiring one per feature. */
-const FEATURE_SCREENSHOTS: Record<string, string> = {
-  "inventory-management": "/screenshots/inventory.webp",
-  "sales-quotation-management": "/screenshots/quotations.webp",
-  "credit-management": "/screenshots/customers.webp",
-  "report-builder": "/screenshots/reports.webp",
-};
 
 /** Reusable template for every flagship feature page (§108): Problem /
  * Solution / How It Works / Benefits / Workflow / Industries / FAQs /

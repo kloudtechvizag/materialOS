@@ -39,8 +39,8 @@ export function IndustriesIndexPage() {
             <Card className={content ? "h-full border-[#E2E8F0] transition-shadow hover:shadow-md" : "h-full border-[#E2E8F0] opacity-60"}>
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-lg" style={{ backgroundColor: color.bg }}>
-                    <Icon className="h-5 w-5" style={{ color: color.fg }} />
+                  <div className="flex h-14 w-14 items-center justify-center rounded-xl" style={{ backgroundColor: color.bg }}>
+                    <Icon className="h-7 w-7" style={{ color: color.fg }} />
                   </div>
                   {!content && <Badge variant="outline" className="text-xs">Coming soon</Badge>}
                 </div>
