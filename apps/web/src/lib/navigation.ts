@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   ArrowLeftRight,
   Banknote,
+  BarChart3,
   Bell,
   Building,
   Building2,
@@ -115,6 +116,7 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
       { id: "financial-reports", label: "Financial reports", href: "/books", icon: FileSpreadsheet, module: "accounting" },
       { id: "gst", label: "GST filing", href: "/gst", icon: Receipt, module: "gst" },
       { id: "credit-debit-notes", label: "Credit & debit notes", href: "/credit-debit-notes", icon: FileMinus },
+      { id: "reports", label: "Report builder", href: "/reports", icon: BarChart3 },
     ],
   },
   {

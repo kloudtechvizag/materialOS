@@ -53,6 +53,7 @@ import { ProductionBoardPage } from "@/routes/printing/ProductionBoardPage";
 import { NewQuotationPage } from "@/routes/quotations/NewQuotationPage";
 import { QuotationDetailPage } from "@/routes/quotations/QuotationDetailPage";
 import { QuotationsPage } from "@/routes/quotations/QuotationsPage";
+import { ReportsPage } from "@/routes/ReportsPage";
 import { AuditLogPage } from "@/routes/operations/AuditLogPage";
 import { BackupPage } from "@/routes/operations/BackupPage";
 import { CommandCenterPage } from "@/routes/operations/CommandCenterPage";
@@ -184,6 +185,7 @@ export default function App() {
         <Route path="/books" element={<BooksPage />} />
         <Route path="/gst" element={<GstPage />} />
         <Route path="/credit-debit-notes" element={<CreditDebitNotesPage />} />
+        <Route path="/reports" element={<ReportsPage />} />
         <Route path="/approvals" element={<ApprovalsPage />} />
         <Route path="/company-settings" element={<CompanySettingsPage />} />
         <Route path="/settings/industry" element={<IndustryConfigPage />} />

@@ -35,6 +35,7 @@ from app.api.v1 import (
     procurement,
     projects,
     receipts,
+    reports,
     sales,
     search,
     serial,
@@ -93,6 +94,7 @@ api_router.include_router(attendance.router)
 api_router.include_router(leave.router)
 api_router.include_router(payroll.router)
 api_router.include_router(receipts.router)
+api_router.include_router(reports.router)
 api_router.include_router(search.router)
 api_router.include_router(serial.router)
 api_router.include_router(webhooks.router)
