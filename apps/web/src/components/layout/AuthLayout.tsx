@@ -24,6 +24,8 @@ function byId(id: string) {
 function NodeNetwork() {
   return (
     <div className="relative h-64 w-full max-w-md">
+      <div className="pointer-events-none absolute left-[15%] top-[15%] h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#028090]/30 blur-3xl" />
+      <div className="pointer-events-none absolute left-[80%] top-[70%] h-48 w-48 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#028090]/25 blur-3xl" />
       <svg className="absolute inset-0 h-full w-full overflow-visible" aria-hidden="true">
         <defs>
           <linearGradient id="linkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -77,24 +79,23 @@ function NodeNetwork() {
 export function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen">
-      <div className="relative hidden w-1/2 shrink-0 overflow-hidden bg-brand-navy lg:block">
+      <div className="relative hidden w-1/2 shrink-0 overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 lg:block">
         <div
           className="absolute inset-0 opacity-40"
           style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.15) 1px, transparent 1px)", backgroundSize: "28px 28px" }}
         />
-        <div className="pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-teal-500/10 blur-3xl" />
 
         <div className="relative flex h-full flex-col items-start justify-between p-10">
           <img src="/brand/logo-dark.svg" alt="MaterialOS" className="h-12 w-auto" />
           <NodeNetwork />
-          <p className="max-w-sm text-sm text-brand-navy-muted">
+          <p className="max-w-sm text-sm text-slate-400">
             One connected operating system for sales, inventory, accounting, and operations -- configured for
             your industry, from retail and pharmacy to printing and building materials.
           </p>
         </div>
       </div>
 
-      <div className="flex flex-1 items-center justify-center bg-secondary/30 p-4">
+      <div className="flex flex-1 items-center justify-center bg-slate-100 p-4">
         {children}
       </div>
     </div>
