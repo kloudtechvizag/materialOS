@@ -2,7 +2,17 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 import { AppShell } from "@/components/layout/AppShell";
 import { PortalShell } from "@/components/layout/PortalShell";
+import { MarketingLayout } from "@/components/marketing/MarketingLayout";
 import { FeatureGate } from "@/components/billing/FeatureGate";
+import { AboutPage as MarketingAboutPage } from "@/marketing/pages/AboutPage";
+import { BookDemoPage } from "@/marketing/pages/BookDemoPage";
+import { ContactPage as MarketingContactPage } from "@/marketing/pages/ContactPage";
+import { FeaturePage as MarketingFeaturePage } from "@/marketing/pages/FeaturePage";
+import { FeaturesIndexPage } from "@/marketing/pages/FeaturesIndexPage";
+import { HomePage as MarketingHomePage } from "@/marketing/pages/HomePage";
+import { IndustryPage as MarketingIndustryPage } from "@/marketing/pages/IndustryPage";
+import { IndustriesIndexPage } from "@/marketing/pages/IndustriesIndexPage";
+import { NotFoundPage } from "@/marketing/pages/NotFoundPage";
 import { ApprovalsPage } from "@/routes/ApprovalsPage";
 import { BooksPage } from "@/routes/BooksPage";
 import { BranchesPage } from "@/routes/BranchesPage";
@@ -92,6 +102,20 @@ function RequirePortalAuth({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+/** "/" is shared between the public marketing homepage and the
+ * authenticated Dashboard -- a logged-in visitor sees exactly what
+ * they see today (Dashboard, unchanged); a logged-out visitor sees the
+ * marketing homepage instead of being redirected to /login. */
+function RootRoute() {
+  const accessToken = useAuthStore((s) => s.accessToken);
+  if (accessToken) return <DashboardPage />;
+  return (
+    <MarketingLayout>
+      <MarketingHomePage />
+    </MarketingLayout>
+  );
+}
+
 export default function App() {
   return (
     <Routes>
@@ -100,6 +124,15 @@ export default function App() {
       <Route path="/server-settings" element={<ServerSettingsPage />} />
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/portal/login" element={<PortalLoginPage />} />
+
+      <Route path="/" element={<RootRoute />} />
+      <Route path="/industries" element={<MarketingLayout><IndustriesIndexPage /></MarketingLayout>} />
+      <Route path="/industries/:slug" element={<MarketingLayout><MarketingIndustryPage /></MarketingLayout>} />
+      <Route path="/features" element={<MarketingLayout><FeaturesIndexPage /></MarketingLayout>} />
+      <Route path="/features/:slug" element={<MarketingLayout><MarketingFeaturePage /></MarketingLayout>} />
+      <Route path="/about" element={<MarketingLayout><MarketingAboutPage /></MarketingLayout>} />
+      <Route path="/contact" element={<MarketingLayout><MarketingContactPage /></MarketingLayout>} />
+      <Route path="/book-demo" element={<MarketingLayout><BookDemoPage /></MarketingLayout>} />
 
       <Route
         element={
@@ -135,7 +168,6 @@ export default function App() {
           </RequireAuth>
         }
       >
-        <Route path="/" element={<DashboardPage />} />
         <Route path="/items" element={<ItemsPage />} />
         <Route
           path="/pos"
@@ -209,7 +241,7 @@ export default function App() {
         <Route path="/settings/webhooks" element={<WebhooksPage />} />
       </Route>
 
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<MarketingLayout><NotFoundPage /></MarketingLayout>} />
     </Routes>
   );
 }

@@ -6,6 +6,7 @@ from app.models.billing_plans import AddonOffering, Feature, Plan, PlanFeature, 
 from app.models.catalog import Batch, Category, UnitConversion
 from app.models.compliance import EInvoice, EWayBill
 from app.models.crm import Lead
+from app.models.demo_request import DemoRequest
 from app.models.field_sales import Visit
 from app.models.attendance import AttendanceCorrection, AttendanceRecord
 from app.models.fleet import Driver, ProofOfDelivery, Trip, Vehicle

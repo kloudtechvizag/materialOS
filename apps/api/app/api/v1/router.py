@@ -31,6 +31,7 @@ from app.api.v1 import (
     portal,
     pos,
     pricing,
+    public,
     printing,
     procurement,
     projects,
@@ -87,6 +88,7 @@ api_router.include_router(system_health.router)
 api_router.include_router(backup.router)
 api_router.include_router(command_center.router)
 api_router.include_router(pricing.router)
+api_router.include_router(public.router)
 api_router.include_router(subscription.router)
 api_router.include_router(billing.router)
 api_router.include_router(hr.router)
