@@ -65,6 +65,7 @@ import { PayrollPage } from "@/routes/people/PayrollPage";
 import { PayrollRunDetailPage } from "@/routes/people/PayrollRunDetailPage";
 import { PeopleOverviewPage } from "@/routes/people/PeopleOverviewPage";
 import { SalesOrderDetailPage } from "@/routes/SalesOrderDetailPage";
+import { SerialRmaPage } from "@/routes/SerialRmaPage";
 import { ServerSettingsPage } from "@/routes/ServerSettingsPage";
 import { IndustryConfigPage } from "@/routes/settings/IndustryConfigPage";
 import { SignupPage } from "@/routes/SignupPage";
@@ -172,6 +173,7 @@ export default function App() {
         <Route path="/purchase-orders/:orderId" element={<PurchaseOrderDetailPage />} />
         <Route path="/goods-receipts/:receiptId" element={<GoodsReceiptDetailPage />} />
         <Route path="/purchase-bills/:billId" element={<PurchaseBillDetailPage />} />
+        <Route path="/serial-rma" element={<SerialRmaPage />} />
         <Route path="/collections" element={<CollectionsPage />} />
         <Route path="/field-sales" element={<FieldSalesPage />} />
         <Route path="/imports" element={<ImportsPage />} />

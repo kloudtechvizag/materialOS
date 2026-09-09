@@ -49,6 +49,7 @@ RESOURCES = [
     "payroll",
     "advances",
     "receipts",
+    "rma",
 ]
 
 ACTIONS = ["view", "create", "edit", "delete", "approve", "export", "restore", "manage", "calculate", "lock", "pay"]

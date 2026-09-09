@@ -37,6 +37,7 @@ from app.api.v1 import (
     receipts,
     sales,
     search,
+    serial,
     subscription,
     suppliers,
     system_health,
@@ -92,3 +93,4 @@ api_router.include_router(leave.router)
 api_router.include_router(payroll.router)
 api_router.include_router(receipts.router)
 api_router.include_router(search.router)
+api_router.include_router(serial.router)

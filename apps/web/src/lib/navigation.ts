@@ -25,6 +25,7 @@ import {
   ShieldCheck,
   ShoppingCart,
   SlidersHorizontal,
+  Smartphone,
   Target,
   Truck,
   UploadCloud,
@@ -103,6 +104,7 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
     items: [
       { id: "purchase-orders", label: "Purchase orders", href: "/purchase-orders", icon: ShoppingCart, module: "purchase" },
       { id: "suppliers", label: "Suppliers", href: "/suppliers", icon: Factory, module: "purchase" },
+      { id: "serial-rma", label: "Serial numbers & RMA", href: "/serial-rma", icon: Smartphone },
     ],
   },
   {
