@@ -123,3 +123,13 @@ def create_sales_return_endpoint(
         invoice_id=payload.invoice_id, warehouse_id=payload.warehouse_id, reason=payload.reason,
         lines=[line.model_dump() for line in payload.lines], user_id=user.id,
     )
+
+
+@router.get("/sales-returns/{return_id}", response_model=SalesReturnOut)
+def get_sales_return(
+    return_id: uuid.UUID, db: Session = Depends(get_db_tenant), _user=Depends(require_permission("customers.view")),
+) -> SalesReturn:
+    sales_return = db.get(SalesReturn, return_id)
+    if sales_return is None:
+        raise AppError(ErrorCode.NOT_FOUND, "Sales return not found.", status_code=404)
+    return sales_return

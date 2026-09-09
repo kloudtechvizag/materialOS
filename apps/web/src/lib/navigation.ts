@@ -11,6 +11,7 @@ import {
   CreditCard,
   Database,
   Factory,
+  FileMinus,
   FileSpreadsheet,
   FileText,
   History,
@@ -110,6 +111,7 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
     items: [
       { id: "financial-reports", label: "Financial reports", href: "/books", icon: FileSpreadsheet, module: "accounting" },
       { id: "gst", label: "GST filing", href: "/gst", icon: Receipt, module: "gst" },
+      { id: "credit-debit-notes", label: "Credit & debit notes", href: "/credit-debit-notes", icon: FileMinus },
     ],
   },
   {

@@ -189,3 +189,41 @@ class SupplierPaymentOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class PurchaseReturnLineInput(BaseModel):
+    purchase_bill_item_id: uuid.UUID
+    qty: Decimal
+
+
+class PurchaseReturnCreate(BaseModel):
+    purchase_bill_id: uuid.UUID
+    warehouse_id: uuid.UUID
+    reason: str | None = None
+    lines: list[PurchaseReturnLineInput]
+
+
+class PurchaseReturnItemOut(BaseModel):
+    id: uuid.UUID
+    purchase_bill_item_id: uuid.UUID
+    item_id: uuid.UUID
+    qty: Decimal
+    rate: Decimal
+    line_total: Decimal
+
+    class Config:
+        from_attributes = True
+
+
+class PurchaseReturnOut(BaseModel):
+    id: uuid.UUID
+    number: str
+    purchase_bill_id: uuid.UUID
+    warehouse_id: uuid.UUID
+    return_date: date
+    reason: str | None
+    total: Decimal
+    items: list[PurchaseReturnItemOut] = []
+
+    class Config:
+        from_attributes = True

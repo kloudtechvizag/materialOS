@@ -113,6 +113,38 @@ class PurchaseBillItem(Base, UUIDPk, TenantMixin, TimestampMixin):
     line_total: Mapped[Decimal] = mapped_column(MONEY, nullable=False)
 
 
+class PurchaseReturn(Base, UUIDPk, TenantMixin, TimestampMixin):
+    """The purchase-side mirror of warehouse_ops.SalesReturn: goods sent
+    back to a supplier against a posted bill, reversing both the stock
+    ledger and the bill's journal postings. Printable via the receipt
+    engine as document_type="debit_note" (services/receipt_templates.py)
+    -- AP goes down, the supplier owes us this amount back or it's set
+    against their next bill, exactly as a real GST debit note works.
+    """
+
+    __tablename__ = "purchase_returns"
+
+    number: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    purchase_bill_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("purchase_bills.id", ondelete="RESTRICT"), nullable=False, index=True)
+    warehouse_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("warehouses.id", ondelete="RESTRICT"), nullable=False, index=True)
+    return_date: Mapped[date] = mapped_column(Date, nullable=False)
+    reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    total: Mapped[Decimal] = mapped_column(MONEY, nullable=False, default=0)
+
+    items: Mapped[list["PurchaseReturnItem"]] = relationship(order_by="PurchaseReturnItem.created_at")
+
+
+class PurchaseReturnItem(Base, UUIDPk, TenantMixin, TimestampMixin):
+    __tablename__ = "purchase_return_items"
+
+    purchase_return_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("purchase_returns.id", ondelete="CASCADE"), nullable=False, index=True)
+    purchase_bill_item_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("purchase_bill_items.id", ondelete="RESTRICT"), nullable=False, index=True)
+    item_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("items.id", ondelete="RESTRICT"), nullable=False, index=True)
+    qty: Mapped[Decimal] = mapped_column(QTY, nullable=False)
+    rate: Mapped[Decimal] = mapped_column(MONEY, nullable=False)
+    line_total: Mapped[Decimal] = mapped_column(MONEY, nullable=False)
+
+
 class SupplierPayment(Base, UUIDPk, TenantMixin, TimestampMixin):
     __tablename__ = "supplier_payments"
 

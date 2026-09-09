@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.deps import get_db_tenant, require_permission
 from app.errors import AppError, ErrorCode
-from app.models.procurement import GoodsReceipt, PurchaseBill, PurchaseOrder, SupplierPayment
+from app.models.procurement import GoodsReceipt, PurchaseBill, PurchaseOrder, PurchaseReturn, SupplierPayment
 from app.models.tenant import Branch, Company
 from app.models.user import User
 from app.schemas.procurement import (
@@ -16,6 +16,8 @@ from app.schemas.procurement import (
     PurchaseBillOut,
     PurchaseOrderCreate,
     PurchaseOrderOut,
+    PurchaseReturnCreate,
+    PurchaseReturnOut,
     SupplierPaymentCreate,
     SupplierPaymentOut,
 )
@@ -28,6 +30,7 @@ from app.services.procurement import (
     receive_goods,
     record_supplier_payment,
 )
+from app.services.purchase_return import create_purchase_return
 
 router = APIRouter(tags=["procurement"])
 
@@ -145,3 +148,35 @@ def create_supplier_payment_endpoint(
 @router.get("/supplier-payments", response_model=list[SupplierPaymentOut])
 def list_supplier_payments(db: Session = Depends(get_db_tenant), _user=Depends(require_permission("suppliers.view"))) -> list[SupplierPayment]:
     return db.execute(select(SupplierPayment).order_by(SupplierPayment.created_at.desc())).scalars().all()
+
+
+# --------------------------------------------------------- Purchase returns (debit notes)
+
+@router.post("/purchase-returns", response_model=PurchaseReturnOut, status_code=201)
+def create_purchase_return_endpoint(
+    payload: PurchaseReturnCreate, db: Session = Depends(get_db_tenant), user: User = Depends(require_permission("suppliers.edit")),
+) -> PurchaseReturn:
+    company, branch = _default_company_and_branch(db, user.tenant_id)
+    fy = get_current_financial_year(db, company.id)
+    return create_purchase_return(
+        db, tenant_id=user.tenant_id, company_id=company.id, branch_id=branch.id, financial_year_id=fy.id,
+        purchase_bill_id=payload.purchase_bill_id, warehouse_id=payload.warehouse_id, reason=payload.reason,
+        lines=[line.model_dump() for line in payload.lines], user_id=user.id,
+    )
+
+
+@router.get("/purchase-returns", response_model=list[PurchaseReturnOut])
+def list_purchase_returns(
+    db: Session = Depends(get_db_tenant), _user: User = Depends(require_permission("suppliers.view")),
+) -> list[PurchaseReturn]:
+    return db.execute(select(PurchaseReturn).order_by(PurchaseReturn.created_at.desc()).limit(200)).scalars().all()
+
+
+@router.get("/purchase-returns/{return_id}", response_model=PurchaseReturnOut)
+def get_purchase_return(
+    return_id: uuid.UUID, db: Session = Depends(get_db_tenant), _user: User = Depends(require_permission("suppliers.view")),
+) -> PurchaseReturn:
+    purchase_return = db.get(PurchaseReturn, return_id)
+    if purchase_return is None:
+        raise AppError(ErrorCode.NOT_FOUND, "Purchase return not found.", status_code=404)
+    return purchase_return

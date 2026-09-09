@@ -8,6 +8,7 @@ import { BooksPage } from "@/routes/BooksPage";
 import { BranchesPage } from "@/routes/BranchesPage";
 import { CollectionsPage } from "@/routes/CollectionsPage";
 import { CompanySettingsPage } from "@/routes/CompanySettingsPage";
+import { CreditDebitNotesPage } from "@/routes/CreditDebitNotesPage";
 import { Customer360Page } from "@/routes/Customer360Page";
 import { CustomersPage } from "@/routes/CustomersPage";
 import { DashboardPage } from "@/routes/DashboardPage";
@@ -179,6 +180,7 @@ export default function App() {
         <Route path="/users" element={<UsersPage />} />
         <Route path="/books" element={<BooksPage />} />
         <Route path="/gst" element={<GstPage />} />
+        <Route path="/credit-debit-notes" element={<CreditDebitNotesPage />} />
         <Route path="/approvals" element={<ApprovalsPage />} />
         <Route path="/company-settings" element={<CompanySettingsPage />} />
         <Route path="/settings/industry" element={<IndustryConfigPage />} />

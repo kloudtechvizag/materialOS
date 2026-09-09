@@ -47,6 +47,8 @@ from app.models.procurement import (
     PurchaseBillItem,
     PurchaseOrder,
     PurchaseOrderItem,
+    PurchaseReturn,
+    PurchaseReturnItem,
     SupplierPayment,
     SupplierPaymentAllocation,
 )
@@ -144,6 +146,8 @@ __all__ = [
     "PurchaseBillItem",
     "SupplierPayment",
     "SupplierPaymentAllocation",
+    "PurchaseReturn",
+    "PurchaseReturnItem",
     "Visit",
     "CostCenter",
     "EInvoice",
