@@ -11,6 +11,7 @@ class SearchResultItem(BaseModel):
 
 
 class SearchResults(BaseModel):
+    leads: list[SearchResultItem] = []
     customers: list[SearchResultItem] = []
     suppliers: list[SearchResultItem] = []
     items: list[SearchResultItem] = []

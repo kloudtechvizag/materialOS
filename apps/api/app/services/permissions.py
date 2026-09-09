@@ -25,6 +25,7 @@ RESOURCES = [
     "users",
     "roles",
     "financial_years",
+    "leads",
     "customers",
     "suppliers",
     "items",

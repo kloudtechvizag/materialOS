@@ -14,6 +14,7 @@ from app.api.v1 import (
     command_center,
     companies,
     compliance,
+    crm,
     customers,
     dashboard,
     dispatch,
@@ -58,6 +59,7 @@ api_router.include_router(users.router)
 api_router.include_router(imports.router)
 api_router.include_router(catalog.router)
 api_router.include_router(customers.router)
+api_router.include_router(crm.router)
 api_router.include_router(projects.router)
 api_router.include_router(sales.router)
 api_router.include_router(pos.router)

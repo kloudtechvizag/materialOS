@@ -24,6 +24,7 @@ import {
   ShieldCheck,
   ShoppingCart,
   SlidersHorizontal,
+  Target,
   Truck,
   UploadCloud,
   Users,
@@ -67,6 +68,7 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
     label: "Sell",
     items: [
       { id: "dashboard", label: "Dashboard", href: "/", icon: LayoutDashboard, end: true },
+      { id: "leads", label: "Leads", href: "/leads", icon: Target, permission: "leads.view", module: "sales" },
       { id: "pos", label: "POS", href: "/pos", icon: CreditCard, module: "pos" },
       { id: "quotations", label: "Quotations", href: "/quotations", icon: FileText, module: "sales" },
       { id: "collections", label: "Collections", href: "/collections", icon: Banknote, module: "collections" },

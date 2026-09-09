@@ -5,6 +5,7 @@ from app.models.backup import Backup
 from app.models.billing_plans import AddonOffering, Feature, Plan, PlanFeature, PlanLimit
 from app.models.catalog import Batch, Category, UnitConversion
 from app.models.compliance import EInvoice, EWayBill
+from app.models.crm import Lead
 from app.models.field_sales import Visit
 from app.models.attendance import AttendanceCorrection, AttendanceRecord
 from app.models.fleet import Driver, ProofOfDelivery, Trip, Vehicle
@@ -190,4 +191,5 @@ __all__ = [
     "PayrollItem",
     "EmployeeAdvance",
     "ReceiptSettings",
+    "Lead",
 ]

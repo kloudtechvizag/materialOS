@@ -25,6 +25,7 @@ import { ImportWizardPage } from "@/routes/imports/ImportWizardPage";
 import { ImportsPage } from "@/routes/imports/ImportsPage";
 import { InvoiceDetailPage } from "@/routes/InvoiceDetailPage";
 import { ItemsPage } from "@/routes/ItemsPage";
+import { LeadsPage } from "@/routes/LeadsPage";
 import { LoginPage } from "@/routes/LoginPage";
 import { GoodsReceiptDetailPage } from "@/routes/procurement/GoodsReceiptDetailPage";
 import { PurchaseBillDetailPage } from "@/routes/procurement/PurchaseBillDetailPage";
@@ -151,6 +152,7 @@ export default function App() {
         <Route path="/customers" element={<CustomersPage />} />
         <Route path="/customers/:customerId" element={<Customer360Page />} />
         <Route path="/projects" element={<ProjectsPage />} />
+        <Route path="/leads" element={<LeadsPage />} />
         <Route path="/quotations" element={<QuotationsPage />} />
         <Route path="/quotations/new" element={<NewQuotationPage />} />
         <Route path="/quotations/:quotationId" element={<QuotationDetailPage />} />

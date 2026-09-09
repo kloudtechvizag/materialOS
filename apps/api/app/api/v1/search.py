@@ -3,6 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.deps import get_current_user, get_db_tenant
+from app.models.crm import Lead
 from app.models.masters import Customer, Item, Supplier
 from app.models.procurement import PurchaseOrder
 from app.models.sales import Invoice, Quotation, SalesOrder
@@ -39,6 +40,15 @@ def global_search(
     if not q or not q.strip():
         return results
     like = f"%{q.strip()}%"
+
+    if _has_permission(db, user, "leads.view"):
+        leads = db.execute(
+            select(Lead).where(Lead.name.ilike(like) | Lead.company_name.ilike(like)).order_by(Lead.created_at.desc()).limit(LIMIT_PER_CATEGORY)
+        ).scalars().all()
+        results.leads = [
+            SearchResultItem(id=lead.id, title=lead.company_name or lead.name, subtitle=lead.status, href="/leads")
+            for lead in leads
+        ]
 
     if _has_permission(db, user, "customers.view"):
         customers = db.execute(
