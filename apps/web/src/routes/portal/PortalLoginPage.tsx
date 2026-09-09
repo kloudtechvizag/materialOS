@@ -61,7 +61,7 @@ export function PortalLoginPage() {
 
   return (
     <AuthLayout>
-      <Card className="w-full max-w-sm">
+      <Card className="w-full max-w-sm rounded-2xl shadow-xl">
         <CardHeader>
           <img src="/brand/symbol.svg" alt="" className="mb-2 h-8 w-8 lg:hidden" />
           <CardTitle>Customer portal sign-in</CardTitle>

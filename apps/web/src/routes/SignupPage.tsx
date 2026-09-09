@@ -85,7 +85,7 @@ export function SignupPage() {
 
   return (
     <AuthLayout>
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md rounded-2xl shadow-xl">
         <CardHeader>
           <img src="/brand/symbol.svg" alt="" className="mb-2 h-8 w-8 lg:hidden" />
           <CardTitle>Create your MaterialOS workspace</CardTitle>
