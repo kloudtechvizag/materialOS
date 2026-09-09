@@ -10,7 +10,7 @@ export function SidebarHeader({ collapsed, onToggleCollapse }: { collapsed: bool
         collapsed ? "flex-col justify-center gap-1 px-0 py-2" : "gap-2 px-4"
       )}
     >
-      <img src="/brand/symbol.png" alt="" className="h-7 w-7 shrink-0" />
+      <img src="/brand/symbol.svg" alt="" className="h-7 w-7 shrink-0" />
       {!collapsed && <span className="flex-1 truncate text-sm font-semibold">MaterialOS</span>}
       {onToggleCollapse && (
         <button

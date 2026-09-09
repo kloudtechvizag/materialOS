@@ -27,7 +27,7 @@ export function PortalShell() {
     <div className="flex h-screen w-full overflow-hidden">
       <aside className="flex w-60 shrink-0 flex-col bg-brand-navy text-brand-navy-foreground">
         <div className="flex h-14 items-center gap-2 border-b border-white/10 px-4">
-          <img src="/brand/symbol.png" alt="" className="h-7 w-7" />
+          <img src="/brand/symbol.svg" alt="" className="h-7 w-7" />
           <span className="text-sm font-semibold">Customer Portal</span>
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">

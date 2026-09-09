@@ -34,7 +34,7 @@ export function MobileDrawer() {
           <Dialog.Title className="sr-only">Navigation</Dialog.Title>
           <div className="flex h-14 shrink-0 items-center justify-between border-b border-white/10 px-4">
             <div className="flex items-center gap-2">
-              <img src="/brand/symbol.png" alt="" className="h-7 w-7" />
+              <img src="/brand/symbol.svg" alt="" className="h-7 w-7" />
               <span className="text-sm font-semibold">MaterialOS</span>
             </div>
             <Dialog.Close asChild>

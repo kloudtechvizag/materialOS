@@ -1,0 +1,28 @@
+<!-- MaterialOS compact symbol: the icon-only mark, extracted from
+     brand_assets/logo-primary-light.svg's icon group so every usage
+     (favicons, sidebar, mobile drawer, receipts, login/signup) renders
+     the exact same three-square mark instead of a separately-drawn copy. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-10 -10 124 116" width="100%" height="100%">
+  <defs>
+    <linearGradient id="tealGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00A896" />
+      <stop offset="100%" stop-color="#028090" />
+    </linearGradient>
+    <linearGradient id="navyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E3A8A" />
+      <stop offset="100%" stop-color="#0F172A" />
+    </linearGradient>
+    <linearGradient id="slateGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F8FAFC" />
+      <stop offset="100%" stop-color="#E2E8F0" />
+    </linearGradient>
+    <filter id="softShadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0F172A" flood-opacity="0.12" />
+    </filter>
+  </defs>
+  <g filter="url(#softShadow)">
+    <rect x="0" y="44" width="52" height="52" rx="14" fill="url(#navyGrad)" />
+    <rect x="26" y="0" width="52" height="52" rx="14" fill="url(#tealGrad)" />
+    <rect x="52" y="44" width="52" height="52" rx="14" fill="url(#slateGrad)" stroke="#CBD5E1" stroke-width="1.5" />
+  </g>
+</svg>

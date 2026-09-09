@@ -10,7 +10,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
         style={{ backgroundImage: "url(/brand/login-artwork.png)" }}
       >
         <div className="flex h-full flex-col items-start justify-between p-10">
-          <img src="/brand/logo-dark.png" alt="MaterialOS" className="h-8 w-auto" />
+          <img src="/brand/logo-dark.svg" alt="MaterialOS" className="h-8 w-auto" />
           <p className="max-w-sm text-sm text-brand-navy-muted">
             One connected operating system for sales, inventory, accounting, and operations -- configured for
             your industry, from retail and pharmacy to printing and building materials.

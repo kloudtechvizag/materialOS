@@ -87,7 +87,7 @@ export function SignupPage() {
     <AuthLayout>
       <Card className="w-full max-w-md">
         <CardHeader>
-          <img src="/brand/symbol.png" alt="" className="mb-2 h-8 w-8 lg:hidden" />
+          <img src="/brand/symbol.svg" alt="" className="mb-2 h-8 w-8 lg:hidden" />
           <CardTitle>Create your MaterialOS workspace</CardTitle>
           <CardDescription>Takes about a minute. You can import your Tally data right after.</CardDescription>
         </CardHeader>

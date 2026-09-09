@@ -58,7 +58,7 @@ export function LoginPage() {
     <AuthLayout>
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <img src="/brand/symbol.png" alt="" className="mb-2 h-8 w-8 lg:hidden" />
+          <img src="/brand/symbol.svg" alt="" className="mb-2 h-8 w-8 lg:hidden" />
           <CardTitle>Sign in to MaterialOS</CardTitle>
           <CardDescription>Enter your workspace, email, and password.</CardDescription>
         </CardHeader>

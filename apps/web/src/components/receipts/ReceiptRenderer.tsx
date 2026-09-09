@@ -57,7 +57,7 @@ export function ReceiptRenderer({ data, paperWidthMm }: ReceiptRendererProps) {
     >
       {settings.show_logo && (
         <div className="flex justify-center pb-1">
-          <img src="/brand/symbol.png" alt="" style={{ height: "28px", width: "28px", filter: "grayscale(1) contrast(1.2)" }} />
+          <img src="/brand/symbol.svg" alt="" style={{ height: "28px", width: "28px", filter: "grayscale(1) contrast(1.2)" }} />
         </div>
       )}
 

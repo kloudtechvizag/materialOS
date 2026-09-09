@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 160" width="100%" height="100%">
+  <defs>
+    <!-- Gradient Definitions -->
+    <linearGradient id="tealGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00A896" />
+      <stop offset="100%" stop-color="#028090" />
+    </linearGradient>
+
+    <linearGradient id="navyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E3A8A" />
+      <stop offset="100%" stop-color="#0F172A" />
+    </linearGradient>
+
+    <linearGradient id="slateGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F8FAFC" />
+      <stop offset="100%" stop-color="#E2E8F0" />
+    </linearGradient>
+
+    <!-- Subtle Drop Shadow for Elevation -->
+    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0F172A" flood-opacity="0.12" />
+    </filter>
+  </defs>
+
+  <!-- Icon Group -->
+  <g transform="translate(40, 25)" filter="url(#softShadow)">
+    <!-- Bottom Left Square (Deep Royal Navy) -->
+    <rect x="0" y="44" width="52" height="52" rx="14" fill="url(#navyGrad)" />
+    
+    <!-- Top Square (Vibrant Teal Accent) -->
+    <rect x="26" y="0" width="52" height="52" rx="14" fill="url(#tealGrad)" />
+    
+    <!-- Bottom Right Square (Soft Slate White) -->
+    <rect x="52" y="44" width="52" height="52" rx="14" fill="url(#slateGrad)" stroke="#CBD5E1" stroke-width="1.5" />
+  </g>
+
+  <!-- Wordmark -->
+  <text x="175" y="94" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="52" letter-spacing="-1.5">
+    <tspan font-weight="600" fill="#028090">Material</tspan><tspan font-weight="800" fill="#1E3A8A">OS</tspan>
+  </text>
+</svg>
