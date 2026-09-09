@@ -87,7 +87,7 @@ export function SignupPage() {
   return (
     <AuthLayout>
       <div className="w-full max-w-md">
-      <Card className="rounded-2xl border-slate-200 shadow-sm">
+      <Card className="rounded-xl border-[#E2E8F0] shadow-sm">
         <CardHeader>
           <img src="/brand/symbol.svg" alt="" className="mb-2 h-8 w-8 md:hidden" />
           <CardTitle>Create your MaterialOS workspace</CardTitle>
@@ -154,13 +154,13 @@ export function SignupPage() {
               {errors.ownerPassword && <p className="text-sm text-destructive">{errors.ownerPassword.message}</p>}
             </div>
             {serverError && <p className="text-sm text-destructive">{serverError}</p>}
-            <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
+            <Button type="submit" size="lg" className="w-full bg-[#7C3AED] text-white hover:bg-[#6D28D9]" disabled={isSubmitting}>
               {isSubmitting ? "Creating workspace..." : "Create workspace"}
             </Button>
           </form>
           <p className="mt-4 text-center text-sm text-muted-foreground">
             Already have a workspace?{" "}
-            <Link to="/login" className="font-medium text-primary underline-offset-4 hover:underline">
+            <Link to="/login" className="font-medium text-[#7C3AED] underline-offset-4 hover:underline">
               Sign in
             </Link>
           </p>
