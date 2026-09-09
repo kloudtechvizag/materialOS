@@ -45,6 +45,7 @@ class Supplier(Base, UUIDPk, TenantMixin, TimestampMixin):
     phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
     email: Mapped[str | None] = mapped_column(String(255), nullable=True)
     billing_state: Mapped[str | None] = mapped_column(String(100), nullable=True)  # drives CGST+SGST vs IGST on purchases
+    category: Mapped[str | None] = mapped_column(String(100), nullable=True)  # free text, e.g. "Raw Materials", "Logistics" -- no fixed enum, varies by industry
     opening_balance: Mapped[Decimal] = mapped_column(MONEY, nullable=False, default=0)
     opening_balance_as_of: Mapped[date | None] = mapped_column(Date, nullable=True)
     source_ledger_name: Mapped[str | None] = mapped_column(String(200), nullable=True)

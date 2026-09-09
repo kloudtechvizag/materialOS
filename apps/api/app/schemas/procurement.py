@@ -10,8 +10,17 @@ class SupplierOut(BaseModel):
     name: str
     gstin: str | None
     phone: str | None
+    email: str | None
     billing_state: str | None
+    category: str | None
     is_active: bool
+    # Not real columns -- set as ad-hoc attributes on the ORM object by
+    # the list endpoint's bulk aggregate query before serialization
+    # (Pydantic's from_attributes reads them via plain getattr, same as
+    # any mapped column). Absent (None) on any response built from a
+    # bare Supplier row that skipped that step, e.g. the create response.
+    outstanding_balance: Decimal | None = None
+    open_purchase_orders: int | None = None
 
     class Config:
         from_attributes = True
@@ -21,7 +30,26 @@ class SupplierCreate(BaseModel):
     name: str
     gstin: str | None = None
     phone: str | None = None
+    email: str | None = None
     billing_state: str | None = None
+    category: str | None = None
+
+
+class SupplierUpdate(BaseModel):
+    name: str | None = None
+    gstin: str | None = None
+    phone: str | None = None
+    email: str | None = None
+    billing_state: str | None = None
+    category: str | None = None
+    is_active: bool | None = None
+
+
+class SuppliersSummary(BaseModel):
+    total_suppliers: int
+    active_purchase_orders: int
+    total_outstanding: Decimal
+    missing_gstin_count: int
 
 
 class Supplier360(BaseModel):

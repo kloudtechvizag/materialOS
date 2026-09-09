@@ -477,5 +477,19 @@ Recorded in `docs/decisions/`:
   load-bearing service path, caught by the app failing to boot, fixed
   by restoring the original and renaming the new module) were all
   caught before or immediately upon first live test -- see the ADR.
+- **ADR-017**: the Suppliers list page's KPIs and table are real
+  aggregates or existing columns, not fabricated fields -- "Pending GST
+  Validation" doesn't exist anywhere in the schema (no GSTN API
+  integration, same no-fake-credentials reasoning as ADR-007/ADR-014),
+  so it's an honestly-labeled "Missing GSTIN" count instead.
+  `compute_payable_bulk()` batches the same math `GET /suppliers/{id}
+  /360` has trusted since Slice 3, live-verified equal to it. Row
+  checkboxes drive a real client-side CSV export, not decorative bulk
+  UI; "Delete" is deactivate/activate (real, reversible) since no
+  master-data resource in this app hard-deletes and suppliers are
+  FK-referenced by purchase orders/bills; `include_inactive` is opt-in
+  on `GET /suppliers` so the management page can reach a deactivated
+  supplier again without changing the purchase-order supplier picker's
+  active-only default.
 
 Read these before re-litigating any of them.
