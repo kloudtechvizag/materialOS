@@ -135,7 +135,7 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
     id: "operations",
     label: "Operations",
     items: [
-      { id: "command-center", label: "Command center", href: "/operations", icon: LayoutDashboard },
+      { id: "command-center", label: "Command center", href: "/operations", icon: LayoutDashboard, end: true },
       { id: "backups", label: "Backups", href: "/operations/backups", icon: Database, permission: "backup.view" },
       { id: "audit-log", label: "Audit log", href: "/operations/audit-log", icon: History, permission: "audit.view" },
       { id: "notification-rules", label: "Notification rules", href: "/operations/notification-rules", icon: Bell, permission: "notification_rules.manage" },
