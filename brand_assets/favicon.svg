@@ -1,29 +1,23 @@
+<!-- favicon.svg -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%">
   <defs>
-    <linearGradient id="favTeal" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00A896" />
-      <stop offset="100%" stop-color="#028090" />
+    <linearGradient id="favViolet" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7C3AED" />
+      <stop offset="100%" stop-color="#6D28D9" />
     </linearGradient>
-
-    <linearGradient id="favNavy" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1E3A8A" />
-      <stop offset="100%" stop-color="#0F172A" />
+    <linearGradient id="favEmerald" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="100%" stop-color="#059669" />
     </linearGradient>
-
-    <linearGradient id="favSlate" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#F8FAFC" />
-      <stop offset="100%" stop-color="#E2E8F0" />
+    <linearGradient id="favCoral" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF8800" />
+      <stop offset="100%" stop-color="#FF6B00" />
     </linearGradient>
   </defs>
 
   <g transform="translate(6, 6)">
-    <!-- Bottom Left Square (Deep Royal Navy) -->
-    <rect x="0" y="22" width="26" height="26" rx="6" fill="url(#favNavy)" />
-    
-    <!-- Top Square (Vibrant Teal) -->
-    <rect x="13" y="0" width="26" height="26" rx="6" fill="url(#favTeal)" />
-    
-    <!-- Bottom Right Square (Soft Slate) -->
-    <rect x="26" y="22" width="26" height="26" rx="6" fill="url(#favSlate)" stroke="#CBD5E1" stroke-width="1" />
+    <rect x="0" y="22" width="26" height="26" rx="6" fill="url(#favViolet)" />
+    <rect x="13" y="0" width="26" height="26" rx="6" fill="url(#favEmerald)" />
+    <rect x="26" y="22" width="26" height="26" rx="6" fill="url(#favCoral)" />
   </g>
 </svg>

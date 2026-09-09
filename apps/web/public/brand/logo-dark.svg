@@ -1,33 +1,33 @@
-<!-- MaterialOS primary lockup for dark backgrounds (AuthLayout's navy
-     hero panel). Same icon mark as logo-light.svg; the wordmark's navy
-     "OS" is swapped for white since brand_assets/logo-primary-dark.svg
-     used the same navy/teal text as the light variant, which is
-     unreadable on a dark navy panel: "Material" goes white for
-     contrast, "OS" keeps the teal accent so the brand color still reads. -->
+<!-- MaterialOS primary lockup for dark backgrounds (AuthLayout's hero
+     panel). Same icon mark as logo-light.svg; brand_assets'
+     logo-primary-light.svg colors "OS" a dark violet (#6D28D9), which
+     is unreadable on a near-black panel, so: "Material" goes white for
+     contrast, "OS" gets a lighter violet tint so the brand accent still
+     reads instead of disappearing into the background. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 160" width="100%" height="100%">
   <defs>
-    <linearGradient id="tealGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00A896" />
-      <stop offset="100%" stop-color="#028090" />
+    <linearGradient id="violetGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7C3AED" />
+      <stop offset="100%" stop-color="#6D28D9" />
     </linearGradient>
-    <linearGradient id="navyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1E3A8A" />
-      <stop offset="100%" stop-color="#0F172A" />
+    <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="100%" stop-color="#059669" />
     </linearGradient>
-    <linearGradient id="slateGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#F8FAFC" />
-      <stop offset="100%" stop-color="#E2E8F0" />
+    <linearGradient id="coralGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF8800" />
+      <stop offset="100%" stop-color="#FF6B00" />
     </linearGradient>
     <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
       <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.35" />
     </filter>
   </defs>
   <g transform="translate(40, 25)" filter="url(#softShadow)">
-    <rect x="0" y="44" width="52" height="52" rx="14" fill="url(#navyGrad)" stroke="#334155" stroke-width="1.5" />
-    <rect x="26" y="0" width="52" height="52" rx="14" fill="url(#tealGrad)" />
-    <rect x="52" y="44" width="52" height="52" rx="14" fill="url(#slateGrad)" />
+    <rect x="0" y="44" width="52" height="52" rx="14" fill="url(#violetGrad)" />
+    <rect x="26" y="0" width="52" height="52" rx="14" fill="url(#emeraldGrad)" />
+    <rect x="52" y="44" width="52" height="52" rx="14" fill="url(#coralGrad)" />
   </g>
   <text x="175" y="94" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="52" letter-spacing="-1.5">
-    <tspan font-weight="600" fill="#FFFFFF">Material</tspan><tspan font-weight="800" fill="#2DD4BF">OS</tspan>
+    <tspan font-weight="600" fill="#FFFFFF">Material</tspan><tspan font-weight="800" fill="#A78BFA">OS</tspan>
   </text>
 </svg>

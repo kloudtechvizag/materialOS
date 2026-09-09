@@ -27,8 +27,8 @@ function NodeNetwork() {
       <svg className="absolute inset-0 h-full w-full overflow-visible" aria-hidden="true">
         <defs>
           <linearGradient id="linkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#0EA5E9" stopOpacity={0.7} />
-            <stop offset="100%" stopColor="#00A896" stopOpacity={0.7} />
+            <stop offset="0%" stopColor="#A78BFA" stopOpacity={0.7} />
+            <stop offset="100%" stopColor="#34D399" stopOpacity={0.7} />
           </linearGradient>
         </defs>
         {LINKS.map(([fromId, toId]) => {
@@ -74,7 +74,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
           className="absolute inset-0 opacity-[0.07]"
           style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.4) 1px, transparent 1px)", backgroundSize: "32px 32px" }}
         />
-        <div className="pointer-events-none absolute left-1/3 top-1/3 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky-500/10 blur-[100px]" />
+        <div className="pointer-events-none absolute left-1/3 top-1/3 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-500/10 blur-[100px]" />
 
         <div className="relative flex h-full flex-col justify-between p-10 lg:p-12">
           <img src="/brand/logo-dark.svg" alt="MaterialOS" className="h-10 w-auto" />
