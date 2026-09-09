@@ -1,6 +1,7 @@
-import { Menu } from "lucide-react";
+import { Menu, Search } from "lucide-react";
 import { Outlet, useNavigate } from "react-router-dom";
 
+import { CommandPalette } from "@/components/CommandPalette";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 import { MobileDrawer } from "@/components/layout/sidebar/MobileDrawer";
 import { SidebarFooter } from "@/components/layout/sidebar/SidebarFooter";
@@ -8,6 +9,7 @@ import { SidebarHeader } from "@/components/layout/sidebar/SidebarHeader";
 import { SidebarNav } from "@/components/layout/sidebar/SidebarNav";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth";
+import { useCommandPaletteStore } from "@/store/commandPalette";
 import { useSidebarStore } from "@/store/sidebar";
 
 export function AppShell() {
@@ -17,6 +19,7 @@ export function AppShell() {
   const collapsed = useSidebarStore((s) => s.collapsed);
   const toggleCollapsed = useSidebarStore((s) => s.toggleCollapsed);
   const setMobileOpen = useSidebarStore((s) => s.setMobileOpen);
+  const openCommandPalette = useCommandPaletteStore((s) => s.setOpen);
 
   function handleLogout() {
     clearSession();
@@ -53,12 +56,24 @@ export function AppShell() {
             </button>
             <span className="text-sm text-muted-foreground">{tenantSlug}</span>
           </div>
-          <NotificationBell />
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => openCommandPalette(true)}
+              className="flex h-9 items-center gap-2 rounded-md border border-input px-3 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            >
+              <Search className="h-4 w-4" aria-hidden="true" />
+              <span className="hidden sm:inline">Search</span>
+              <kbd className="hidden rounded border border-border px-1.5 py-0.5 text-xs sm:inline">Ctrl K</kbd>
+            </button>
+            <NotificationBell />
+          </div>
         </header>
         <main className="flex-1 overflow-auto p-4 md:p-6">
           <Outlet />
         </main>
       </div>
+      <CommandPalette />
     </div>
   );
 }
