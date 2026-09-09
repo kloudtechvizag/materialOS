@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%">
+  <defs>
+    <linearGradient id="favTeal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00A896" />
+      <stop offset="100%" stop-color="#028090" />
+    </linearGradient>
+
+    <linearGradient id="favNavy" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E3A8A" />
+      <stop offset="100%" stop-color="#0F172A" />
+    </linearGradient>
+
+    <linearGradient id="favSlate" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F8FAFC" />
+      <stop offset="100%" stop-color="#E2E8F0" />
+    </linearGradient>
+  </defs>
+
+  <g transform="translate(6, 6)">
+    <!-- Bottom Left Square (Deep Royal Navy) -->
+    <rect x="0" y="22" width="26" height="26" rx="6" fill="url(#favNavy)" />
+    
+    <!-- Top Square (Vibrant Teal) -->
+    <rect x="13" y="0" width="26" height="26" rx="6" fill="url(#favTeal)" />
+    
+    <!-- Bottom Right Square (Soft Slate) -->
+    <rect x="26" y="22" width="26" height="26" rx="6" fill="url(#favSlate)" stroke="#CBD5E1" stroke-width="1" />
+  </g>
+</svg>
