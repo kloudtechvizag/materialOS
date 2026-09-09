@@ -71,9 +71,9 @@ export function PricingPage() {
     <div className="mx-auto max-w-6xl space-y-16 px-6 py-16">
       {/* Hero */}
       <div className="space-y-4 text-center">
-        <h1 className="text-4xl font-semibold tracking-tight">Power your business with MaterialOS</h1>
+        <h1 className="text-4xl font-semibold tracking-tight">One intelligent operating system for every business.</h1>
         <p className="mx-auto max-w-xl text-lg text-muted-foreground">
-          One operating system for sales, inventory, accounting, operations, and growth. Start with the essentials, add capabilities as your business grows.
+          Sales, inventory, accounting, and operations, tailored to your industry. Start with the essentials, add capabilities as your business grows.
         </p>
       </div>
 

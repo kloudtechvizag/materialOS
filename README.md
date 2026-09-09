@@ -1,6 +1,6 @@
 # MaterialOS
 
-AI-powered building materials business operating system. See
+One intelligent operating system for every business. See
 [`MaterialOS_Master_Brief_v2.md`](MaterialOS_Master_Brief_v2.md) for the
 product brief this build follows (it supersedes `dev.md`, the original
 116-section v1 prompt, which is kept as the full feature backlog).

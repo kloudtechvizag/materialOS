@@ -29,7 +29,7 @@
     "targets": "all",
     "publisher": "MaterialOS",
     "category": "Business",
-    "shortDescription": "AI-powered multi-industry business operating system",
+    "shortDescription": "One intelligent operating system for every business.",
     "longDescription": "MaterialOS desktop client -- the same web application (React + TypeScript, apps/web) wrapped in a native shell for Windows, macOS, and Linux. Sales, inventory, accounting, dispatch, printing/production, backup & operations, subscription billing, and People & Payroll across 23+ industry profiles. See docs/decisions/ADR-012 for what desktop-specific capability this build does and does not add.",
     "icon": [
       "icons/32x32.png",

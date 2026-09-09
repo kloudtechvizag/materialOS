@@ -83,7 +83,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
 
           <div className="max-w-sm space-y-2">
             <p className="text-xl font-semibold leading-snug text-white">
-              One connected operating system for your business.
+              One intelligent operating system for every business.
             </p>
             <p className="text-sm leading-relaxed text-slate-400">
               Manage sales, inventory, purchasing, finance, operations and AI from one powerful platform.
