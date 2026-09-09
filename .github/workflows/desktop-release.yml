@@ -32,13 +32,42 @@ on:
   workflow_dispatch:
 
 jobs:
+  # tauri-action's own "create the release if it doesn't exist yet"
+  # logic races when both matrix jobs below call it at once for the
+  # SAME tag: whichever job's create-release call loses gets a real
+  # "Validation Failed: {\"resource\":\"Release\",\"code\":\"already_
+  # exists\"...}" and its whole job (compile included) is marked
+  # failed -- confirmed from an actual run (desktop-v0.2.4): Windows
+  # won the race and published; Linux compiled fine but never got to
+  # upload its .deb/.rpm/.AppImage because its own create call 409'd.
+  # Creating the (draft) release once, first, in its own job, and
+  # having each matrix job only *upload* to that known release id
+  # removes the race instead of trying to win it.
+  create-release:
+    permissions:
+      contents: write
+    runs-on: ubuntu-22.04
+    outputs:
+      release_id: ${{ steps.create.outputs.result }}
+    steps:
+      - uses: actions/github-script@v7
+        id: create
+        with:
+          script: |
+            const { data } = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: context.ref.replace('refs/tags/', ''),
+              name: `MaterialOS Desktop ${context.ref.replace('refs/tags/', '')}`,
+              draft: true,
+              prerelease: false,
+            });
+            return data.id;
+
   build:
-    # The build itself needs no special access; creating/uploading to a
-    # GitHub Release does. Without this, the default GITHUB_TOKEN this
-    # workflow gets is read-only and tauri-action's release step fails
-    # with "Resource not accessible by integration" -- confirmed from
-    # an actual run: both builds succeeded (real .msi/.deb/.rpm/
-    # .AppImage artifacts), only the release-creation call failed.
+    needs: create-release
+    # The build itself needs no special access; uploading to the
+    # release created above does.
     permissions:
       contents: write
     strategy:
@@ -99,11 +128,28 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           projectPath: apps/desktop
-          tagName: ${{ github.ref_name }}
-          releaseName: "MaterialOS Desktop ${{ github.ref_name }}"
-          # Published immediately, not draft: the point is a real,
-          # downloadable release on the repo's Releases page (a draft
-          # is invisible to anyone but repo admins, defeating that).
-          # Still genuinely unsigned -- see this file's header comment.
-          releaseDraft: false
-          prerelease: false
+          # Upload-only: releaseId (not tagName/releaseName) points
+          # tauri-action at the release create-release already made,
+          # so this step can't race the other matrix job to create it.
+          releaseId: ${{ needs.create-release.outputs.release_id }}
+
+  # Un-drafts the release once both platforms have uploaded, so it's
+  # never visible on the public Releases page half-built (e.g. Windows
+  # assets up, Linux still compiling). Still genuinely unsigned -- see
+  # this file's header comment.
+  publish-release:
+    needs: [create-release, build]
+    permissions:
+      contents: write
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.updateRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: ${{ needs.create-release.outputs.release_id }},
+              draft: false,
+              prerelease: false,
+            });
