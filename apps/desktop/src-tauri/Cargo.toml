@@ -1,6 +1,6 @@
 [package]
 name = "materialos-desktop"
-version = "0.2.5"
+version = "0.2.6"
 description = "MaterialOS desktop client -- native shell around apps/web"
 authors = ["MaterialOS"]
 edition = "2021"

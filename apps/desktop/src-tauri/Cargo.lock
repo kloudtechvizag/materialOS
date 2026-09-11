@@ -1773,12 +1773,13 @@ dependencies = [
 
 [[package]]
 name = "materialos-desktop"
-version = "0.2.5"
+version = "0.2.6"
 dependencies = [
  "serde",
  "serde_json",
  "tauri",
  "tauri-build",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
