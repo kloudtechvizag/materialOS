@@ -17,13 +17,25 @@ name: desktop-release
 # / `x86_64-apple-darwin` entries this file had before), not a
 # structural change.
 #
-# Publishing is unsigned by default (no code-signing certificates are
-# configured in this repo's secrets) -- Windows SmartScreen will warn
-# on an unsigned .msi. That's an intentional gap, not an oversight:
-# faking a signature isn't possible without a real certificate, and
-# this workflow doesn't pretend otherwise. Add
-# TAURI_SIGNING_PRIVATE_KEY (updater signing) and a code-signing
-# certificate secret when this is ready to distribute outside the team.
+# The .msi/.exe/.deb/.AppImage themselves are still unsigned (no
+# Windows Authenticode / macOS notarization certificate is configured
+# in this repo's secrets) -- Windows SmartScreen will still warn on a
+# fresh install. That's a separate, still-intentional gap: faking an
+# OS code-signing certificate isn't possible without a real one, and
+# this workflow doesn't pretend otherwise.
+#
+# What IS signed as of ADR-018: the *updater* manifest/payload.
+# TAURI_SIGNING_PRIVATE_KEY(_PASSWORD) below is a separate minisign-style
+# keypair (`tauri signer generate`) used only by tauri-plugin-updater to
+# verify an update package before installing it -- unrelated to OS-level
+# code signing. bundle.createUpdaterArtifacts in tauri.conf.json makes
+# `tauri build` emit a signed update bundle + .sig per platform, and
+# tauri-action's default behavior (includeUpdaterJson) then generates
+# and uploads latest.json to this release, which
+# plugins.updater.endpoints points every installed copy of MaterialOS
+# at. Losing TAURI_SIGNING_PRIVATE_KEY means no future release can ever
+# be verified by already-installed clients again -- back it up
+# somewhere outside GitHub, not just in the repo secret.
 
 on:
   push:
@@ -126,6 +138,8 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           projectPath: apps/desktop
           # Upload-only: releaseId (not tagName/releaseName) points

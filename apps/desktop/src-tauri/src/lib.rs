@@ -27,6 +27,21 @@ pub fn run() {
     set_app_user_model_id();
 
     tauri::Builder::default()
+        // Updater checks a signed manifest (tauri.conf.json's
+        // plugins.updater.endpoints) and verifies the downloaded
+        // package against plugins.updater.pubkey before ever writing
+        // it to disk -- see docs/decisions/ADR-LOCAL-009. process
+        // gives the frontend a way to relaunch after
+        // downloadAndInstall() completes. Desktop-only: this plugin
+        // doesn't build for mobile targets.
+        .setup(|app| {
+            #[cfg(desktop)]
+            {
+                app.handle().plugin(tauri_plugin_updater::Builder::new().build())?;
+                app.handle().plugin(tauri_plugin_process::init())?;
+            }
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![app_info])
         .run(tauri::generate_context!())
         .expect("error while running the MaterialOS desktop shell");

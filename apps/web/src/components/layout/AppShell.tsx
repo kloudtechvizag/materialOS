@@ -3,6 +3,7 @@ import { Outlet, useNavigate } from "react-router-dom";
 import { Toaster } from "sonner";
 
 import { CommandPalette } from "@/components/CommandPalette";
+import { DesktopUpdateNotifier } from "@/components/DesktopUpdateNotifier";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 import { MobileDrawer } from "@/components/layout/sidebar/MobileDrawer";
 import { SidebarFooter } from "@/components/layout/sidebar/SidebarFooter";
@@ -75,6 +76,7 @@ export function AppShell({ children }: { children?: React.ReactNode } = {}) {
         </main>
       </div>
       <CommandPalette />
+      <DesktopUpdateNotifier />
       <Toaster
         position="bottom-right"
         toastOptions={{
