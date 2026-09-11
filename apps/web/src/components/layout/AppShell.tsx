@@ -1,5 +1,6 @@
 import { Menu, Search } from "lucide-react";
 import { Outlet, useNavigate } from "react-router-dom";
+import { Toaster } from "sonner";
 
 import { CommandPalette } from "@/components/CommandPalette";
 import { NotificationBell } from "@/components/layout/NotificationBell";
@@ -74,6 +75,16 @@ export function AppShell({ children }: { children?: React.ReactNode } = {}) {
         </main>
       </div>
       <CommandPalette />
+      <Toaster
+        position="bottom-right"
+        toastOptions={{
+          classNames: {
+            toast: "rounded-lg border border-border bg-card text-card-foreground shadow-md",
+            title: "text-sm font-medium",
+            description: "text-sm text-muted-foreground",
+          },
+        }}
+      />
     </div>
   );
 }

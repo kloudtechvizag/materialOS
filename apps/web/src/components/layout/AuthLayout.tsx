@@ -1,17 +1,23 @@
-import { Bot, Layers, Package, Warehouse } from "lucide-react";
+import { BarChart3, Bot, Layers, Package, Truck, Warehouse } from "lucide-react";
 
 const NODES = [
-  { id: "cement", label: "Cement", icon: Package, top: "22%", left: "10%" },
-  { id: "steel", label: "Steel TMT", icon: Layers, top: "46%", left: "36%" },
-  { id: "warehouse", label: "Warehouse", icon: Warehouse, top: "30%", left: "64%" },
-  { id: "dispatch", label: "AI Dispatch", icon: Bot, top: "58%", left: "90%" },
+  { id: "cement", label: "Cement", icon: Package, top: "18%", left: "8%" },
+  { id: "steel", label: "Steel TMT", icon: Layers, top: "40%", left: "32%" },
+  { id: "warehouse", label: "Warehouse", icon: Warehouse, top: "20%", left: "58%" },
+  { id: "finance", label: "Finance", icon: BarChart3, top: "62%", left: "62%" },
+  { id: "dispatch", label: "AI Dispatch", icon: Bot, top: "44%", left: "88%" },
+  { id: "delivery", label: "Delivery", icon: Truck, top: "78%", left: "20%" },
 ] as const;
 
 const LINKS: [(typeof NODES)[number]["id"], (typeof NODES)[number]["id"]][] = [
   ["cement", "steel"],
   ["steel", "warehouse"],
+  ["warehouse", "finance"],
   ["warehouse", "dispatch"],
+  ["steel", "delivery"],
 ];
+
+const MODULES = ["Sales", "Inventory", "Finance", "Operations", "AI"];
 
 function byId(id: string) {
   return NODES.find((n) => n.id === id)!;
@@ -19,11 +25,11 @@ function byId(id: string) {
 
 /** Coded in place of a flat exported image so it always matches the live
  * brand palette and never drifts the way a baked PNG did. Kept
- * deliberately restrained (thin lines, low glow) -- this is brand
- * texture behind a sign-in form, not a dashboard. */
+ * deliberately restrained (thin lines, low glow, one pulsing link) --
+ * this is brand texture behind a sign-in form, not a dashboard. */
 function NodeNetwork() {
   return (
-    <div className="relative hidden h-56 w-full max-w-md lg:block">
+    <div className="relative hidden h-64 w-full max-w-md lg:block">
       <svg className="absolute inset-0 h-full w-full overflow-visible" aria-hidden="true">
         <defs>
           <linearGradient id="linkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -46,6 +52,17 @@ function NodeNetwork() {
             />
           );
         })}
+        {/* One quiet pulse of "data movement" along the busiest edge --
+            everything else on this panel is static. */}
+        <circle r={2.5} fill="#A78BFA">
+          <animateMotion
+            dur="4s"
+            repeatCount="indefinite"
+            path={`M ${byId("cement").left} ${byId("cement").top} L ${byId("steel").left} ${byId("steel").top} L ${byId("warehouse").left} ${byId("warehouse").top} L ${byId("dispatch").left} ${byId("dispatch").top}`}
+            keyPoints="0;1"
+            keyTimes="0;1"
+          />
+        </circle>
       </svg>
       {NODES.map(({ id, label, icon: Icon, top, left }) => (
         <div
@@ -84,13 +101,23 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
 
           <NodeNetwork />
 
-          <div className="max-w-sm space-y-2">
-            <p className="text-xl font-semibold leading-snug text-white">
-              One intelligent operating system for every business.
-            </p>
-            <p className="text-sm leading-relaxed text-slate-400">
-              Manage sales, inventory, purchasing, finance, operations and AI from one powerful platform.
-            </p>
+          <div className="max-w-sm space-y-4">
+            <div className="space-y-2">
+              <p className="text-xl font-semibold leading-snug text-white">
+                One connected operating system for your business.
+              </p>
+              <p className="text-sm leading-relaxed text-slate-400">
+                Sales, inventory, purchasing, finance, operations and AI -- connected in one intelligent platform.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-x-3 gap-y-1.5">
+              {MODULES.map((m, i) => (
+                <span key={m} className="flex items-center text-xs font-medium text-slate-500">
+                  {i > 0 && <span className="mr-3 text-slate-700">·</span>}
+                  {m}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
       </div>

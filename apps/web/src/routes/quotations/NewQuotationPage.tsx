@@ -3,6 +3,10 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Plus, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
+import { QuickAddContactModal } from "@/components/entities/QuickAddContactModal";
+import { QuickAddProjectModal } from "@/components/entities/QuickAddProjectModal";
+import { QuickAddSiteModal } from "@/components/entities/QuickAddSiteModal";
+import { SearchableSelect } from "@/components/entities/SearchableSelect";
 import { ItemSelect } from "@/components/items/ItemSelect";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,7 +34,12 @@ export function NewQuotationPage() {
   const [siteId, setSiteId] = useState("");
   const [lines, setLines] = useState<Line[]>([{ item_id: "", qty: "", uom: "" }]);
 
+  const [quickAddCustomerOpen, setQuickAddCustomerOpen] = useState(false);
+  const [quickAddProjectOpen, setQuickAddProjectOpen] = useState(false);
+  const [quickAddSiteOpen, setQuickAddSiteOpen] = useState(false);
+
   const customerProjects = projects?.filter((p) => p.customer_id === customerId) ?? [];
+  const selectedCustomer = customers?.find((c) => c.id === customerId);
   const selectedProject = customerProjects.find((p) => p.id === projectId);
 
   const createQuotation = useMutation({
@@ -71,24 +80,44 @@ export function NewQuotationPage() {
         <CardContent className="grid grid-cols-3 gap-4">
           <div className="space-y-1.5">
             <Label>Customer</Label>
-            <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={customerId} onChange={(e) => { setCustomerId(e.target.value); setProjectId(""); setSiteId(""); }}>
-              <option value="">Select customer</option>
-              {customers?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            <SearchableSelect
+              options={customers?.map((c) => ({ id: c.id, label: c.name }))}
+              value={customerId}
+              onChange={(id) => { setCustomerId(id); setProjectId(""); setSiteId(""); }}
+              placeholder="Select customer"
+              searchPlaceholder="Search customers..."
+              emptyText="No customers match."
+              quickAddLabel="Quick Add Customer"
+              onQuickAdd={() => setQuickAddCustomerOpen(true)}
+            />
           </div>
           <div className="space-y-1.5">
             <Label>Project (optional)</Label>
-            <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={projectId} onChange={(e) => { setProjectId(e.target.value); setSiteId(""); }} disabled={!customerId}>
-              <option value="">No project</option>
-              {customerProjects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
+            <SearchableSelect
+              options={customerProjects.map((p) => ({ id: p.id, label: p.name }))}
+              value={projectId}
+              onChange={(id) => { setProjectId(id); setSiteId(""); }}
+              placeholder="No project"
+              searchPlaceholder="Search projects..."
+              emptyText="No projects for this customer."
+              disabled={!customerId}
+              quickAddLabel="Quick Add Project"
+              onQuickAdd={customerId ? () => setQuickAddProjectOpen(true) : undefined}
+            />
           </div>
           <div className="space-y-1.5">
             <Label>Site (optional)</Label>
-            <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={siteId} onChange={(e) => setSiteId(e.target.value)} disabled={!selectedProject}>
-              <option value="">No site</option>
-              {selectedProject?.sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
+            <SearchableSelect
+              options={selectedProject?.sites.map((s) => ({ id: s.id, label: s.name, sublabel: s.state }))}
+              value={siteId}
+              onChange={setSiteId}
+              placeholder="No site"
+              searchPlaceholder="Search sites..."
+              emptyText="No sites on this project."
+              disabled={!selectedProject}
+              quickAddLabel="Quick Add Site"
+              onQuickAdd={selectedProject ? () => setQuickAddSiteOpen(true) : undefined}
+            />
           </div>
         </CardContent>
       </Card>
@@ -147,6 +176,33 @@ export function NewQuotationPage() {
           </Button>
         </CardContent>
       </Card>
+
+      <QuickAddContactModal<Customer>
+        open={quickAddCustomerOpen}
+        onOpenChange={setQuickAddCustomerOpen}
+        title="Customer"
+        endpoint="/customers"
+        queryKey="customers"
+        onCreated={(customer) => { setCustomerId(customer.id); setProjectId(""); setSiteId(""); }}
+      />
+      {customerId && (
+        <QuickAddProjectModal
+          open={quickAddProjectOpen}
+          onOpenChange={setQuickAddProjectOpen}
+          customerId={customerId}
+          customerName={selectedCustomer?.name ?? ""}
+          onCreated={(project) => { setProjectId(project.id); setSiteId(""); }}
+        />
+      )}
+      {selectedProject && (
+        <QuickAddSiteModal
+          open={quickAddSiteOpen}
+          onOpenChange={setQuickAddSiteOpen}
+          projectId={selectedProject.id}
+          projectName={selectedProject.name}
+          onCreated={(site) => setSiteId(site.id)}
+        />
+      )}
     </div>
   );
 }

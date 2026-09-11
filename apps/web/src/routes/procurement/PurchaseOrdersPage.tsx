@@ -3,6 +3,8 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Plus, ShoppingCart, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
+import { QuickAddContactModal } from "@/components/entities/QuickAddContactModal";
+import { SearchableSelect } from "@/components/entities/SearchableSelect";
 import { ItemSelect } from "@/components/items/ItemSelect";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,6 +36,7 @@ export function PurchaseOrdersPage() {
   const [supplierId, setSupplierId] = useState("");
   const [warehouseId, setWarehouseId] = useState("");
   const [lines, setLines] = useState<Line[]>([{ item_id: "", qty: "", rate: "" }]);
+  const [quickAddSupplierOpen, setQuickAddSupplierOpen] = useState(false);
 
   const { data: suppliers } = useQuery({ queryKey: ["suppliers"], queryFn: () => apiFetch<Supplier[]>("/suppliers") });
   const { data: warehouses } = useQuery({ queryKey: ["warehouses"], queryFn: () => apiFetch<Warehouse[]>("/warehouses") });
@@ -76,10 +79,16 @@ export function PurchaseOrdersPage() {
           <CardHeader><CardTitle className="text-base">New purchase order</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={supplierId} onChange={(e) => setSupplierId(e.target.value)}>
-                <option value="">Select supplier</option>
-                {suppliers?.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
+              <SearchableSelect
+                options={suppliers?.map((s) => ({ id: s.id, label: s.name }))}
+                value={supplierId}
+                onChange={setSupplierId}
+                placeholder="Select supplier"
+                searchPlaceholder="Search suppliers..."
+                emptyText="No suppliers match."
+                quickAddLabel="Quick Add Supplier"
+                onQuickAdd={() => setQuickAddSupplierOpen(true)}
+              />
               <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={warehouseId} onChange={(e) => setWarehouseId(e.target.value)}>
                 <option value="">Receive into warehouse</option>
                 {warehouses?.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
@@ -116,6 +125,15 @@ export function PurchaseOrdersPage() {
           </CardContent>
         </Card>
       )}
+
+      <QuickAddContactModal<Supplier>
+        open={quickAddSupplierOpen}
+        onOpenChange={setQuickAddSupplierOpen}
+        title="Supplier"
+        endpoint="/suppliers"
+        queryKey="suppliers"
+        onCreated={(supplier) => setSupplierId(supplier.id)}
+      />
 
       {isLoading && <Skeleton className="h-40" />}
       {error && <ErrorState error={error} onRetry={() => refetch()} />}

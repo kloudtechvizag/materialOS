@@ -10,7 +10,7 @@ from app.errors import AppError, ErrorCode
 from app.models.projects import Project, Site
 from app.models.sales import Invoice, InvoiceItem
 from app.models.user import User
-from app.schemas.projects import ProjectCreate, ProjectOut, ProjectProfitability
+from app.schemas.projects import ProjectCreate, ProjectOut, ProjectProfitability, SiteCreate, SiteOut
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
@@ -38,6 +38,29 @@ def create_project(
     db.flush()
     db.refresh(project)
     return project
+
+
+@router.post("/{project_id}/sites", response_model=SiteOut, status_code=201)
+def create_site(
+    project_id: uuid.UUID,
+    payload: SiteCreate,
+    db: Session = Depends(get_db_tenant),
+    user: User = Depends(require_permission("customers.create")),
+) -> Site:
+    """Adding a site to a project that already exists -- ProjectCreate's
+    nested `sites` only covers a site created in the same request as its
+    project. Quick Add Site (and any other post-hoc site addition) needs
+    this instead.
+    """
+    project = db.get(Project, project_id)
+    if project is None:
+        raise AppError(ErrorCode.NOT_FOUND, "Project not found.", status_code=404)
+
+    site = Site(tenant_id=user.tenant_id, project_id=project_id, **payload.model_dump())
+    db.add(site)
+    db.flush()
+    db.refresh(site)
+    return site
 
 
 @router.get("/{project_id}/profitability", response_model=ProjectProfitability)
