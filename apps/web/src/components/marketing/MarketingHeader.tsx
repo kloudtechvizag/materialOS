@@ -25,7 +25,7 @@ export function MarketingHeader({ active }: { active?: AuthAction }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <header className="relative border-b border-[#E2E8F0] bg-white">
+    <header className="sticky top-0 z-40 border-b border-black/[0.06] bg-white/80 backdrop-blur-md supports-[backdrop-filter]:bg-white/70">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <Link to="/" className="flex items-center gap-2.5" onClick={() => setMobileOpen(false)}>
           <img src="/brand/symbol.svg" alt="" className="h-10 w-10" />
@@ -70,7 +70,7 @@ export function MarketingHeader({ active }: { active?: AuthAction }) {
 
       <div
         className={cn(
-          "overflow-hidden border-t border-[#E2E8F0] transition-[max-height,opacity] duration-200 ease-in-out md:hidden",
+          "overflow-hidden border-t border-black/[0.06] bg-white transition-[max-height,opacity] duration-200 ease-in-out md:hidden",
           mobileOpen ? "max-h-[26rem] opacity-100" : "max-h-0 opacity-0",
         )}
       >

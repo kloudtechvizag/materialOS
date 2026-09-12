@@ -2,13 +2,13 @@ import { Link } from "react-router-dom";
 import { ArrowRight, Package } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Seo, SITE_URL } from "@/components/marketing/Seo";
 import { BrowserFrame } from "@/components/marketing/BrowserFrame";
+import { ModuleCard } from "@/components/marketing/ModuleCard";
 import { ALL_INDUSTRIES, INDUSTRIES } from "@/marketing/content/industries";
 import { FEATURES } from "@/marketing/content/features";
 import { FEATURE_ICONS, INDUSTRY_ICONS } from "@/marketing/icons";
-import { paletteColor } from "@/marketing/palette";
+import { paletteGradient } from "@/marketing/palette";
 import { FEATURE_SCREENSHOTS } from "@/marketing/screenshots";
 
 const jsonLd = [
@@ -49,75 +49,61 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-5xl px-6 pb-20 pt-14">
-        <div className="relative">
-          <div className="absolute inset-x-8 -top-6 h-24 rounded-full bg-[#7C3AED]/10 blur-3xl" aria-hidden="true" />
-          <BrowserFrame src="/screenshots/dashboard.webp" alt="MaterialOS dashboard showing outstanding, invoiced, quotations, and stock in real time" className="relative" />
-        </div>
+      <section className="relative mx-auto max-w-5xl px-6 pb-20 pt-14">
+        <div
+          className="pointer-events-none absolute inset-x-8 -top-10 h-64 bg-[radial-gradient(60%_60%_at_50%_35%,rgba(124,58,237,0.14),transparent_70%)]"
+          aria-hidden="true"
+        />
+        <BrowserFrame
+          src="/screenshots/dashboard.webp"
+          alt="MaterialOS dashboard showing outstanding, invoiced, quotations, and stock in real time"
+          className="relative -rotate-1 shadow-[0_40px_80px_-30px_rgba(15,23,42,0.35)] transition-transform duration-500 hover:rotate-0"
+        />
       </section>
 
-      <section className="border-t border-[#E2E8F0] bg-[#F8FAFC] py-16">
+      <section className="border-t border-black/[0.06] bg-[#F9FAFB] py-16">
         <div className="mx-auto max-w-6xl px-6">
           <div className="flex items-end justify-between">
-            <h2 className="text-2xl font-semibold">Built for your industry</h2>
+            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">Built for your industry</h2>
             <Link to="/industries" className="flex items-center gap-1 text-sm font-medium text-[#7C3AED] hover:underline">
               All {ALL_INDUSTRIES.length} industries <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {INDUSTRIES.map((industry, i) => {
-              const Icon = INDUSTRY_ICONS[industry.slug] ?? Package;
-              const color = paletteColor(i);
-              return (
-                <Link key={industry.slug} to={`/industries/${industry.slug}`}>
-                  <Card className="h-full border-[#E2E8F0] transition-shadow hover:shadow-md">
-                    <CardContent className="p-6">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-xl" style={{ backgroundColor: color.bg }}>
-                        <Icon className="h-7 w-7" style={{ color: color.fg }} />
-                      </div>
-                      <h3 className="mt-4 font-semibold">{industry.name}</h3>
-                      <p className="mt-2 text-sm text-muted-foreground">{industry.heroTagline}</p>
-                    </CardContent>
-                  </Card>
-                </Link>
-              );
-            })}
+          <div className="mt-8 grid grid-cols-1 items-start gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {INDUSTRIES.map((industry, i) => (
+              <ModuleCard
+                key={industry.slug}
+                to={`/industries/${industry.slug}`}
+                icon={INDUSTRY_ICONS[industry.slug] ?? Package}
+                gradient={paletteGradient(i)}
+                name={industry.name}
+                tagline={industry.heroTagline}
+              />
+            ))}
           </div>
         </div>
       </section>
 
       <section className="py-16">
         <div className="mx-auto max-w-6xl px-6">
-          <h2 className="text-2xl font-semibold">Everything runs on one platform</h2>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {FEATURES.map((feature, i) => {
-              const Icon = FEATURE_ICONS[feature.slug] ?? Package;
-              const color = paletteColor(i);
-              const screenshot = FEATURE_SCREENSHOTS[feature.slug];
-              return (
-                <Link key={feature.slug} to={`/features/${feature.slug}`}>
-                  <Card className="h-full overflow-hidden border-[#E2E8F0] transition-shadow hover:shadow-md">
-                    <CardContent className="p-6">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-xl" style={{ backgroundColor: color.bg }}>
-                        <Icon className="h-7 w-7" style={{ color: color.fg }} />
-                      </div>
-                      <h3 className="mt-4 font-semibold">{feature.name}</h3>
-                      <p className="mt-2 text-sm text-muted-foreground">{feature.problem}</p>
-                    </CardContent>
-                    {screenshot && (
-                      <div className="h-24 border-t border-[#E2E8F0]">
-                        <img src={screenshot} alt="" className="h-full w-full object-cover object-top" loading="lazy" />
-                      </div>
-                    )}
-                  </Card>
-                </Link>
-              );
-            })}
+          <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">Everything runs on one platform</h2>
+          <div className="mt-8 grid grid-cols-1 items-start gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {FEATURES.map((feature, i) => (
+              <ModuleCard
+                key={feature.slug}
+                to={`/features/${feature.slug}`}
+                icon={FEATURE_ICONS[feature.slug] ?? Package}
+                gradient={paletteGradient(i)}
+                name={feature.name}
+                tagline={feature.problem}
+                screenshot={FEATURE_SCREENSHOTS[feature.slug]}
+              />
+            ))}
           </div>
         </div>
       </section>
 
-      <section className="border-t border-[#E2E8F0] bg-[#F8FAFC] py-16 text-center">
+      <section className="border-t border-black/[0.06] bg-[#F9FAFB] py-16 text-center">
         <h2 className="text-2xl font-semibold">Ready to run your business on one system?</h2>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <Button size="lg" className="bg-[#7C3AED] text-white hover:bg-[#6D28D9]" asChild>
