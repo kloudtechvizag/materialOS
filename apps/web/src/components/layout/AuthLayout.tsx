@@ -1,5 +1,7 @@
 import { BarChart3, Bot, Layers, Package, Truck, Warehouse } from "lucide-react";
 
+import { MarketingHeader, type AuthAction } from "@/components/marketing/MarketingHeader";
+
 const NODES = [
   { id: "cement", label: "Cement", icon: Package, top: "18%", left: "8%" },
   { id: "steel", label: "Steel TMT", icon: Layers, top: "40%", left: "32%" },
@@ -78,52 +80,55 @@ function NodeNetwork() {
   );
 }
 
-/** Shared shell for Login/Signup/Portal login: a branded panel on
- * tablet+ (reduced to just logo/tagline on md, the full node network
- * joins at lg), the real form on top of a soft off-white background
- * everywhere. The hero is decorative only -- the functional form is
- * always our own component, never baked into an image. */
-export function AuthLayout({ children }: { children: React.ReactNode }) {
+/** Shared shell for Login/Signup/Portal login: the same global
+ * MarketingHeader as every marketing page on top (so auth pages never
+ * feel like a separate app), a branded panel on tablet+ below it
+ * (reduced to just a tagline on md, the full node network joins at lg),
+ * and the real form on a soft off-white background everywhere. The hero
+ * is decorative only -- the functional form is always our own
+ * component, never baked into an image. `active` tells MarketingHeader
+ * which auth action this page IS, so Login/Signup can show where the
+ * visitor already is. */
+export function AuthLayout({ children, active }: { children: React.ReactNode; active?: AuthAction }) {
   return (
-    <div className="flex min-h-screen">
-      <div className="relative hidden shrink-0 overflow-hidden bg-[#081426] md:flex md:w-[38%] lg:w-[45%]">
-        <div
-          className="absolute inset-0 opacity-[0.07]"
-          style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.4) 1px, transparent 1px)", backgroundSize: "32px 32px" }}
-        />
-        <div className="pointer-events-none absolute left-1/3 top-1/3 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-500/10 blur-[100px]" />
+    <div className="flex min-h-screen flex-col bg-white">
+      <MarketingHeader active={active} />
 
-        <div className="relative flex h-full flex-col justify-between p-10 lg:p-12">
-          <div className="flex items-center gap-2.5">
-            <img src="/brand/symbol.svg" alt="" className="h-10 w-10" />
-            <span className="text-2xl font-semibold text-white">MaterialOS</span>
-          </div>
+      <div className="flex flex-1">
+        <div className="relative hidden shrink-0 overflow-hidden bg-[#081426] md:flex md:w-[38%] lg:w-[45%]">
+          <div
+            className="absolute inset-0 opacity-[0.07]"
+            style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.4) 1px, transparent 1px)", backgroundSize: "32px 32px" }}
+          />
+          <div className="pointer-events-none absolute left-1/3 top-1/3 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-500/10 blur-[100px]" />
 
-          <NodeNetwork />
+          <div className="relative flex h-full flex-col justify-center gap-10 p-10 lg:p-12">
+            <NodeNetwork />
 
-          <div className="max-w-sm space-y-4">
-            <div className="space-y-2">
-              <p className="text-xl font-semibold leading-snug text-white">
-                One connected operating system for your business.
-              </p>
-              <p className="text-sm leading-relaxed text-slate-400">
-                Sales, inventory, purchasing, finance, operations and AI -- connected in one intelligent platform.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-x-3 gap-y-1.5">
-              {MODULES.map((m, i) => (
-                <span key={m} className="flex items-center text-xs font-medium text-slate-500">
-                  {i > 0 && <span className="mr-3 text-slate-700">·</span>}
-                  {m}
-                </span>
-              ))}
+            <div className="max-w-sm space-y-4">
+              <div className="space-y-2">
+                <p className="text-xl font-semibold leading-snug text-white">
+                  One connected operating system for your business.
+                </p>
+                <p className="text-sm leading-relaxed text-slate-400">
+                  Sales, inventory, purchasing, finance, operations and AI -- connected in one intelligent platform.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-x-3 gap-y-1.5">
+                {MODULES.map((m, i) => (
+                  <span key={m} className="flex items-center text-xs font-medium text-slate-500">
+                    {i > 0 && <span className="mr-3 text-slate-700">·</span>}
+                    {m}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="flex flex-1 items-center justify-center bg-[#F8FAFC] p-6">
-        {children}
+        <div className="flex flex-1 items-center justify-center bg-[#F8FAFC] p-6">
+          {children}
+        </div>
       </div>
     </div>
   );

@@ -1,14 +1,6 @@
 import { Link } from "react-router-dom";
 
-import { Button } from "@/components/ui/button";
-
-const NAV_LINKS = [
-  { label: "Product", href: "/product" },
-  { label: "Industries", href: "/industries" },
-  { label: "Features", href: "/features" },
-  { label: "Why MaterialOS", href: "/why-materialos" },
-  { label: "Pricing", href: "/pricing" },
-];
+import { MarketingHeader } from "@/components/marketing/MarketingHeader";
 
 const FOOTER_SECTIONS = [
   {
@@ -45,29 +37,7 @@ const FOOTER_SECTIONS = [
 export function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-white">
-      <header className="border-b border-[#E2E8F0]">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link to="/" className="flex items-center gap-2.5">
-            <img src="/brand/symbol.svg" alt="" className="h-10 w-10" />
-            <span className="text-xl font-semibold text-foreground">MaterialOS</span>
-          </Link>
-          <nav className="hidden items-center gap-6 text-sm font-medium text-muted-foreground md:flex">
-            {NAV_LINKS.map((link) => (
-              <Link key={link.href} to={link.href} className="hover:text-foreground">
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" asChild>
-              <Link to="/login">Sign in</Link>
-            </Button>
-            <Button className="bg-[#7C3AED] text-white hover:bg-[#6D28D9]" asChild>
-              <Link to="/signup">Start free</Link>
-            </Button>
-          </div>
-        </div>
-      </header>
+      <MarketingHeader />
 
       <main className="flex-1">{children}</main>
 

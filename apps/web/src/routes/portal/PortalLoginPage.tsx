@@ -65,7 +65,6 @@ export function PortalLoginPage() {
       <div className="w-full max-w-md">
         <Card className="rounded-xl border-[#E2E8F0] shadow-sm">
           <CardHeader>
-            <img src="/brand/symbol.svg" alt="" className="mb-2 h-8 w-8 md:hidden" />
             <CardTitle>Customer portal sign-in</CardTitle>
             <CardDescription>Enter the workspace, email, and password given to you by your supplier.</CardDescription>
           </CardHeader>

@@ -98,15 +98,12 @@ export function LoginPage() {
   }
 
   return (
-    <AuthLayout>
+    <AuthLayout active="login">
       <div className="w-full max-w-md">
         <Card className="rounded-xl border-[#E2E8F0] shadow-sm">
           <CardHeader>
-            <div className="mb-1 flex items-center">
-              <img src="/brand/symbol.svg" alt="" className="h-8 w-8 md:hidden" />
-              <div className="ml-auto">
-                <ConnectionBadge state={connection} />
-              </div>
+            <div className="mb-1 flex justify-end">
+              <ConnectionBadge state={connection} />
             </div>
             <CardTitle>{lastTenantSlug ? `Welcome back to ${lastTenantSlug}` : "Sign in to MaterialOS"}</CardTitle>
             <CardDescription>
