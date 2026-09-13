@@ -23,6 +23,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { Input } from "@/components/ui/input";
+import { KpiCard } from "@/components/ui/kpi-card";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
@@ -64,22 +65,6 @@ type SupplierPatchBody = {
 
 type SortKey = "name" | "outstanding_balance" | "billing_state";
 const PAGE_SIZE = 10;
-
-function KpiCard({ icon: Icon, iconColor, iconBg, label, value }: { icon: typeof Building2; iconColor: string; iconBg: string; label: string; value: string }) {
-  return (
-    <div className="rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm">
-      <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: iconBg }}>
-          <Icon className="h-5 w-5" style={{ color: iconColor }} />
-        </div>
-        <div className="min-w-0">
-          <p className="truncate text-xs text-muted-foreground">{label}</p>
-          <p className="text-xl font-semibold">{value}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function FieldSet({ form, setForm, nameExample }: { form: SupplierFormValues; setForm: React.Dispatch<React.SetStateAction<SupplierFormValues>>; nameExample: string }) {
   return (
@@ -254,14 +239,14 @@ export function SuppliersPage() {
 
       {summary && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <KpiCard icon={Building2} iconColor="#7C3AED" iconBg="#EDE9FE" label="Total suppliers" value={String(summary.total_suppliers)} />
-          <KpiCard icon={ShoppingCart} iconColor="#10B981" iconBg="#D1FAE5" label="Active purchase orders" value={String(summary.active_purchase_orders)} />
-          <KpiCard icon={Wallet} iconColor="#7C3AED" iconBg="#EDE9FE" label="Total outstanding balance" value={formatINR(summary.total_outstanding)} />
-          <KpiCard icon={FileWarning} iconColor="#FF6B00" iconBg="#FFEDD5" label="Missing GSTIN" value={String(summary.missing_gstin_count)} />
+          <KpiCard icon={Building2} color="violet" label="Total suppliers" value={String(summary.total_suppliers)} />
+          <KpiCard icon={ShoppingCart} color="emerald" label="Active purchase orders" value={String(summary.active_purchase_orders)} />
+          <KpiCard icon={Wallet} color="violet" label="Total outstanding balance" value={formatINR(summary.total_outstanding)} />
+          <KpiCard icon={FileWarning} color="orange" label="Missing GSTIN" value={String(summary.missing_gstin_count)} />
         </div>
       )}
 
-      <div className="flex flex-col gap-3 rounded-xl border border-[#E2E8F0] bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
           <div className="relative w-full sm:max-w-xs">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -302,7 +287,7 @@ export function SuppliersPage() {
           <Button variant="outline" size="sm" onClick={exportSelected} disabled={filtered.length === 0}>
             <Download className="h-4 w-4" /> Export{selected.size > 0 ? ` (${selected.size})` : ""}
           </Button>
-          <Button size="sm" className="bg-[#7C3AED] text-white hover:bg-[#6D28D9]" onClick={() => setAddOpen(true)}>
+          <Button size="sm" onClick={() => setAddOpen(true)}>
             <Plus className="h-4 w-4" /> Add supplier
           </Button>
         </div>
@@ -320,10 +305,10 @@ export function SuppliersPage() {
       )}
 
       {pageRows.length > 0 && (
-        <div className="overflow-hidden rounded-xl border border-[#E2E8F0] bg-white shadow-sm">
+        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-left text-muted-foreground">
+              <thead className="border-b border-border bg-muted text-left text-muted-foreground">
                 <tr>
                   <th className="w-10 px-4 py-3">
                     <Checkbox
@@ -348,12 +333,12 @@ export function SuppliersPage() {
               </thead>
               <tbody>
                 {pageRows.map((s, i) => (
-                  <tr key={s.id} className={`border-t border-[#E2E8F0] hover:bg-[#F8FAFC] ${i % 2 === 1 ? "bg-[#FAFBFC]" : ""}`}>
+                  <tr key={s.id} className={`border-t border-border hover:bg-muted ${i % 2 === 1 ? "bg-muted/40" : ""}`}>
                     <td className="px-4 py-3"><Checkbox checked={selected.has(s.id)} onCheckedChange={() => toggleSelected(s.id)} /></td>
                     <td className="px-4 py-3">
                       <div className="font-medium">{s.name}</div>
                       {s.category ? (
-                        <Badge variant="outline" className="mt-1 border-[#DDD6FE] text-[#6D28D9]">{s.category}</Badge>
+                        <Badge variant="secondary" className="mt-1">{s.category}</Badge>
                       ) : (
                         <span className="text-xs text-muted-foreground">Uncategorized</span>
                       )}
@@ -366,12 +351,12 @@ export function SuppliersPage() {
                       {s.billing_state ?? <Badge variant="outline" className="text-muted-foreground">State not set</Badge>}
                     </td>
                     <td className="px-4 py-3">
-                      {s.gstin ?? <Badge variant="outline" className="border-[#FED7AA] text-[#C2410C]">GSTIN missing</Badge>}
+                      {s.gstin ?? <Badge variant="warning">GSTIN missing</Badge>}
                     </td>
                     <td className="px-4 py-3 font-medium">{formatINR(s.outstanding_balance ?? 0)}</td>
                     <td className="px-4 py-3">
                       {s.is_active ? (
-                        <Badge variant="outline" className="border-[#A7F3D0] text-[#047857]">Active</Badge>
+                        <Badge variant="success">Active</Badge>
                       ) : (
                         <Badge variant="outline" className="text-muted-foreground">Inactive</Badge>
                       )}
@@ -398,7 +383,7 @@ export function SuppliersPage() {
             </table>
           </div>
 
-          <div className="flex items-center justify-between border-t border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3 text-sm text-muted-foreground">
+          <div className="flex items-center justify-between border-t border-border bg-muted px-4 py-3 text-sm text-muted-foreground">
             <span>
               Showing {(page - 1) * PAGE_SIZE + 1}-{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}
             </span>
@@ -422,7 +407,7 @@ export function SuppliersPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button>
             <Button
-              className="bg-[#7C3AED] text-white hover:bg-[#6D28D9]"
+              
               onClick={() => createSupplier.mutate(addForm)}
               disabled={!addForm.name || createSupplier.isPending}
             >
@@ -442,7 +427,7 @@ export function SuppliersPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditSupplier(null)}>Cancel</Button>
             <Button
-              className="bg-[#7C3AED] text-white hover:bg-[#6D28D9]"
+              
               onClick={() => editSupplier && updateSupplier.mutate({ id: editSupplier.id, values: cleanForm(editForm) })}
               disabled={!editForm.name || updateSupplier.isPending}
             >

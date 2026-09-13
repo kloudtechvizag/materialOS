@@ -46,10 +46,10 @@ const RMA_NEXT: Record<string, { status: string; label: string; resolution?: str
   ],
 };
 
-function statusBadgeClass(status: string) {
-  if (status === "resolved") return "border-[#A7F3D0] text-[#047857]";
-  if (status === "rejected") return "text-muted-foreground";
-  return "border-[#DDD6FE] text-[#6D28D9]";
+function statusBadgeVariant(status: string): "success" | "secondary" | "outline" {
+  if (status === "resolved") return "success";
+  if (status === "rejected") return "outline";
+  return "secondary";
 }
 
 export function SerialRmaPage() {
@@ -124,7 +124,7 @@ export function SerialRmaPage() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setRmaOpen(true)}><ShieldCheck className="h-4 w-4" /> New RMA</Button>
-          <Button className="bg-[#7C3AED] text-white hover:bg-[#6D28D9]" onClick={() => setRegisterOpen(true)}>
+          <Button onClick={() => setRegisterOpen(true)}>
             <Plus className="h-4 w-4" /> Register serial
           </Button>
         </div>
@@ -138,9 +138,9 @@ export function SerialRmaPage() {
           <EmptyState icon={Smartphone} title="No serial units registered" description="Register a serial/IMEI to start tracking it individually." actionLabel="Register serial" onAction={() => setRegisterOpen(true)} />
         )}
         {serials && serials.length > 0 && (
-          <div className="overflow-hidden rounded-xl border border-[#E2E8F0] bg-white shadow-sm">
+          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
             <table className="w-full text-sm">
-              <thead className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-left text-muted-foreground">
+              <thead className="border-b border-border bg-muted text-left text-muted-foreground">
                 <tr>
                   <th className="px-4 py-2 font-medium">Serial / IMEI</th>
                   <th className="px-4 py-2 font-medium">Item</th>
@@ -150,7 +150,7 @@ export function SerialRmaPage() {
               </thead>
               <tbody>
                 {serials.map((s) => (
-                  <tr key={s.id} className="border-t border-[#E2E8F0]">
+                  <tr key={s.id} className="border-t border-border">
                     <td className="px-4 py-2 font-mono">{s.serial_number}</td>
                     <td className="px-4 py-2">{itemById.get(s.item_id)?.name ?? s.item_id}</td>
                     <td className="px-4 py-2 text-muted-foreground">{s.warranty_expiry ?? "--"}</td>
@@ -171,9 +171,9 @@ export function SerialRmaPage() {
           <EmptyState icon={ShieldCheck} title="No RMA requests" description="Log one against a registered serial when a customer reports an issue." />
         )}
         {rmas && rmas.length > 0 && (
-          <div className="overflow-hidden rounded-xl border border-[#E2E8F0] bg-white shadow-sm">
+          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
             <table className="w-full text-sm">
-              <thead className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-left text-muted-foreground">
+              <thead className="border-b border-border bg-muted text-left text-muted-foreground">
                 <tr>
                   <th className="px-4 py-2 font-medium">RMA</th>
                   <th className="px-4 py-2 font-medium">Reason</th>
@@ -183,11 +183,11 @@ export function SerialRmaPage() {
               </thead>
               <tbody>
                 {rmas.map((r) => (
-                  <tr key={r.id} className="border-t border-[#E2E8F0]">
+                  <tr key={r.id} className="border-t border-border">
                     <td className="px-4 py-2 font-medium">{r.number}</td>
                     <td className="px-4 py-2">{r.reason}</td>
                     <td className="px-4 py-2">
-                      <Badge variant="outline" className={statusBadgeClass(r.status)}>{r.status.replace("_", " ")}</Badge>
+                      <Badge variant={statusBadgeVariant(r.status)}>{r.status.replace("_", " ")}</Badge>
                       {r.resolution && <span className="ml-2 text-xs text-muted-foreground">({r.resolution})</span>}
                     </td>
                     <td className="px-4 py-2 text-right">
@@ -231,7 +231,7 @@ export function SerialRmaPage() {
           {registerSerial.isError && <ErrorState error={registerSerial.error} />}
           <DialogFooter>
             <Button variant="outline" onClick={() => setRegisterOpen(false)}>Cancel</Button>
-            <Button className="bg-[#7C3AED] text-white hover:bg-[#6D28D9]" onClick={() => registerSerial.mutate(registerForm)} disabled={!registerForm.sku || !registerForm.serial_number || registerSerial.isPending}>
+            <Button onClick={() => registerSerial.mutate(registerForm)} disabled={!registerForm.sku || !registerForm.serial_number || registerSerial.isPending}>
               {registerSerial.isPending ? "Saving..." : "Register"}
             </Button>
           </DialogFooter>
@@ -252,7 +252,7 @@ export function SerialRmaPage() {
           {createRma.isError && <ErrorState error={createRma.error} />}
           <DialogFooter>
             <Button variant="outline" onClick={() => setRmaOpen(false)}>Cancel</Button>
-            <Button className="bg-[#7C3AED] text-white hover:bg-[#6D28D9]" onClick={() => createRma.mutate(rmaForm)} disabled={!rmaForm.serial_number || !rmaForm.customer_name || !rmaForm.reason || createRma.isPending}>
+            <Button onClick={() => createRma.mutate(rmaForm)} disabled={!rmaForm.serial_number || !rmaForm.customer_name || !rmaForm.reason || createRma.isPending}>
               {createRma.isPending ? "Saving..." : "Create RMA"}
             </Button>
           </DialogFooter>

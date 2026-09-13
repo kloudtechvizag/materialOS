@@ -10,6 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { Input } from "@/components/ui/input";
+import { KpiCard } from "@/components/ui/kpi-card";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
@@ -34,11 +35,10 @@ const STATUS_LABEL: Record<string, string> = {
 };
 const STATUS_ORDER = ["new", "contacted", "qualified", "proposal", "won", "lost"];
 
-function statusBadgeClass(status: string) {
-  if (status === "won") return "border-[#A7F3D0] text-[#047857]";
-  if (status === "lost") return "text-muted-foreground";
-  if (status === "qualified" || status === "proposal") return "border-[#DDD6FE] text-[#6D28D9]";
-  return "border-border text-foreground";
+function statusBadgeVariant(status: string): "success" | "secondary" | "outline" {
+  if (status === "won") return "success";
+  if (status === "qualified" || status === "proposal") return "secondary";
+  return "outline";
 }
 
 type LeadForm = { name: string; company_name: string; phone: string; email: string; source: string; estimated_value: string; notes: string };
@@ -116,17 +116,17 @@ export function LeadsPage() {
           <h1 className="text-2xl font-semibold">Leads</h1>
           <p className="text-sm text-muted-foreground">The pipeline before a prospect becomes a real customer.</p>
         </div>
-        <Button className="bg-[#7C3AED] text-white hover:bg-[#6D28D9]" onClick={() => setAddOpen(true)}>
+        <Button onClick={() => setAddOpen(true)}>
           <Plus className="h-4 w-4" /> Add lead
         </Button>
       </div>
 
       {leads && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <KpiCard icon={Users} iconColor="#7C3AED" iconBg="#EDE9FE" label="Total leads" value={String(kpis.total)} />
-          <KpiCard icon={Target} iconColor="#0EA5E9" iconBg="#E0F2FE" label="Open" value={String(kpis.open)} />
-          <KpiCard icon={TrendingUp} iconColor="#F59E0B" iconBg="#FEF3C7" label="Qualified / Proposal" value={String(kpis.qualified)} />
-          <KpiCard icon={Trophy} iconColor="#10B981" iconBg="#D1FAE5" label="Won" value={String(kpis.won)} />
+          <KpiCard icon={Users} color="violet" label="Total leads" value={String(kpis.total)} />
+          <KpiCard icon={Target} color="sky" label="Open" value={String(kpis.open)} />
+          <KpiCard icon={TrendingUp} color="amber" label="Qualified / Proposal" value={String(kpis.qualified)} />
+          <KpiCard icon={Trophy} color="emerald" label="Won" value={String(kpis.won)} />
         </div>
       )}
 
@@ -138,10 +138,10 @@ export function LeadsPage() {
       )}
 
       {leads && leads.length > 0 && (
-        <div className="overflow-hidden rounded-xl border border-[#E2E8F0] bg-white shadow-sm">
+        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-left text-muted-foreground">
+              <thead className="border-b border-border bg-muted text-left text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3 font-medium">Lead</th>
                   <th className="px-4 py-3 font-medium">Contact</th>
@@ -153,7 +153,7 @@ export function LeadsPage() {
               </thead>
               <tbody>
                 {leads.map((lead, i) => (
-                  <tr key={lead.id} className={`border-t border-[#E2E8F0] hover:bg-[#F8FAFC] ${i % 2 === 1 ? "bg-[#FAFBFC]" : ""}`}>
+                  <tr key={lead.id} className={`border-t border-border hover:bg-muted ${i % 2 === 1 ? "bg-muted/40" : ""}`}>
                     <td className="px-4 py-3">
                       <div className="font-medium">{lead.company_name || lead.name}</div>
                       {lead.company_name && <div className="text-xs text-muted-foreground">{lead.name}</div>}
@@ -165,7 +165,7 @@ export function LeadsPage() {
                     <td className="px-4 py-3">{lead.source ?? <span className="text-muted-foreground">Not set</span>}</td>
                     <td className="px-4 py-3 font-medium">{lead.estimated_value ? formatINR(lead.estimated_value) : <span className="text-muted-foreground">--</span>}</td>
                     <td className="px-4 py-3">
-                      <Badge variant="outline" className={statusBadgeClass(lead.status)}>{STATUS_LABEL[lead.status] ?? lead.status}</Badge>
+                      <Badge variant={statusBadgeVariant(lead.status)}>{STATUS_LABEL[lead.status] ?? lead.status}</Badge>
                       {lead.converted_customer_id && (
                         <Link to={`/customers/${lead.converted_customer_id}`} className="ml-2 text-xs text-primary hover:underline">
                           View customer
@@ -235,7 +235,6 @@ export function LeadsPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button>
             <Button
-              className="bg-[#7C3AED] text-white hover:bg-[#6D28D9]"
               onClick={() => createLead.mutate(addForm)}
               disabled={!addForm.name || createLead.isPending}
             >
@@ -273,7 +272,6 @@ export function LeadsPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setConvertLead(null)}>Cancel</Button>
             <Button
-              className="bg-[#7C3AED] text-white hover:bg-[#6D28D9]"
               onClick={() => convertLead && convert.mutate({ id: convertLead.id, values: convertForm })}
               disabled={convert.isPending}
             >
@@ -282,22 +280,6 @@ export function LeadsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
-
-function KpiCard({ icon: Icon, iconColor, iconBg, label, value }: { icon: typeof Users; iconColor: string; iconBg: string; label: string; value: string }) {
-  return (
-    <div className="rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm">
-      <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: iconBg }}>
-          <Icon className="h-5 w-5" style={{ color: iconColor }} />
-        </div>
-        <div className="min-w-0">
-          <p className="truncate text-xs text-muted-foreground">{label}</p>
-          <p className="text-xl font-semibold">{value}</p>
-        </div>
-      </div>
     </div>
   );
 }

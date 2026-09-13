@@ -33,10 +33,10 @@ interface WebhookDelivery {
   created_at: string;
 }
 
-function statusBadgeClass(status: string) {
-  if (status === "sent") return "border-[#A7F3D0] text-[#047857]";
-  if (status === "dead_letter") return "border-[#FED7AA] text-[#C2410C]";
-  return "border-[#DDD6FE] text-[#6D28D9]";
+function statusBadgeVariant(status: string): "success" | "destructive" | "secondary" {
+  if (status === "sent") return "success";
+  if (status === "dead_letter") return "destructive";
+  return "secondary";
 }
 
 export function WebhooksPage() {
@@ -96,7 +96,7 @@ export function WebhooksPage() {
           <h1 className="text-2xl font-semibold">Webhooks</h1>
           <p className="text-sm text-muted-foreground">Get a signed HTTP callback when something real happens in your workspace.</p>
         </div>
-        <Button className="bg-[#7C3AED] text-white hover:bg-[#6D28D9]" onClick={() => setCreateOpen(true)}>
+        <Button onClick={() => setCreateOpen(true)}>
           <Plus className="h-4 w-4" /> Add webhook
         </Button>
       </div>
@@ -110,9 +110,9 @@ export function WebhooksPage() {
 
       {subscriptions && subscriptions.length > 0 && (
         <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-          <div className="overflow-hidden rounded-xl border border-[#E2E8F0] bg-white shadow-sm">
+          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
             <table className="w-full text-sm">
-              <thead className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-left text-muted-foreground">
+              <thead className="border-b border-border bg-muted text-left text-muted-foreground">
                 <tr>
                   <th className="px-4 py-2 font-medium">URL</th>
                   <th className="px-4 py-2 font-medium">Events</th>
@@ -122,7 +122,7 @@ export function WebhooksPage() {
               </thead>
               <tbody>
                 {subscriptions.map((s) => (
-                  <tr key={s.id} className={`cursor-pointer border-t border-[#E2E8F0] hover:bg-[#F8FAFC] ${selected?.id === s.id ? "bg-[#F8FAFC]" : ""}`} onClick={() => setSelected(s)}>
+                  <tr key={s.id} className={`cursor-pointer border-t border-border hover:bg-muted ${selected?.id === s.id ? "bg-muted" : ""}`} onClick={() => setSelected(s)}>
                     <td className="px-4 py-2">
                       <div className="max-w-xs truncate font-mono text-xs">{s.url}</div>
                       {s.description && <div className="text-xs text-muted-foreground">{s.description}</div>}
@@ -133,7 +133,7 @@ export function WebhooksPage() {
                       </div>
                     </td>
                     <td className="px-4 py-2">
-                      <Badge variant="outline" className={s.is_active ? "border-[#A7F3D0] text-[#047857]" : "text-muted-foreground"}>
+                      <Badge variant={s.is_active ? "success" : "outline"}>
                         {s.is_active ? "Active" : "Disabled"}
                       </Badge>
                     </td>
@@ -160,10 +160,10 @@ export function WebhooksPage() {
             <h2 className="text-sm font-medium text-muted-foreground">{selected ? "Recent deliveries" : "Select a webhook to see deliveries"}</h2>
             {selected && deliveries && deliveries.length === 0 && <p className="text-sm text-muted-foreground">No deliveries yet.</p>}
             {selected && deliveries && deliveries.map((d) => (
-              <div key={d.id} className="rounded-lg border border-[#E2E8F0] bg-white p-3 text-sm shadow-sm">
+              <div key={d.id} className="rounded-lg border border-border bg-card p-3 text-sm shadow-sm">
                 <div className="flex items-center justify-between">
                   <span className="font-medium">{d.event_type}</span>
-                  <Badge variant="outline" className={statusBadgeClass(d.status)}>{d.status.replace("_", " ")}</Badge>
+                  <Badge variant={statusBadgeVariant(d.status)}>{d.status.replace("_", " ")}</Badge>
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Attempt {d.attempt_count} {d.response_status ? `-- HTTP ${d.response_status}` : ""} {d.provider_response ? `(${d.provider_response})` : ""}
@@ -234,7 +234,7 @@ export function WebhooksPage() {
               {create.isError && <ErrorState error={create.error} />}
               <DialogFooter>
                 <Button variant="outline" onClick={closeCreate}>Cancel</Button>
-                <Button className="bg-[#7C3AED] text-white hover:bg-[#6D28D9]" onClick={() => create.mutate()} disabled={!form.url || form.event_types.length === 0 || create.isPending}>
+                <Button onClick={() => create.mutate()} disabled={!form.url || form.event_types.length === 0 || create.isPending}>
                   {create.isPending ? "Saving..." : "Create webhook"}
                 </Button>
               </DialogFooter>

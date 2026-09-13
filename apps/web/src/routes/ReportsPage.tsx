@@ -92,7 +92,7 @@ export function ReportsPage() {
 
       {datasets && datasets.length > 0 && activeDataset && (
         <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
-          <div className="space-y-4 rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm">
+          <div className="space-y-4 rounded-xl border border-border bg-card p-4 shadow-sm">
             <div className="space-y-1.5">
               <Label>Dataset</Label>
               <select
@@ -130,16 +130,16 @@ export function ReportsPage() {
               </select>
             </div>
             <div className="flex gap-2 pt-2">
-              <Button variant={view === "table" ? "default" : "outline"} size="sm" className={view === "table" ? "bg-[#7C3AED] text-white hover:bg-[#6D28D9]" : ""} onClick={() => setView("table")}>
+              <Button variant={view === "table" ? "default" : "outline"} size="sm" onClick={() => setView("table")}>
                 <Table2 className="h-3.5 w-3.5" /> Table
               </Button>
-              <Button variant={view === "chart" ? "default" : "outline"} size="sm" className={view === "chart" ? "bg-[#7C3AED] text-white hover:bg-[#6D28D9]" : ""} onClick={() => setView("chart")}>
+              <Button variant={view === "chart" ? "default" : "outline"} size="sm" onClick={() => setView("chart")}>
                 <BarChart3 className="h-3.5 w-3.5" /> Chart
               </Button>
             </div>
           </div>
 
-          <div className="rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm">
+          <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
             {resultLoading && <Skeleton className="h-72" />}
             {resultError && <ErrorState error={resultError} />}
             {result && result.rows.length === 0 && (
@@ -148,7 +148,7 @@ export function ReportsPage() {
             {result && result.rows.length > 0 && view === "table" && (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-left text-muted-foreground">
+                  <thead className="border-b border-border bg-muted text-left text-muted-foreground">
                     <tr>
                       <th className="px-4 py-2 font-medium">{activeDataset.group_by_options.find((g) => g.key === result.group_by)?.label}</th>
                       <th className="px-4 py-2 text-right font-medium">{metricLabel}</th>
@@ -156,7 +156,7 @@ export function ReportsPage() {
                   </thead>
                   <tbody>
                     {result.rows.map((r) => (
-                      <tr key={r.group} className="border-t border-[#E2E8F0]">
+                      <tr key={r.group} className="border-t border-border">
                         <td className="px-4 py-2">{r.group}</td>
                         <td className="px-4 py-2 text-right tabular-nums">{isCurrencyMetric ? formatINR(r.value) : r.value}</td>
                       </tr>
@@ -169,11 +169,14 @@ export function ReportsPage() {
               <div className="h-96 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 48 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                    <XAxis dataKey="group" angle={-30} textAnchor="end" interval={0} height={60} tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip formatter={(v: number) => (isCurrencyMetric ? formatINR(v) : v)} />
-                    <Bar dataKey="value" fill="#7C3AED" radius={[4, 4, 0, 0]} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="group" angle={-30} textAnchor="end" interval={0} height={60} tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
+                    <YAxis tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
+                    <Tooltip
+                      formatter={(v: number) => (isCurrencyMetric ? formatINR(v) : v)}
+                      contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))", color: "hsl(var(--card-foreground))" }}
+                    />
+                    <Bar dataKey="value" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

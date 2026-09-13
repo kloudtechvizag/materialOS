@@ -30,6 +30,12 @@
     --destructive-foreground: 0 0% 100%;
     --success: 142 71% 35%;
     --success-foreground: 0 0% 100%;
+    /* Third status color alongside success/destructive -- "attention but
+       not an error" (missing GSTIN, state not set, low stock). Added
+       for the dark-mode sweep of routes that used to hardcode
+       #FFEDD5/#EA580C-style amber badges instead of a semantic token. */
+    --warning: 33 94% 41%;
+    --warning-foreground: 0 0% 100%;
     --radius: 0.5rem;
 
     /* Brand navy surface -- used for the sidebar, not the whole app
@@ -38,6 +44,56 @@
     --brand-navy: 217 33% 17%;
     --brand-navy-foreground: 0 0% 100%;
     --brand-navy-muted: 217 20% 65%;
+
+    /* Density mode (comfortable/compact, useDensityStore -> "data-density"
+       on <html>): a single control-height token consumed by Button's and
+       Input's "default" size and shared table cell padding, so compact
+       mode has a real, felt effect across almost the whole app without
+       every page needing its own density-aware classes. Bounded scope,
+       stated honestly: raw <select> elements and page-specific spacing
+       that doesn't go through these tokens are not (yet) density-aware. */
+    --control-h: 2.5rem;
+    --table-cell-py: 0.5rem;
+  }
+
+  [data-density="compact"] {
+    --control-h: 2.25rem;
+    --table-cell-py: 0.25rem;
+  }
+
+  /* Dark theme -- a deliberately separate palette, not an inversion of
+     the light one (flipping background/foreground alone leaves borders
+     invisible and blows out saturated brand colors). Sidebar stays the
+     same brand-navy in both themes (it's already dark), so only its
+     muted/foreground contrast is retouched slightly. Applied via the
+     "dark" class on <html> (Tailwind's darkMode: "class"), toggled by
+     useThemeStore -- see src/store/theme.ts. */
+  :root.dark {
+    --background: 222 28% 10%;
+    --foreground: 210 20% 92%;
+    --card: 222 24% 13%;
+    --card-foreground: 210 20% 92%;
+    --border: 217 19% 22%;
+    --input: 217 19% 22%;
+    --ring: 258 90% 70%;
+    --primary: 258 90% 70%;
+    --primary-foreground: 222 28% 10%;
+    --secondary: 217 19% 18%;
+    --secondary-foreground: 210 20% 92%;
+    --muted: 217 19% 18%;
+    --muted-foreground: 215 14% 65%;
+    --accent: 217 19% 20%;
+    --accent-foreground: 210 20% 92%;
+    --destructive: 0 63% 60%;
+    --destructive-foreground: 222 28% 10%;
+    --success: 142 55% 52%;
+    --success-foreground: 222 28% 10%;
+    --warning: 36 92% 58%;
+    --warning-foreground: 222 28% 10%;
+
+    --brand-navy: 222 30% 8%;
+    --brand-navy-foreground: 0 0% 100%;
+    --brand-navy-muted: 217 15% 58%;
   }
 }
 
@@ -48,6 +104,17 @@
   body {
     @apply bg-background text-foreground antialiased;
   }
+}
+
+/* Density mode, continued: a plain (non-@layer) rule so it beats
+   Tailwind's own py-2/py-3 utility classes on table cells regardless of
+   specificity -- @tailwind utilities emits into a CSS @layer, and an
+   unlayered rule always wins over a layered one. Covers every list
+   page's table without each page needing density-aware classes. */
+[data-density="compact"] table td,
+[data-density="compact"] table th {
+  padding-top: var(--table-cell-py);
+  padding-bottom: var(--table-cell-py);
 }
 
 /* Desktop-shell local printing (ADR-012): window.print() is a standard

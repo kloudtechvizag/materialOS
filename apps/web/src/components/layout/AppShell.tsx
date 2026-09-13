@@ -4,7 +4,9 @@ import { Toaster } from "sonner";
 
 import { CommandPalette } from "@/components/CommandPalette";
 import { DesktopUpdateNotifier } from "@/components/DesktopUpdateNotifier";
+import { DensityToggle } from "@/components/layout/DensityToggle";
 import { NotificationBell } from "@/components/layout/NotificationBell";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { MobileDrawer } from "@/components/layout/sidebar/MobileDrawer";
 import { SidebarFooter } from "@/components/layout/sidebar/SidebarFooter";
 import { SidebarHeader } from "@/components/layout/sidebar/SidebarHeader";
@@ -68,6 +70,8 @@ export function AppShell({ children }: { children?: React.ReactNode } = {}) {
               <span className="hidden sm:inline">Search</span>
               <kbd className="hidden rounded border border-border px-1.5 py-0.5 text-xs sm:inline">Ctrl K</kbd>
             </button>
+            <DensityToggle />
+            <ThemeToggle />
             <NotificationBell />
           </div>
         </header>

@@ -5,7 +5,15 @@ import { HelmetProvider } from "react-helmet-async";
 import { BrowserRouter } from "react-router-dom";
 
 import App from "./App";
+import { initDensityWatcher } from "./store/density";
+import { initThemeWatcher } from "./store/theme";
 import "./index.css";
+
+// Applied before the first render so there's no flash of the wrong
+// theme, and kept subscribed for the app's lifetime so switching the
+// OS theme live-updates a "system"-mode session without a reload.
+initThemeWatcher();
+initDensityWatcher();
 
 const queryClient = new QueryClient({
   defaultOptions: {

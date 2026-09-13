@@ -62,9 +62,9 @@ export function CreditDebitNotesPage() {
             <EmptyState icon={FileMinus} title="No credit notes yet" description="Recorded against a posted invoice when a customer returns goods." />
           )}
           {creditNotes && creditNotes.length > 0 && (
-            <div className="overflow-hidden rounded-xl border border-[#E2E8F0] bg-white shadow-sm">
+            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
               <table className="w-full text-sm">
-                <thead className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-left text-muted-foreground">
+                <thead className="border-b border-border bg-muted text-left text-muted-foreground">
                   <tr>
                     <th className="px-4 py-2 font-medium">Number</th>
                     <th className="px-4 py-2 font-medium">Date</th>
@@ -74,7 +74,7 @@ export function CreditDebitNotesPage() {
                 </thead>
                 <tbody>
                   {creditNotes.map((n) => (
-                    <tr key={n.id} className="border-t border-[#E2E8F0]">
+                    <tr key={n.id} className="border-t border-border">
                       <td className="px-4 py-2">
                         <Link to={`/invoices/${n.invoice_id}`} className="font-medium text-primary hover:underline">{n.number}</Link>
                       </td>
@@ -99,9 +99,9 @@ export function CreditDebitNotesPage() {
             <EmptyState icon={FilePlus} title="No debit notes yet" description="Recorded against a posted purchase bill when you return goods to a supplier." />
           )}
           {debitNotes && debitNotes.length > 0 && (
-            <div className="overflow-hidden rounded-xl border border-[#E2E8F0] bg-white shadow-sm">
+            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
               <table className="w-full text-sm">
-                <thead className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-left text-muted-foreground">
+                <thead className="border-b border-border bg-muted text-left text-muted-foreground">
                   <tr>
                     <th className="px-4 py-2 font-medium">Number</th>
                     <th className="px-4 py-2 font-medium">Date</th>
@@ -111,10 +111,10 @@ export function CreditDebitNotesPage() {
                 </thead>
                 <tbody>
                   {debitNotes.map((n) => (
-                    <tr key={n.id} className="border-t border-[#E2E8F0]">
+                    <tr key={n.id} className="border-t border-border">
                       <td className="px-4 py-2">
                         <Link to={`/purchase-bills/${n.purchase_bill_id}`} className="font-medium text-primary hover:underline">{n.number}</Link>
-                        <Badge variant="outline" className="ml-2 border-[#FED7AA] text-[#C2410C]">Debit note</Badge>
+                        <Badge variant="warning" className="ml-2">Debit note</Badge>
                       </td>
                       <td className="px-4 py-2 text-muted-foreground">{n.return_date}</td>
                       <td className="px-4 py-2">{n.reason ?? <span className="text-muted-foreground">--</span>}</td>
