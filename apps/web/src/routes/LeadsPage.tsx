@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DetailField, Drawer, DrawerBody, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
@@ -50,6 +51,7 @@ export function LeadsPage() {
   const [addForm, setAddForm] = useState(BLANK_FORM);
   const [convertLead, setConvertLead] = useState<Lead | null>(null);
   const [convertForm, setConvertForm] = useState({ billing_state: "", credit_limit: "", credit_days: "" });
+  const [detailLead, setDetailLead] = useState<Lead | null>(null);
 
   const { data: leads, isLoading, error, refetch } = useQuery({
     queryKey: ["leads"], queryFn: () => apiFetch<Lead[]>("/leads"),
@@ -144,8 +146,8 @@ export function LeadsPage() {
               <thead className="border-b border-border bg-muted text-left text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3 font-medium">Lead</th>
-                  <th className="px-4 py-3 font-medium">Contact</th>
-                  <th className="px-4 py-3 font-medium">Source</th>
+                  <th className="hidden px-4 py-3 font-medium md:table-cell">Contact</th>
+                  <th className="hidden px-4 py-3 font-medium lg:table-cell">Source</th>
                   <th className="px-4 py-3 font-medium">Est. value</th>
                   <th className="px-4 py-3 font-medium">Status</th>
                   <th className="px-4 py-3 font-medium"><span className="sr-only">Actions</span></th>
@@ -153,26 +155,30 @@ export function LeadsPage() {
               </thead>
               <tbody>
                 {leads.map((lead, i) => (
-                  <tr key={lead.id} className={`border-t border-border hover:bg-muted ${i % 2 === 1 ? "bg-muted/40" : ""}`}>
+                  <tr
+                    key={lead.id}
+                    className={`cursor-pointer border-t border-border hover:bg-muted ${i % 2 === 1 ? "bg-muted/40" : ""}`}
+                    onClick={() => setDetailLead(lead)}
+                  >
                     <td className="px-4 py-3">
                       <div className="font-medium">{lead.company_name || lead.name}</div>
                       {lead.company_name && <div className="text-xs text-muted-foreground">{lead.name}</div>}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="hidden px-4 py-3 md:table-cell">
                       <div>{lead.phone ?? <span className="text-muted-foreground">No phone on file</span>}</div>
                       <div className="text-xs text-muted-foreground">{lead.email ?? "No email on file"}</div>
                     </td>
-                    <td className="px-4 py-3">{lead.source ?? <span className="text-muted-foreground">Not set</span>}</td>
+                    <td className="hidden px-4 py-3 lg:table-cell">{lead.source ?? <span className="text-muted-foreground">Not set</span>}</td>
                     <td className="px-4 py-3 font-medium">{lead.estimated_value ? formatINR(lead.estimated_value) : <span className="text-muted-foreground">--</span>}</td>
                     <td className="px-4 py-3">
                       <Badge variant={statusBadgeVariant(lead.status)}>{STATUS_LABEL[lead.status] ?? lead.status}</Badge>
                       {lead.converted_customer_id && (
-                        <Link to={`/customers/${lead.converted_customer_id}`} className="ml-2 text-xs text-primary hover:underline">
+                        <Link to={`/customers/${lead.converted_customer_id}`} className="ml-2 text-xs text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
                           View customer
                         </Link>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
@@ -280,6 +286,29 @@ export function LeadsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Drawer open={detailLead !== null} onOpenChange={(open) => !open && setDetailLead(null)}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>{detailLead?.company_name || detailLead?.name}</DrawerTitle>
+          </DrawerHeader>
+          {detailLead && (
+            <DrawerBody>
+              {detailLead.company_name && <DetailField label="Contact name" value={detailLead.name} />}
+              <DetailField label="Phone" value={detailLead.phone ?? <span className="text-muted-foreground">No phone on file</span>} />
+              <DetailField label="Email" value={detailLead.email ?? <span className="text-muted-foreground">No email on file</span>} />
+              <DetailField label="Source" value={detailLead.source ?? <span className="text-muted-foreground">Not set</span>} />
+              <DetailField label="Estimated value" value={detailLead.estimated_value ? formatINR(detailLead.estimated_value) : <span className="text-muted-foreground">--</span>} />
+              <DetailField label="Status" value={<Badge variant={statusBadgeVariant(detailLead.status)}>{STATUS_LABEL[detailLead.status] ?? detailLead.status}</Badge>} />
+              {detailLead.notes && <DetailField label="Notes" value={detailLead.notes} />}
+              {detailLead.lost_reason && <DetailField label="Lost reason" value={detailLead.lost_reason} />}
+            </DrawerBody>
+          )}
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setDetailLead(null)}>Close</Button>
+          </DialogFooter>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 }

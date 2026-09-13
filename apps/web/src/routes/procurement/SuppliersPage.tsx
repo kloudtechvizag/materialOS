@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DetailField, Drawer, DrawerBody, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
@@ -124,6 +125,7 @@ export function SuppliersPage() {
   const [addForm, setAddForm] = useState(BLANK_FORM);
   const [editSupplier, setEditSupplier] = useState<Supplier | null>(null);
   const [editForm, setEditForm] = useState(BLANK_FORM);
+  const [detailSupplier, setDetailSupplier] = useState<Supplier | null>(null);
 
   const [search, setSearch] = useState("");
   const [stateFilter, setStateFilter] = useState("");
@@ -323,9 +325,15 @@ export function SuppliersPage() {
                     />
                   </th>
                   <SortableHeader label="Supplier" active={sort.key === "name"} dir={sort.dir} onClick={() => toggleSort("name")} />
-                  <th className="px-4 py-3 font-medium">Contact</th>
-                  <SortableHeader label="Location" active={sort.key === "billing_state"} dir={sort.dir} onClick={() => toggleSort("billing_state")} />
-                  <th className="px-4 py-3 font-medium">GSTIN</th>
+                  <th className="hidden px-4 py-3 font-medium md:table-cell">Contact</th>
+                  <SortableHeader
+                    label="Location"
+                    active={sort.key === "billing_state"}
+                    dir={sort.dir}
+                    onClick={() => toggleSort("billing_state")}
+                    className="hidden xl:table-cell"
+                  />
+                  <th className="hidden px-4 py-3 font-medium lg:table-cell">GSTIN</th>
                   <SortableHeader label="Outstanding" active={sort.key === "outstanding_balance"} dir={sort.dir} onClick={() => toggleSort("outstanding_balance")} />
                   <th className="px-4 py-3 font-medium">Status</th>
                   <th className="px-4 py-3 font-medium"><span className="sr-only">Actions</span></th>
@@ -333,8 +341,14 @@ export function SuppliersPage() {
               </thead>
               <tbody>
                 {pageRows.map((s, i) => (
-                  <tr key={s.id} className={`border-t border-border hover:bg-muted ${i % 2 === 1 ? "bg-muted/40" : ""}`}>
-                    <td className="px-4 py-3"><Checkbox checked={selected.has(s.id)} onCheckedChange={() => toggleSelected(s.id)} /></td>
+                  <tr
+                    key={s.id}
+                    className={`cursor-pointer border-t border-border hover:bg-muted ${i % 2 === 1 ? "bg-muted/40" : ""}`}
+                    onClick={() => setDetailSupplier(s)}
+                  >
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                      <Checkbox checked={selected.has(s.id)} onCheckedChange={() => toggleSelected(s.id)} />
+                    </td>
                     <td className="px-4 py-3">
                       <div className="font-medium">{s.name}</div>
                       {s.category ? (
@@ -343,14 +357,14 @@ export function SuppliersPage() {
                         <span className="text-xs text-muted-foreground">Uncategorized</span>
                       )}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="hidden px-4 py-3 md:table-cell">
                       <div>{s.phone ?? <span className="text-muted-foreground">No phone on file</span>}</div>
                       <div className="text-xs text-muted-foreground">{s.email ?? "No email on file"}</div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="hidden px-4 py-3 xl:table-cell">
                       {s.billing_state ?? <Badge variant="outline" className="text-muted-foreground">State not set</Badge>}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="hidden px-4 py-3 lg:table-cell">
                       {s.gstin ?? <Badge variant="warning">GSTIN missing</Badge>}
                     </td>
                     <td className="px-4 py-3 font-medium">{formatINR(s.outstanding_balance ?? 0)}</td>
@@ -361,7 +375,7 @@ export function SuppliersPage() {
                         <Badge variant="outline" className="text-muted-foreground">Inactive</Badge>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
@@ -436,13 +450,38 @@ export function SuppliersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <Drawer open={detailSupplier !== null} onOpenChange={(open) => !open && setDetailSupplier(null)}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>{detailSupplier?.name}</DrawerTitle>
+          </DrawerHeader>
+          {detailSupplier && (
+            <DrawerBody>
+              <DetailField label="Category" value={detailSupplier.category ?? <span className="text-muted-foreground">Uncategorized</span>} />
+              <DetailField label="Phone" value={detailSupplier.phone ?? <span className="text-muted-foreground">No phone on file</span>} />
+              <DetailField label="Email" value={detailSupplier.email ?? <span className="text-muted-foreground">No email on file</span>} />
+              <DetailField label="Billing state" value={detailSupplier.billing_state ?? <Badge variant="outline" className="text-muted-foreground">State not set</Badge>} />
+              <DetailField label="GSTIN" value={detailSupplier.gstin ?? <Badge variant="warning">GSTIN missing</Badge>} />
+              <DetailField label="Outstanding balance" value={formatINR(detailSupplier.outstanding_balance ?? 0)} />
+              <DetailField label="Open purchase orders" value={String(detailSupplier.open_purchase_orders ?? 0)} />
+              <DetailField label="Status" value={detailSupplier.is_active ? <Badge variant="success">Active</Badge> : <Badge variant="outline" className="text-muted-foreground">Inactive</Badge>} />
+            </DrawerBody>
+          )}
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setDetailSupplier(null)}>Close</Button>
+            <Button asChild>
+              <Link to={`/suppliers/${detailSupplier?.id}`}>View 360</Link>
+            </Button>
+          </DialogFooter>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 }
 
-function SortableHeader({ label, active, dir, onClick }: { label: string; active: boolean; dir: "asc" | "desc"; onClick: () => void }) {
+function SortableHeader({ label, active, dir, onClick, className }: { label: string; active: boolean; dir: "asc" | "desc"; onClick: () => void; className?: string }) {
   return (
-    <th className="px-4 py-3 font-medium">
+    <th className={`px-4 py-3 font-medium ${className ?? ""}`}>
       <button type="button" onClick={onClick} className="flex items-center gap-1 hover:text-foreground">
         {label}
         <ArrowUpDown className={`h-3.5 w-3.5 ${active ? "text-foreground" : "text-muted-foreground/50"}`} />
