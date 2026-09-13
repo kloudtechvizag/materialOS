@@ -46,3 +46,23 @@ export const HERO_SCREENSHOTS = {
 export const INDUSTRY_SCREENSHOTS: Record<string, string> = {
   building_materials: "/screenshots/inventory.webp",
 };
+
+/** WhyMaterialOSPage's 4-panel opener (apps/web/public/photos/pillars/*.webp).
+ * Real, licensed people/scene photos (construction site, factory floor,
+ * office meeting, retail counter) with a REAL MaterialOS screenshot
+ * perspective-composited into each device's screen -- not an
+ * AI-generated mockup. The original AI-generated composite this
+ * replaced had garbled, fabricated UI text baked into every device
+ * screen (e.g. the "MaterialOS" wordmark itself was misspelled) and
+ * was rejected outright rather than published; see this repo's git
+ * history around 2026-09-14 for the compositing approach (perspective
+ * warp of a real /screenshots/*.webp onto hand-picked screen corners,
+ * with the person's hand/finger kept in front via an exclusion mask).
+ * Inherits the same header/nav staleness noted above, since these crop
+ * from the same five screenshots. */
+export const PILLAR_PHOTOS = {
+  "mobile-first-field-sales": "/photos/pillars/mobile-first-field-sales.webp",
+  "real-time-intelligence": "/photos/pillars/real-time-intelligence.webp",
+  "one-business-graph": "/photos/pillars/one-business-graph.webp",
+  "connected-commerce": "/photos/pillars/connected-commerce.webp",
+} as const;

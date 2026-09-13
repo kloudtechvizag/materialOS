@@ -6,8 +6,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Seo } from "@/components/marketing/Seo";
 import { Breadcrumbs, breadcrumbJsonLd } from "@/components/marketing/Breadcrumbs";
 import { paletteColor } from "@/marketing/palette";
+import { PILLAR_PHOTOS } from "@/marketing/screenshots";
 
 const BREADCRUMB_ITEMS = [{ label: "Home", href: "/" }, { label: "Why MaterialOS" }];
+
+const PILLAR_HIGHLIGHTS: { key: keyof typeof PILLAR_PHOTOS; label: string }[] = [
+  { key: "mobile-first-field-sales", label: "Mobile-first & field sales" },
+  { key: "real-time-intelligence", label: "Real-time intelligence" },
+  { key: "one-business-graph", label: "One business graph" },
+  { key: "connected-commerce", label: "Connected commerce" },
+];
 
 const PILLARS = [
   {
@@ -72,6 +80,15 @@ export function WhyMaterialOSPage() {
           Not another app bolted onto a pile of disconnected tools. One connected system your whole business runs on.
         </p>
       </header>
+
+      <section className="mt-10 grid gap-4 sm:grid-cols-2">
+        {PILLAR_HIGHLIGHTS.map(({ key, label }) => (
+          <div key={key} className="overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white shadow-sm">
+            <img src={PILLAR_PHOTOS[key]} alt={`${label} in MaterialOS`} className="h-56 w-full object-cover sm:h-64" loading="lazy" />
+            <p className="p-4 font-semibold">{label}</p>
+          </div>
+        ))}
+      </section>
 
       <section className="mt-12">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

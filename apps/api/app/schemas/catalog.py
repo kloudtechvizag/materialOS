@@ -33,6 +33,7 @@ class ItemOut(BaseModel):
     min_price: Decimal
     standard_cost: Decimal
     is_active: bool
+    image_path: str | None
 
     class Config:
         from_attributes = True

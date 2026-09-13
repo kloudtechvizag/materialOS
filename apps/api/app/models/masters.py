@@ -87,3 +87,8 @@ class Item(Base, UUIDPk, TenantMixin, TimestampMixin):
     # this item, never treated as zero -- an unset reorder level must
     # not silently fire a low-stock alert on every item that has none.
     reorder_level: Mapped[Decimal | None] = mapped_column(MONEY, nullable=True)
+    # Storage-relative path (app/storage.py's save_file convention, same
+    # as fleet.py's POD photos) to a real photo of this tenant's own
+    # item -- never a generic stock photo, see ADR-019. NULL means no
+    # photo uploaded yet; callers fall back to an icon, not a blank box.
+    image_path: Mapped[str | None] = mapped_column(String(500), nullable=True)

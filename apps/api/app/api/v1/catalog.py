@@ -1,6 +1,8 @@
+import mimetypes
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi.responses import Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -10,6 +12,7 @@ from app.models.masters import Item
 from app.models.user import User
 from app.schemas.catalog import BatchCreate, BatchOut, CategoryCreate, CategoryOut, ItemCreate, ItemOut, ItemUpdate
 from app.services.inventory import near_expiry_batches
+from app.storage import read_file, save_file
 
 router = APIRouter(tags=["catalog"])
 
@@ -99,6 +102,47 @@ def update_item(
         setattr(item, field, value)
     db.flush()
     return item
+
+
+# Real photos of a tenant's own inventory (ADR-019) -- never a generic
+# stock photo standing in for a specific merchant's product. Same
+# storage convention as fleet.py's POD photos: save_file returns a
+# storage-relative path, stored on the item, served back through this
+# same API (never a raw filesystem path exposed to the browser).
+@router.post("/items/{item_id}/image", response_model=ItemOut)
+async def upload_item_image(
+    item_id: uuid.UUID,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db_tenant),
+    user: User = Depends(require_permission("items.edit")),
+) -> Item:
+    from app.errors import AppError, ErrorCode
+
+    item = db.get(Item, item_id)
+    if item is None:
+        raise AppError(ErrorCode.NOT_FOUND, "Item not found.", status_code=404)
+    content = await file.read()
+    item.image_path = save_file(
+        tenant_id=user.tenant_id, category="item_images", file_name=file.filename or "image.jpg", content=content
+    )
+    db.flush()
+    return item
+
+
+@router.get("/items/{item_id}/image")
+def get_item_image(
+    item_id: uuid.UUID,
+    db: Session = Depends(get_db_tenant),
+    _user=Depends(require_permission("items.view")),
+) -> Response:
+    from app.errors import AppError, ErrorCode
+
+    item = db.get(Item, item_id)
+    if item is None or item.image_path is None:
+        raise AppError(ErrorCode.NOT_FOUND, "No image for this item.", status_code=404)
+    content = read_file(item.image_path)
+    media_type = mimetypes.guess_type(item.image_path)[0] or "application/octet-stream"
+    return Response(content=content, media_type=media_type)
 
 
 # ---------------------------------------------------------------- Batches

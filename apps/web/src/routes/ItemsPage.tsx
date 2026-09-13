@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Package, Sparkles } from "lucide-react";
 
 import { DynamicAttributesFieldset, type AttributeSchemaEntry } from "@/components/items/DynamicAttributesFieldset";
+import { ItemImage } from "@/components/items/ItemImage";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +28,7 @@ interface Item {
   standard_price: string;
   standard_cost: string;
   is_active: boolean;
+  image_path: string | null;
 }
 
 interface Category {
@@ -117,6 +119,47 @@ function CategorySelect({ item, categories }: { item: Item; categories: Category
         <option key={c.id} value={c.id}>{c.name}</option>
       ))}
     </select>
+  );
+}
+
+function ItemImageCell({ item }: { item: Item }) {
+  const queryClient = useQueryClient();
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const upload = useMutation({
+    mutationFn: (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      return apiFetch<Item>(`/items/${item.id}/image`, { method: "POST", body: formData, isFormData: true });
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["items"] }),
+  });
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        className="group relative block h-10 w-10 shrink-0 overflow-hidden rounded-md border border-border"
+        title="Click to upload a photo"
+      >
+        <ItemImage itemId={item.id} imagePath={item.image_path} alt={item.name} className="h-full w-full" />
+        <span className="absolute inset-0 hidden items-center justify-center bg-black/50 text-[9px] font-medium text-white group-hover:flex">
+          {upload.isPending ? "..." : "Edit"}
+        </span>
+      </button>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) upload.mutate(file);
+          e.target.value = "";
+        }}
+      />
+    </>
   );
 }
 
@@ -371,6 +414,7 @@ export function ItemsPage() {
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-left text-muted-foreground">
               <tr>
+                <th className="px-4 py-2 font-medium"><span className="sr-only">Photo</span></th>
                 <th className="px-4 py-2 font-medium">SKU</th>
                 <th className="px-4 py-2 font-medium">Name</th>
                 <th className="px-4 py-2 font-medium">Category</th>
@@ -383,6 +427,7 @@ export function ItemsPage() {
             <tbody>
               {filteredItems.map((item) => (
                 <tr key={item.id} className="border-t border-border">
+                  <td className="px-4 py-2"><ItemImageCell item={item} /></td>
                   <td className="px-4 py-2 text-muted-foreground">{item.sku}</td>
                   <td className="px-4 py-2">{item.name}</td>
                   <td className="px-4 py-2"><CategorySelect item={item} categories={categories} /></td>
