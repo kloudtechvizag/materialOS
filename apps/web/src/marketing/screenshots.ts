@@ -1,11 +1,48 @@
-/** Real screenshots (apps/web/public/screenshots/*.webp, captured from
- * the actual running app against the sribalaji-demo tenant) for the
- * features where a clean one exists. Partial by design -- not every
- * feature has one yet, and cards for the rest fall back to the icon
- * badge alone rather than a placeholder image. */
+/** Single registry for every real MaterialOS product screenshot used on
+ * the public site (apps/web/public/screenshots/*.webp, captured against
+ * the actual running app, sribalaji-demo tenant -- never a mockup or
+ * fabricated UI, matching BrowserFrame's own contract). One file so a
+ * page can never hardcode a screenshot path directly or maintain its
+ * own parallel copy of this map -- every consumer (FeaturePage,
+ * FeaturesIndexPage, ProductOverviewPage, HomePage, IndustryPage)
+ * imports from here.
+ *
+ * Partial by design -- not every feature or industry has one yet, and
+ * a missing entry means the card falls back to its icon badge alone
+ * rather than a wrong or generic placeholder image (see IndustryPage:
+ * only building_materials gets one, because that's the only industry
+ * whose demo-tenant data genuinely matches its own marketing claims).
+ *
+ * KNOWN STALE (audited 2026-09-13): all five screenshots below were
+ * captured 2026-09-09, before two real UI changes landed --
+ * (1) AppShell's header gained a theme toggle and a density toggle
+ * (2026-09-13), (2) "POS" was added to the Sell nav group. Every one of
+ * these screenshots' sidebar/header is missing those two changes. The
+ * gap is minor (icons/one nav item, not a different product), so they
+ * stay live rather than leaving hero sections blank, but they are due
+ * for a re-capture -- see README's "Updating marketing screenshots"
+ * section for the exact capture steps once someone has a logged-in
+ * session against a running instance (this sandboxed environment has
+ * no backend to log into, so a fresh capture can't be produced here). */
 export const FEATURE_SCREENSHOTS: Record<string, string> = {
   "inventory-management": "/screenshots/inventory.webp",
   "sales-quotation-management": "/screenshots/quotations.webp",
   "credit-management": "/screenshots/customers.webp",
   "report-builder": "/screenshots/reports.webp",
+};
+
+/** Keyed by /screenshots/*.webp filename (not a marketing slug, since
+ * the same dashboard screenshot is reused across the home hero and the
+ * product overview hero -- there's no single "feature" it belongs to). */
+export const HERO_SCREENSHOTS = {
+  dashboard: "/screenshots/dashboard.webp",
+} as const;
+
+/** Real screenshots, only where the actual demo data genuinely matches
+ * the industry's own claims (building_materials' demo tenant really is
+ * a cement/steel/paint dealer) -- not force-fit onto industries whose
+ * specific claims (e.g. pharmacy's batch/expiry) this generic item list
+ * doesn't actually demonstrate. */
+export const INDUSTRY_SCREENSHOTS: Record<string, string> = {
+  building_materials: "/screenshots/inventory.webp",
 };

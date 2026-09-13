@@ -303,6 +303,18 @@ settings** from the app's own Login or Signup screen to point it at
 the right address -- this is a runtime setting stored per-install, not
 something that requires rebuilding the app.
 
+## Updating marketing screenshots
+
+Every product screenshot on the public site (`apps/web/public/screenshots/*.webp`) is a real capture against a running instance, logged in as the seeded demo tenant -- never a mockup. `apps/web/src/marketing/screenshots.ts` is the single registry every marketing page imports from; a page must never hardcode a screenshot path itself. That file's own top comment tracks which entries are currently known-stale.
+
+To recapture one after a real UI change:
+
+1. Run the API + web app locally (see "Running it" above) and log in as the demo tenant: `owner@sribalaji-demo.example.com` / `demo-password-123` (workspace `sribalaji-demo`).
+2. Set the browser window/viewport to 1600x1000 -- `BrowserFrame` renders every screenshot at that aspect ratio (`width={1600} height={1000}`), so capturing at a different ratio means it gets cropped or letterboxed on the site.
+3. Navigate to the real page the marketing screenshot is supposed to represent, wait for real seeded data to render (not a loading skeleton), and capture it -- the full window, not just the content area, since `BrowserFrame` draws its own macOS-style title bar chrome around whatever image it's given.
+4. Convert to WebP and drop it into `apps/web/public/screenshots/` (e.g. `cwebp -q 85 capture.png -o dashboard.webp`).
+5. Update `screenshots.ts`'s comment to record the new capture date, remove the entry from the "known stale" note, and delete the old file if nothing else references it (`grep -rn "old-name.webp" apps/web/src`).
+
 ## Database migrations
 
 Migrations run as the Postgres **superuser** role (`materialos`); the

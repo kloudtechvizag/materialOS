@@ -9,7 +9,7 @@ import { ALL_INDUSTRIES, INDUSTRIES } from "@/marketing/content/industries";
 import { FEATURES } from "@/marketing/content/features";
 import { FEATURE_ICONS, INDUSTRY_ICONS } from "@/marketing/icons";
 import { paletteGradient } from "@/marketing/palette";
-import { FEATURE_SCREENSHOTS } from "@/marketing/screenshots";
+import { FEATURE_SCREENSHOTS, HERO_SCREENSHOTS } from "@/marketing/screenshots";
 
 const jsonLd = [
   { "@context": "https://schema.org", "@type": "Organization", name: "MaterialOS", url: SITE_URL, logo: `${SITE_URL}/brand/symbol.svg` },
@@ -55,7 +55,7 @@ export function HomePage() {
           aria-hidden="true"
         />
         <BrowserFrame
-          src="/screenshots/dashboard.webp"
+          src={HERO_SCREENSHOTS.dashboard}
           alt="MaterialOS dashboard showing outstanding, invoiced, quotations, and stock in real time"
           className="relative -rotate-1 shadow-[0_40px_80px_-30px_rgba(15,23,42,0.35)] transition-transform duration-500 hover:rotate-0"
         />

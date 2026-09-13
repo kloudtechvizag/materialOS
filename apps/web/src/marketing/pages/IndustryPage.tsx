@@ -9,16 +9,8 @@ import { Faq, faqJsonLd } from "@/components/marketing/Faq";
 import { PhotoBanner } from "@/components/marketing/PhotoBanner";
 import { getFeatureBySlug } from "@/marketing/content/features";
 import { getIndustryBySlug } from "@/marketing/content/industries";
+import { INDUSTRY_SCREENSHOTS } from "@/marketing/screenshots";
 import { NotFoundPage } from "./NotFoundPage";
-
-/** Real screenshots, only where the actual demo data genuinely matches
- * the industry's own claims (building_materials' demo tenant really is
- * a cement/steel/paint dealer) -- not force-fit onto industries whose
- * specific claims (e.g. pharmacy's batch/expiry) this generic item list
- * doesn't actually demonstrate. */
-const INDUSTRY_SCREENSHOTS: Record<string, string> = {
-  building_materials: "/screenshots/inventory.webp",
-};
 
 /** Real, specific, relevant photos (Unsplash License -- free for any
  * use, no attribution required) -- one per flagship industry where a

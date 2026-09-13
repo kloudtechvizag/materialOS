@@ -11,7 +11,7 @@ import { Breadcrumbs, breadcrumbJsonLd } from "@/components/marketing/Breadcrumb
 import { FEATURES } from "@/marketing/content/features";
 import { FEATURE_ICONS } from "@/marketing/icons";
 import { paletteGradient } from "@/marketing/palette";
-import { FEATURE_SCREENSHOTS } from "@/marketing/screenshots";
+import { FEATURE_SCREENSHOTS, HERO_SCREENSHOTS } from "@/marketing/screenshots";
 
 const BREADCRUMB_ITEMS = [{ label: "Home", href: "/" }, { label: "Product" }];
 
@@ -100,7 +100,7 @@ export function ProductOverviewPage() {
         />
         <div className="relative">
           <BrowserFrame
-            src="/screenshots/dashboard.webp"
+            src={HERO_SCREENSHOTS.dashboard}
             alt="MaterialOS dashboard showing outstanding, invoiced, quotations, and stock in real time"
             className="mx-auto max-w-4xl -rotate-1 shadow-[0_40px_80px_-30px_rgba(15,23,42,0.35)] transition-transform duration-500 hover:rotate-0"
           />
