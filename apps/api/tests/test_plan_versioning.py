@@ -10,11 +10,29 @@ from fastapi.testclient import TestClient
 
 from app.db import SessionLocal
 from app.main import app
+from app.models.billing_plans import Plan, PlanFeature, PlanLimit
 from app.models.platform_admin import PlatformAdmin
 from app.security import hash_password
 from app.services.billing_plans import ensure_plan_catalog
 
 client = TestClient(app)
+
+
+def _delete_plan(slug: str) -> None:
+    """This endpoint writes real, permanently-committed rows (via
+    get_platform_db, not the rollback-based `db` fixture) -- and unlike
+    a leftover test tenant, a leftover Plan with is_public defaulting to
+    True actually appears on the real public /pricing/plans page. Clean
+    up explicitly rather than relying on is_public=False alone."""
+    db = SessionLocal()
+    try:
+        for plan in db.query(Plan).filter(Plan.slug == slug).all():
+            db.query(PlanFeature).filter(PlanFeature.plan_id == plan.id).delete()
+            db.query(PlanLimit).filter(PlanLimit.plan_id == plan.id).delete()
+            db.delete(plan)
+        db.commit()
+    finally:
+        db.close()
 
 
 def _make_platform_admin(email: str) -> str:
@@ -34,45 +52,48 @@ def test_creating_a_new_plan_version_never_mutates_the_old_row():
     headers = {"Authorization": f"Bearer {admin_token}"}
 
     slug = f"test-tier-{uuid.uuid4().hex[:8]}"
-    v1 = client.post(
-        "/api/v1/platform/plans", headers=headers,
-        json={
-            "slug": slug, "name": "Test Tier", "tier_order": 99, "monthly_price": "999.00", "yearly_price": "9590.00",
-            "feature_codes": ["module.pos"], "limits": {"users": 5},
-        },
-    )
-    assert v1.status_code == 201
-    v1_body = v1.json()
-    assert v1_body["version"] == 1
-    assert v1_body["is_current"] is True
-    assert v1_body["features"] == ["module.pos"]
-    assert v1_body["limits"]["users"] == 5
+    try:
+        v1 = client.post(
+            "/api/v1/platform/plans", headers=headers,
+            json={
+                "slug": slug, "name": "Test Tier", "tier_order": 99, "monthly_price": "999.00", "yearly_price": "9590.00",
+                "feature_codes": ["module.pos"], "limits": {"users": 5}, "is_public": False,
+            },
+        )
+        assert v1.status_code == 201
+        v1_body = v1.json()
+        assert v1_body["version"] == 1
+        assert v1_body["is_current"] is True
+        assert v1_body["features"] == ["module.pos"]
+        assert v1_body["limits"]["users"] == 5
 
-    v2 = client.post(
-        "/api/v1/platform/plans", headers=headers,
-        json={
-            "slug": slug, "name": "Test Tier", "tier_order": 99, "monthly_price": "1299.00", "yearly_price": "12470.00",
-            "feature_codes": ["module.pos", "module.warehouse"], "limits": {"users": 10},
-        },
-    )
-    assert v2.status_code == 201
-    v2_body = v2.json()
-    assert v2_body["version"] == 2
-    assert v2_body["is_current"] is True
-    assert v2_body["id"] != v1_body["id"]
+        v2 = client.post(
+            "/api/v1/platform/plans", headers=headers,
+            json={
+                "slug": slug, "name": "Test Tier", "tier_order": 99, "monthly_price": "1299.00", "yearly_price": "12470.00",
+                "feature_codes": ["module.pos", "module.warehouse"], "limits": {"users": 10}, "is_public": False,
+            },
+        )
+        assert v2.status_code == 201
+        v2_body = v2.json()
+        assert v2_body["version"] == 2
+        assert v2_body["is_current"] is True
+        assert v2_body["id"] != v1_body["id"]
 
-    all_plans = client.get("/api/v1/platform/plans", headers=headers).json()
-    versions = [p for p in all_plans if p["slug"] == slug]
-    assert len(versions) == 2
-    v1_after = next(p for p in versions if p["version"] == 1)
-    v2_after = next(p for p in versions if p["version"] == 2)
-    # The original v1 row is completely unchanged...
-    assert v1_after["monthly_price"] == "999.00"
-    assert v1_after["limits"]["users"] == 5
-    # ...but is no longer the current version.
-    assert v1_after["is_current"] is False
-    assert v2_after["is_current"] is True
-    assert v2_after["monthly_price"] == "1299.00"
+        all_plans = client.get("/api/v1/platform/plans", headers=headers).json()
+        versions = [p for p in all_plans if p["slug"] == slug]
+        assert len(versions) == 2
+        v1_after = next(p for p in versions if p["version"] == 1)
+        v2_after = next(p for p in versions if p["version"] == 2)
+        # The original v1 row is completely unchanged...
+        assert v1_after["monthly_price"] == "999.00"
+        assert v1_after["limits"]["users"] == 5
+        # ...but is no longer the current version.
+        assert v1_after["is_current"] is False
+        assert v2_after["is_current"] is True
+        assert v2_after["monthly_price"] == "1299.00"
+    finally:
+        _delete_plan(slug)
 
 
 def test_rejects_an_unknown_feature_code():
@@ -80,7 +101,7 @@ def test_rejects_an_unknown_feature_code():
     headers = {"Authorization": f"Bearer {admin_token}"}
     resp = client.post(
         "/api/v1/platform/plans", headers=headers,
-        json={"slug": f"bad-{uuid.uuid4().hex[:8]}", "name": "Bad", "tier_order": 1, "feature_codes": ["not.a.real.feature"]},
+        json={"slug": f"bad-{uuid.uuid4().hex[:8]}", "name": "Bad", "tier_order": 1, "feature_codes": ["not.a.real.feature"], "is_public": False},
     )
     assert resp.status_code == 422
 

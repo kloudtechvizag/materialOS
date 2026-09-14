@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { RoiCalculator } from "@/components/marketing/RoiCalculator";
 import { Seo } from "@/components/marketing/Seo";
 import { apiFetch } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -124,7 +125,7 @@ export function PricingPage() {
                   <ul className="flex-1 space-y-1.5 text-xs text-muted-foreground">
                     <li>{plan.limits.users === null ? "Unlimited" : plan.limits.users} users</li>
                     <li>{plan.limits.companies === null ? "Unlimited" : plan.limits.companies} compan{plan.limits.companies === 1 ? "y" : "ies"}</li>
-                    <li>{plan.limits.invoices_per_month === null ? "Unlimited" : plan.limits.invoices_per_month.toLocaleString()} invoices/mo</li>
+                    <li>{plan.limits.invoices_per_month == null ? "Unlimited" : plan.limits.invoices_per_month.toLocaleString()} invoices/mo</li>
                     <li>{plan.features.length} advanced features</li>
                   </ul>
                   <Button asChild variant={recommended ? "default" : "outline"} size="sm" className="w-full">
@@ -138,6 +139,9 @@ export function PricingPage() {
           })}
         </div>
       )}
+
+      {/* ROI calculator */}
+      {plans && plans.length > 0 && <RoiCalculator plans={plans} yearly={yearly} />}
 
       {/* Compare */}
       <div className="space-y-4">
