@@ -3,31 +3,74 @@ skeleton of the sample lifecycle described in the LIMS master prompt's
 sec3/sec88: Client -> Sample -> Accession -> Test Order -> Result ->
 Report, with real status transitions and a versioned, never-overwritten
 report. Deliberately NOT built in this pass (named, not faked):
-worksheets/batch testing, instrument integration, chain of custody as
-its own ledger, storage hierarchy, aliquot genealogy, reflex/dilution
-rules, multi-stage technical/QC/pathologist review (collapsed here to
-entry -> validate -> authorize), competency-gated RBAC, electronic-
-signature workflow (a real second-user check exists, but it is not a
-compliant e-signature per the spec's own sec36), and the customer
-portal. Client reuses the existing Customer model (spec sec28
-explicitly asks for this), not a new lab_clients table.
+aliquot genealogy, reflex/dilution rules, multi-stage technical/QC/
+pathologist review (collapsed here to entry -> validate -> authorize),
+competency-gated RBAC, electronic-signature workflow (a real
+second-user check exists, but it is not a compliant e-signature per
+the spec's own sec36), and the customer portal. Client reuses the
+existing Customer model (spec sec28 explicitly asks for this), not a
+new lab_clients table.
 
 **QC subsystem (blanks/controls/duplicates), second pass:** real, not
 config-only. `QcReferenceSample` is a scoped-down merge of the spec's
 separate "Reference Sample" and "Reference Analysis" concepts (sec30-
 31) -- one row per control/blank *for one specific test*, carrying its
 own acceptance range, rather than a generic reference material that
-supports many analyses each with their own expected-result row. A real
-lab QC failure is meant to be scoped to one worksheet's batch of
-samples (sec67); since worksheets don't exist yet, the honest, buildable
-substitute here is coarser but real: `authorize_result` checks the
-*most recent* QcRun for that result's test definition, of any type --
-if it's a fail, authorization is blocked until a fresh QC run for that
-test passes. No QC run ever recorded for a test does not block (a lab
-that hasn't configured QC for that test yet isn't bricked), but a
-recorded failure does, until superseded by a pass. Westgard-style
-multi-rule statistics (sec66), Levey-Jennings charts (sec65), and
-QC-per-worksheet scoping are named, later gaps.
+supports many analyses each with their own expected-result row. No QC
+run ever recorded for a test does not block authorization (a lab that
+hasn't configured QC for that test yet isn't bricked), but a recorded
+failure does, until superseded by a pass. Westgard-style multi-rule
+statistics (sec66) and Levey-Jennings charts (sec65) remain named,
+later gaps.
+
+**Worksheets (batch testing), third pass:** real, not config-only.
+`LabWorksheet` groups test orders for one test definition into a batch
+run by one analyst (sec15) -- test orders opt in via `worksheet_id`
+rather than a separate join table, since one test order belongs to at
+most one worksheet. QC runs (blank/control/duplicate) can likewise be
+recorded *against* a worksheet via the same `worksheet_id` column on
+`QcRun`. This is what makes QC-per-worksheet-batch scoping real instead
+of the second pass's coarser "most recent run for the whole test"
+fallback: `authorize_result` now checks QC scoped to the specific
+worksheet a result's test order belongs to, and only falls back to the
+test-definition-wide most-recent-run check for test orders that were
+never put on a worksheet at all (the walking-skeleton path, still
+fully supported). Deliberately NOT built: worksheet templates/layout
+positions (sec15's fixed-position plate map), multi-test-definition
+worksheets, and re-running a worksheet in place (a new worksheet must
+be created instead) -- named gaps, not silent omissions.
+
+**Instrument integration, fourth pass:** real, but deliberately scoped
+to file-based result import, not a live ASTM E1394/HL7 v2.x wire
+protocol (sec21-23). This codebase has no real instrument to connect
+to and no verified serial/TCP driver stack -- shipping an untested
+protocol implementation would itself be fake functionality dressed up
+as real. What's real instead: `LabInstrument` is a genuine catalog
+entity, and `LabResult.instrument_id` genuinely records which
+instrument produced a result (null means a human keyed it in). A real
+CSV import endpoint matches each row (sample_number, test_code,
+result_value) against a pending test order and calls the same
+`enter_result` used by manual entry -- this is an honest, commonly-used
+real-world integration pattern for labs without HL7 middleware budget,
+not a placeholder. A live ASTM/HL7 listener, and instrument-specific
+result-format parsers beyond the generic three-column CSV, remain
+named, later gaps.
+
+**Storage & chain of custody, fifth pass:** real. `LabStorageLocation`
+is a self-referencing hierarchy (freezer -> shelf -> rack -> box, or
+however deep a lab needs), and `LabCustodyEvent` is a genuine
+append-only ledger -- rows are only ever inserted, never updated or
+deleted, matching the spec's "chain of custody as its own ledger"
+framing (sec8-10) rather than overloading `LabSample`'s own mutable
+columns. `LabSample.current_location_id` is a deliberate denormalized
+fast-lookup pointer (today's location), while `LabCustodyEvent` is the
+durable historical record; `from_location_id` on each event is always
+captured automatically from the sample's own state at the moment of
+the event, never accepted from the caller, so the ledger can't be
+spoofed into recording a movement that didn't happen. Aliquot
+genealogy (sec9 -- splitting one sample into independently trackable
+child aliquots) is a real, later gap: this pass tracks one sample's
+whole-sample movement, not sub-sample lineage.
 """
 
 import uuid
@@ -51,6 +94,9 @@ RESULT_FLAGS = ["normal", "abnormal", "critical"]
 REPORT_STATUSES = ["released", "superseded"]
 QC_TYPES = ["blank", "control", "duplicate"]
 QC_STATUSES = ["pass", "fail"]
+WORKSHEET_STATUSES = ["open", "in_progress", "completed"]
+STORAGE_LOCATION_TYPES = ["room", "freezer", "refrigerator", "cabinet", "shelf", "rack", "box"]
+CUSTODY_EVENT_TYPES = ["received", "stored", "moved", "checked_out", "checked_in", "disposed"]
 
 
 class LabSampleType(Base, UUIDPk, TenantMixin, TimestampMixin):
@@ -135,6 +181,9 @@ class LabSample(Base, UUIDPk, TenantMixin, TimestampMixin):
     received_datetime: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     rejection_reason: Mapped[str | None] = mapped_column(String(500), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Denormalized fast-lookup pointer -- the durable historical record
+    # is LabCustodyEvent, not this column (see module docstring).
+    current_location_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("lab_storage_locations.id", ondelete="SET NULL"), nullable=True, index=True)
 
 
 class LabTestOrder(Base, UUIDPk, TenantMixin, TimestampMixin):
@@ -144,6 +193,9 @@ class LabTestOrder(Base, UUIDPk, TenantMixin, TimestampMixin):
     test_definition_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("lab_test_definitions.id", ondelete="RESTRICT"), nullable=False, index=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="ordered")
     ordered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    # A test order belongs to at most one worksheet -- opt-in via this
+    # column rather than a separate join table (see module docstring).
+    worksheet_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("lab_worksheets.id", ondelete="SET NULL"), nullable=True, index=True)
 
 
 class LabResult(Base, UUIDPk, TenantMixin, TimestampMixin):
@@ -158,6 +210,9 @@ class LabResult(Base, UUIDPk, TenantMixin, TimestampMixin):
     test_order_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("lab_test_orders.id", ondelete="CASCADE"), nullable=False, index=True)
     result_value: Mapped[str] = mapped_column(String(500), nullable=False)
     numeric_value: Mapped[Decimal | None] = mapped_column(Numeric(18, 4), nullable=True)
+    # Which instrument produced this result via a CSV import -- null
+    # means a human keyed it in manually (see module docstring).
+    instrument_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("lab_instruments.id", ondelete="SET NULL"), nullable=True, index=True)
     unit: Mapped[str | None] = mapped_column(String(30), nullable=True)
     flag: Mapped[str | None] = mapped_column(String(20), nullable=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="draft")
@@ -225,6 +280,10 @@ class QcRun(Base, UUIDPk, TenantMixin, TimestampMixin):
 
     test_definition_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("lab_test_definitions.id", ondelete="RESTRICT"), nullable=False, index=True)
     qc_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    # Set when this run was recorded as part of a specific worksheet's
+    # batch (see LabWorksheet) -- null for a run recorded standalone,
+    # outside any worksheet.
+    worksheet_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("lab_worksheets.id", ondelete="SET NULL"), nullable=True, index=True)
     reference_sample_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("qc_reference_samples.id", ondelete="RESTRICT"), nullable=True)
     source_test_order_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("lab_test_orders.id", ondelete="RESTRICT"), nullable=True)
     result_value: Mapped[str] = mapped_column(String(500), nullable=False)
@@ -233,3 +292,78 @@ class QcRun(Base, UUIDPk, TenantMixin, TimestampMixin):
     status: Mapped[str] = mapped_column(String(10), nullable=False)  # pass | fail
     performed_by_user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
     performed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class LabWorksheet(Base, UUIDPk, TenantMixin, TimestampMixin):
+    """A batch of test orders for one test definition, run together by
+    one analyst (spec sec15). Test orders and QC runs opt into a
+    worksheet via their own nullable worksheet_id column rather than a
+    join table -- see module docstring for why. Deliberately NOT a
+    fixed-position plate map: `LabTestOrder.worksheet_id` records
+    membership, not a specific well/slot position.
+    """
+
+    __tablename__ = "lab_worksheets"
+    __table_args__ = (UniqueConstraint("tenant_id", "worksheet_number", name="uq_lab_worksheets_tenant_number"),)
+
+    company_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("companies.id", ondelete="RESTRICT"), nullable=False, index=True)
+    worksheet_number: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    test_definition_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("lab_test_definitions.id", ondelete="RESTRICT"), nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="open")
+    analyst_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_by_user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class LabInstrument(Base, UUIDPk, TenantMixin, TimestampMixin):
+    """A catalog entry for a physical instrument whose results are
+    imported via CSV rather than manually keyed -- see module docstring
+    for why this stops short of a live ASTM/HL7 wire protocol.
+    """
+
+    __tablename__ = "lab_instruments"
+    __table_args__ = (UniqueConstraint("tenant_id", "company_id", "code", name="uq_lab_instruments_company_code"),)
+
+    company_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("companies.id", ondelete="RESTRICT"), nullable=False, index=True)
+    code: Mapped[str] = mapped_column(String(30), nullable=False)
+    name: Mapped[str] = mapped_column(String(150), nullable=False)
+    manufacturer: Mapped[str | None] = mapped_column(String(150), nullable=True)
+    model: Mapped[str | None] = mapped_column(String(150), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+
+class LabStorageLocation(Base, UUIDPk, TenantMixin, TimestampMixin):
+    """A self-referencing hierarchy -- freezer -> shelf -> rack -> box,
+    or as shallow or deep as a lab actually needs (spec sec8's storage
+    hierarchy, scoped down to one generic self-FK rather than named
+    tables per level)."""
+
+    __tablename__ = "lab_storage_locations"
+    __table_args__ = (UniqueConstraint("tenant_id", "company_id", "code", name="uq_lab_storage_locations_company_code"),)
+
+    company_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("companies.id", ondelete="RESTRICT"), nullable=False, index=True)
+    parent_location_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("lab_storage_locations.id", ondelete="SET NULL"), nullable=True, index=True)
+    code: Mapped[str] = mapped_column(String(30), nullable=False)
+    name: Mapped[str] = mapped_column(String(150), nullable=False)
+    location_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    temperature_c: Mapped[Decimal | None] = mapped_column(Numeric(5, 1), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+
+class LabCustodyEvent(Base, UUIDPk, TenantMixin, TimestampMixin):
+    """Append-only chain-of-custody ledger (spec sec8-10) -- rows are
+    only ever inserted, never updated or deleted. from_location_id is
+    always captured server-side from the sample's own current_location_
+    id at the moment of the event, never accepted from the caller, so
+    the ledger can't be spoofed into recording a movement that didn't
+    happen."""
+
+    __tablename__ = "lab_custody_events"
+
+    sample_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("lab_samples.id", ondelete="CASCADE"), nullable=False, index=True)
+    event_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    from_location_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("lab_storage_locations.id", ondelete="SET NULL"), nullable=True)
+    to_location_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("lab_storage_locations.id", ondelete="SET NULL"), nullable=True)
+    performed_by_user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    performed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    notes: Mapped[str | None] = mapped_column(String(500), nullable=True)

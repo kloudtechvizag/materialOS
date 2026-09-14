@@ -99,9 +99,13 @@ import { SubscriptionInvoicesPage } from "@/routes/settings/SubscriptionInvoices
 import { SubscriptionPage } from "@/routes/settings/SubscriptionPage";
 import { CapabilityMarketplacePage } from "@/routes/settings/CapabilityMarketplacePage";
 import { LabSampleDetailPage } from "@/routes/laboratory/LabSampleDetailPage";
+import { LabInstrumentsPage } from "@/routes/laboratory/LabInstrumentsPage";
 import { LabQcPage } from "@/routes/laboratory/LabQcPage";
 import { LabSamplesPage } from "@/routes/laboratory/LabSamplesPage";
+import { LabStorageLocationsPage } from "@/routes/laboratory/LabStorageLocationsPage";
 import { LabTestCatalogPage } from "@/routes/laboratory/LabTestCatalogPage";
+import { LabWorksheetDetailPage } from "@/routes/laboratory/LabWorksheetDetailPage";
+import { LabWorksheetsPage } from "@/routes/laboratory/LabWorksheetsPage";
 import { MetalRatesPage } from "@/routes/settings/MetalRatesPage";
 import { ReceiptSettingsPage } from "@/routes/settings/ReceiptSettingsPage";
 import { WebhooksPage } from "@/routes/settings/WebhooksPage";
@@ -302,6 +306,10 @@ export default function App() {
         <Route path="/lab/samples/:sampleId" element={<LabSampleDetailPage />} />
         <Route path="/lab/test-catalog" element={<LabTestCatalogPage />} />
         <Route path="/lab/qc" element={<LabQcPage />} />
+        <Route path="/lab/worksheets" element={<LabWorksheetsPage />} />
+        <Route path="/lab/worksheets/:worksheetId" element={<LabWorksheetDetailPage />} />
+        <Route path="/lab/instruments" element={<LabInstrumentsPage />} />
+        <Route path="/lab/storage" element={<LabStorageLocationsPage />} />
         <Route path="/settings/webhooks" element={<WebhooksPage />} />
       </Route>
 

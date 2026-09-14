@@ -10,6 +10,7 @@ import {
   ClipboardList,
   Clock,
   Coins,
+  Cpu,
   CreditCard,
   Database,
   Factory,
@@ -37,6 +38,7 @@ import {
   UploadCloud,
   Users,
   Wallet,
+  Warehouse,
   Webhook,
 } from "lucide-react";
 
@@ -141,6 +143,9 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
     items: [
       { id: "lab-samples", label: "Samples", href: "/lab/samples", icon: FlaskConical, module: "laboratory" },
       { id: "lab-test-catalog", label: "Test catalog", href: "/lab/test-catalog", icon: Microscope, module: "laboratory" },
+      { id: "lab-worksheets", label: "Worksheets", href: "/lab/worksheets", icon: ClipboardList, module: "laboratory" },
+      { id: "lab-instruments", label: "Instruments", href: "/lab/instruments", icon: Cpu, module: "laboratory" },
+      { id: "lab-storage", label: "Storage", href: "/lab/storage", icon: Warehouse, module: "laboratory" },
       { id: "lab-qc", label: "Quality control", href: "/lab/qc", icon: ShieldCheck, module: "laboratory" },
     ],
   },
