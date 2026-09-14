@@ -11,6 +11,7 @@ from app.models.tenant import Company
 from app.schemas.industry import IndustryProfileOut
 from app.schemas.tenant import CompanyComplianceUpdate, CompanyIndustryUpdate, CompanyOut
 from app.services.industry import get_profile_by_slug
+from app.services.jewellery import ensure_jewellery_category
 
 router = APIRouter(prefix="/companies", tags=["companies"])
 
@@ -85,5 +86,7 @@ def update_industry_profile(
             ErrorCode.VALIDATION_ERROR, f"Unknown industry_slug: {payload.industry_slug!r}", status_code=422
         )
     company.industry_profile_id = profile.id
+    if profile.slug == "jewellery":
+        ensure_jewellery_category(db, tenant_id=company.tenant_id, company_id=company.id)
     db.flush()
     return _to_company_out(db, company)

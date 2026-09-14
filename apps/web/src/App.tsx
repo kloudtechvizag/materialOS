@@ -98,6 +98,7 @@ import { SignupPage } from "@/routes/SignupPage";
 import { SubscriptionInvoicesPage } from "@/routes/settings/SubscriptionInvoicesPage";
 import { SubscriptionPage } from "@/routes/settings/SubscriptionPage";
 import { CapabilityMarketplacePage } from "@/routes/settings/CapabilityMarketplacePage";
+import { MetalRatesPage } from "@/routes/settings/MetalRatesPage";
 import { ReceiptSettingsPage } from "@/routes/settings/ReceiptSettingsPage";
 import { WebhooksPage } from "@/routes/settings/WebhooksPage";
 import { SubscriptionPaymentsPage } from "@/routes/settings/SubscriptionPaymentsPage";
@@ -292,6 +293,7 @@ export default function App() {
         <Route path="/settings/subscription/invoices" element={<SubscriptionInvoicesPage />} />
         <Route path="/settings/subscription/payments" element={<SubscriptionPaymentsPage />} />
         <Route path="/settings/receipts" element={<ReceiptSettingsPage />} />
+        <Route path="/settings/metal-rates" element={<MetalRatesPage />} />
         <Route path="/settings/webhooks" element={<WebhooksPage />} />
       </Route>
 

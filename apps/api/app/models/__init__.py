@@ -23,6 +23,7 @@ from app.models.hr import (
 from app.models.idempotency import IdempotencyKey
 from app.models.importing import ImportBatch, ImportBatchRow
 from app.models.industry import IndustryProfile
+from app.models.jewellery import MetalRate
 from app.models.inventory import StockBalance, StockLedger, StockReservation
 from app.models.leave import LeaveBalance, LeaveRequest, LeaveType
 from app.models.masters import Customer, Item, Supplier

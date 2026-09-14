@@ -162,9 +162,61 @@ quotations/invoicing/collections and nothing else, which is honest but
 genuinely thin for those two specifically. The other 18 fit the
 existing generic core (sales + inventory + optionally POS +
 accounting/GST + dynamic attributes for the industry-specific fields)
-well enough to be real, usable configurations, not just placeholders --
-`jewellery`'s `pricing_strategy: "weight_making_wastage"` is likewise
-informational only (see the field's docstring in models/industry.py):
-`resolve_price()` is unchanged for every profile, still rate-contract >
-customer-price > standard_price. A per-profile pricing *formula* engine
-is unbuilt, same honest-gap treatment as FEFO enforcement above.
+well enough to be real, usable configurations, not just placeholders.
+
+**Update: `jewellery`'s pricing_strategy is no longer informational --
+`resolve_price()` (services/pricing.py) now implements it.** A gap
+audit of the whole 24-profile catalog found this was the single most
+concrete case of a profile declaring behavior the code never provided:
+every jewellery tenant priced items off a static `standard_price`
+exactly like a hardware store, silently contradicting the one field
+that's supposed to make jewellery pricing different. Fixed for real,
+not padded:
+
+- **`compute_jewellery_price()`**: metal_value (an item's
+  `attributes.net_weight_g` × a tenant-entered day rate) + making
+  charge (flat or % of metal_value) + wastage (% of metal_value) + a
+  flat stone/diamond charge. Returns `None` (never raises) when weight
+  data or a rate is missing, so `resolve_price()` falls back to
+  `standard_price` rather than blocking a sale -- an item without
+  weight (a gift box, a repair charge) still prices normally.
+- **`metal_rates` table** (tenant-scoped, RLS, migration `f6a7b8c9d0e1`)
+  holds the tenant's own day rate per metal+purity. No live gold-rate
+  feed exists or is integrated here -- same "refuse rather than fake"
+  discipline as ADR-007's e-invoice/e-way adapters: a jeweller enters
+  today's number from their own bullion dealer, exactly like every real
+  jewellery billing product requires, rather than this system
+  fabricating a market price. `POST /metal-rates` upserts by
+  metal+purity+day (a same-day correction overwrites, not duplicates);
+  a `/settings/metal-rates` page is the real UI for it.
+- **Precedence is additive, not replacing**: a rate contract or
+  customer-specific price still wins if one exists (a jeweller can
+  still cut a deal for a large customer) -- the formula only becomes
+  the *default* in place of `standard_price`, gated on `company.
+  industry_profile.pricing_strategy == "weight_making_wastage"`, so
+  every other profile (including one whose item happens to carry
+  jewellery-shaped attributes) is provably unaffected.
+- **No new frontend code for entering the weight/metal/making-charge
+  data**: `ensure_jewellery_category()` auto-seeds a "Jewellery Items"
+  category (with a `parameter_schema` matching the formula's inputs)
+  whenever a company's industry profile becomes jewellery, at signup or
+  via a later profile switch -- the *existing* `DynamicAttributesFieldset`
+  (ADR-003's mechanism, already rendering Building Materials' `grade`/
+  `diameter`/`heat_number` fields) picks it up automatically.
+- **Verified end-to-end against the live stack, not just unit tests**:
+  signed up a real jewellery tenant, entered a real ₹6,200/g rate
+  through `/settings/metal-rates`, created a real 10g/22K item with
+  `making_charge_value=12`, `wastage_percentage=4`, `stone_charge=200`
+  through the real Items page (the attribute fields rendered from the
+  auto-seeded category, unmodified), then created a real quotation via
+  the API -- it priced the line at ₹72,120.00 (`10×6200 + 12% + 4% +
+  200`), while the item's own `standard_price` stayed ₹0 the whole
+  time. 9 new tests (`test_jewellery_pricing.py`) cover the formula, the
+  fallback paths (no weight data, no rate entered), rate-contract/
+  customer-price precedence, cross-profile isolation, the API's
+  upsert-by-day behavior, and the real quotation round-trip.
+
+FEFO enforcement (Pharmacy/FMCG/Food & Beverage/Agriculture/Grocery)
+remains the one other profile-declared-but-unimplemented gap from this
+ADR, unchanged by the above -- still just a near-expiry dashboard
+widget, no batch-aware picking.

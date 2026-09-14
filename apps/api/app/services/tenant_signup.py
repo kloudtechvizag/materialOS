@@ -15,6 +15,7 @@ from app.services.approvals import ensure_default_approval_rules
 from app.services.billing_plans import ensure_plan_catalog
 from app.services.hr import ensure_default_departments, ensure_default_salary_components
 from app.services.industry import ensure_industry_profile_catalog, get_profile_by_slug
+from app.services.jewellery import ensure_jewellery_category
 from app.services.leave import ensure_default_leave_types
 from app.services.notification_rules import ensure_default_notification_rules
 from app.services.permissions import ensure_permission_catalog
@@ -75,6 +76,9 @@ def signup_tenant(db: Session, req: TenantSignupRequest) -> dict:
     )
     db.add(company)
     db.flush()
+
+    if industry_profile.slug == "jewellery":
+        ensure_jewellery_category(db, tenant_id=tenant.id, company_id=company.id)
 
     branch = Branch(tenant_id=tenant.id, company_id=company.id, name="Main Branch", code="MAIN")
     db.add(branch)

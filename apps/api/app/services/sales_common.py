@@ -47,7 +47,7 @@ def price_line(
     site_state: str | None,
     as_of: date,
 ) -> PricedLine:
-    priced: ResolvedPrice = resolve_price(db, customer_id=customer.id, item=item, qty=qty, project_id=project_id, as_of=as_of)
+    priced: ResolvedPrice = resolve_price(db, customer_id=customer.id, item=item, qty=qty, project_id=project_id, as_of=as_of, company=company)
     line_subtotal = round_line_tax(qty * priced.unit_price)
 
     place_of_supply = resolve_place_of_supply(site_state=site_state, customer=customer, company=company)
