@@ -51,6 +51,7 @@ RESOURCES = [
     "receipts",
     "rma",
     "webhooks",
+    "laboratory",
 ]
 
 ACTIONS = ["view", "create", "edit", "delete", "approve", "export", "restore", "manage", "calculate", "lock", "pay"]

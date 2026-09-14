@@ -15,7 +15,7 @@ client = TestClient(app)
 
 VALID_MODULES = {
     "sales", "purchase", "inventory", "warehouse", "dispatch", "fleet", "credit",
-    "collections", "projects", "field_sales", "accounting", "gst", "pos", "printing",
+    "collections", "projects", "field_sales", "accounting", "gst", "pos", "printing", "laboratory",
 }
 VALID_WIDGETS = {
     "outstanding", "invoiced", "open_quotations", "open_sales_orders", "active_items",
@@ -24,16 +24,16 @@ VALID_WIDGETS = {
 }
 
 
-def test_all_24_industries_from_the_brief_are_defined_with_no_typos():
+def test_all_25_industries_from_the_brief_are_defined_with_no_typos():
     """Locks in the full catalog (building_materials/retail/pharmacy,
-    the 20 more added on request, and printing_press) against
-    accidental duplicate/typo'd slugs, and against referencing a module
-    or dashboard widget key that
-    doesn't actually exist on the frontend -- both would silently no-op
-    (buildNavigation()/DASHBOARD_WIDGETS both filter unknown keys rather
-    than erroring), so nothing else would catch it."""
+    the 20 more added on request, printing_press, and laboratory)
+    against accidental duplicate/typo'd slugs, and against referencing
+    a module or dashboard widget key that doesn't actually exist on the
+    frontend -- both would silently no-op (buildNavigation()/
+    DASHBOARD_WIDGETS both filter unknown keys rather than erroring),
+    so nothing else would catch it."""
     slugs = [p["slug"] for p in PROFILE_DEFINITIONS]
-    assert len(slugs) == 24
+    assert len(slugs) == 25
     assert len(slugs) == len(set(slugs)), "duplicate slug in PROFILE_DEFINITIONS"
 
     for p in PROFILE_DEFINITIONS:

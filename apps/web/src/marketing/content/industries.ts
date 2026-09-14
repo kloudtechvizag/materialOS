@@ -2,9 +2,9 @@ import type { IndustryContent } from "./types";
 
 /** Every real industry slug/name/category, mirrored from
  * apps/api/app/services/industry.py's PROFILE_DEFINITIONS -- used by
- * the industries directory page to list all 24 supported industries
+ * the industries directory page to list all 25 supported industries
  * even though only 5 have a full content entry below (INDUSTRIES).
- * The other 19 render as plain, unlinked list items rather than thin
+ * The other 20 render as plain, unlinked list items rather than thin
  * pages -- adding real content for one later is a new entry in
  * INDUSTRIES, no code change. */
 export const ALL_INDUSTRIES: { slug: string; name: string; category: string }[] = [
@@ -32,6 +32,7 @@ export const ALL_INDUSTRIES: { slug: string; name: string; category: string }[] 
   { slug: "real_estate", name: "Real Estate", category: "services" },
   { slug: "grocery", name: "Grocery", category: "retail" },
   { slug: "printing_press", name: "Printing Press & Digital Color Lab", category: "printing" },
+  { slug: "laboratory", name: "Laboratory & Scientific Testing", category: "laboratory" },
 ];
 
 /** Fully-authored industry landing pages -- deliberately only the 5

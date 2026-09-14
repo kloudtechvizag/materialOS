@@ -26,6 +26,7 @@ from app.api.v1 import (
     imports,
     industry,
     jewellery,
+    laboratory,
     leave,
     notifications,
     payroll,
@@ -59,6 +60,7 @@ api_router.include_router(health.router)
 api_router.include_router(auth.router)
 api_router.include_router(tenants.router)
 api_router.include_router(industry.router)
+api_router.include_router(laboratory.router)
 api_router.include_router(jewellery.router)
 api_router.include_router(companies.router)
 api_router.include_router(branches.router)

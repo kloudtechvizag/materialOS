@@ -14,6 +14,7 @@ import {
   Database,
   Factory,
   FileMinus,
+  FlaskConical,
   FileSpreadsheet,
   FileText,
   History,
@@ -21,6 +22,7 @@ import {
   LayoutDashboard,
   LifeBuoy,
   MapPin,
+  Microscope,
   Package,
   Printer,
   Receipt,
@@ -131,6 +133,14 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
       { id: "people-attendance", label: "Attendance", href: "/people/attendance", icon: Clock, permission: "attendance.view" },
       { id: "people-leave", label: "Leave", href: "/people/leave", icon: CalendarDays, permission: "leave.view" },
       { id: "people-payroll", label: "Payroll", href: "/people/payroll", icon: Wallet, permission: "payroll.view" },
+    ],
+  },
+  {
+    id: "laboratory",
+    label: "Laboratory",
+    items: [
+      { id: "lab-samples", label: "Samples", href: "/lab/samples", icon: FlaskConical, module: "laboratory" },
+      { id: "lab-test-catalog", label: "Test catalog", href: "/lab/test-catalog", icon: Microscope, module: "laboratory" },
     ],
   },
   {

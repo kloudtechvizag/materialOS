@@ -361,6 +361,30 @@ PROFILE_DEFINITIONS: list[dict] = [
         "inventory_flags": _flags(),
         "pricing_strategy": "job_costing",
     },
+    # -- Laboratory & Scientific Testing (industry #25). Like Printing
+    # Press, NOT config-only: "laboratory" is a real module backed by
+    # new tables (LabSample/LabTestOrder/LabResult/LabReport, see
+    # models/laboratory.py) and a real Register -> Accession -> Accept/
+    # Reject -> Result -> Validate -> Authorize -> Report state machine
+    # -- a sample is not a generic Item, and a result is not a generic
+    # Invoice line. This is the real walking skeleton from the LIMS
+    # master prompt; worksheets, QC, instruments, storage, the customer
+    # portal, and billing integration are explicitly deferred (see that
+    # module's own docstring), not approximated by anything here.
+    {
+        "slug": "laboratory",
+        "name": "Laboratory & Scientific Testing",
+        "category": "laboratory",
+        "terminology": {"item_label": "Sample", "items_label": "Samples", "item_name_example": "Water Sample - Borewell A", "item_uom_example": "ML", "customer_name_example": "ABC Diagnostics Pvt Ltd", "supplier_name_example": "Lab Reagents & Supplies Co"},
+        "enabled_modules": ["laboratory"],
+        "navigation_config": [],
+        # A real Laboratory Command Center (spec sec5/sec63) is a later
+        # phase -- left empty rather than padded with generic ERP
+        # widgets a lab dashboard has no real use for.
+        "dashboard_widgets": [],
+        "inventory_flags": _flags(),
+        "pricing_strategy": "standard",
+    },
 ]
 
 
