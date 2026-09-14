@@ -1,8 +1,9 @@
 import { useEffect, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 
+import { SidebarItem } from "@/components/layout/sidebar/SidebarItem";
 import { SidebarSection } from "@/components/layout/sidebar/SidebarSection";
-import { buildNavigation, findActiveSectionId } from "@/lib/navigation";
+import { buildGlobalNavItems, buildNavigation, findActiveSectionId } from "@/lib/navigation";
 import { useIndustryProfile } from "@/lib/industryProfile";
 import { useSidebarStore } from "@/store/sidebar";
 
@@ -11,10 +12,16 @@ import { useSidebarStore } from "@/store/sidebar";
  * only ever happen in one place. Filters to the current company's
  * industry profile (ADR-010); while the profile is still loading,
  * buildNavigation(undefined) shows everything rather than flashing an
- * empty sidebar. */
+ * empty sidebar.
+ *
+ * Dashboard and Approvals render flat, above every module section and
+ * outside any accordion -- they're global to every business profile,
+ * not a "Sell" capability, so they're never nested inside a collapsible
+ * section (see GLOBAL_NAV_ITEMS in lib/navigation.ts). */
 export function SidebarNav({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
   const location = useLocation();
   const { profile } = useIndustryProfile();
+  const globalItems = useMemo(() => buildGlobalNavItems(profile?.enabled_modules), [profile]);
   const sections = useMemo(() => buildNavigation(profile?.enabled_modules, profile?.terminology), [profile]);
   const expandedSections = useSidebarStore((s) => s.expandedSections);
   const toggleSection = useSidebarStore((s) => s.toggleSection);
@@ -29,6 +36,11 @@ export function SidebarNav({ collapsed, onNavigate }: { collapsed: boolean; onNa
 
   return (
     <nav aria-label="Primary" className="flex-1 space-y-4 overflow-y-auto p-3">
+      <div className="space-y-0.5">
+        {globalItems.map((item) => (
+          <SidebarItem key={item.id} item={item} collapsed={collapsed} onNavigate={onNavigate} />
+        ))}
+      </div>
       {sections.map((section) => (
         <SidebarSection
           key={section.id}

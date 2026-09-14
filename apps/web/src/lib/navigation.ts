@@ -66,6 +66,16 @@ export interface NavigationSection {
   items: NavigationItem[];
 }
 
+/** Rendered flat, above every module section and outside any accordion
+ * -- these are the only two items every business profile shows
+ * regardless of industry, so they don't belong nested inside "Sell" (or
+ * any other module-specific section) where they'd imply they're a Sell
+ * capability rather than global navigation. See SidebarNav.tsx. */
+export const GLOBAL_NAV_ITEMS: NavigationItem[] = [
+  { id: "dashboard", label: "Dashboard", href: "/", icon: LayoutDashboard, end: true },
+  { id: "approvals", label: "Approvals", href: "/approvals", icon: ShieldCheck },
+];
+
 /** Every item the app can show, across every industry profile -- desktop,
  * collapsed desktop, and the mobile drawer all render from
  * buildNavigation()'s output, so a new module is one entry here (plus
@@ -78,13 +88,11 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
     id: "sell",
     label: "Sell",
     items: [
-      { id: "dashboard", label: "Dashboard", href: "/", icon: LayoutDashboard, end: true },
       { id: "leads", label: "Leads", href: "/leads", icon: Target, permission: "leads.view", module: "sales" },
       { id: "pos", label: "POS", href: "/pos", icon: CreditCard, module: "pos" },
       { id: "quotations", label: "Quotations", href: "/quotations", icon: FileText, module: "sales" },
       { id: "collections", label: "Collections", href: "/collections", icon: Banknote, module: "collections" },
       { id: "field-sales", label: "Field sales", href: "/field-sales", icon: MapPin, module: "field_sales" },
-      { id: "approvals", label: "Approvals", href: "/approvals", icon: ShieldCheck },
     ],
   },
   {
@@ -180,6 +188,14 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
     ],
   },
 ];
+
+/** Same filter GLOBAL_NAV_ITEMS would need if a global item ever gains a
+ * module gate -- neither does today (that's the point of "global"), but
+ * this keeps the two item lists behaving identically instead of one
+ * silently skipping module/permission filtering. */
+export function buildGlobalNavItems(enabledModules: string[] | undefined): NavigationItem[] {
+  return GLOBAL_NAV_ITEMS.filter((item) => !item.module || enabledModules === undefined || enabledModules.includes(item.module));
+}
 
 /** Filters ALL_NAV_SECTIONS down to what a profile actually enables,
  * and relabels the handful of nav items whose name genuinely varies
