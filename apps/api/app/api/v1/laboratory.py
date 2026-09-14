@@ -6,7 +6,18 @@ from sqlalchemy.orm import Session
 
 from app.deps import get_db_tenant, require_permission
 from app.errors import AppError, ErrorCode
-from app.models.laboratory import RESULT_TYPES, LabContainer, LabReport, LabResult, LabSample, LabSampleType, LabTestDefinition, LabTestOrder
+from app.models.laboratory import (
+    RESULT_TYPES,
+    LabContainer,
+    LabReport,
+    LabResult,
+    LabSample,
+    LabSampleType,
+    LabTestDefinition,
+    LabTestOrder,
+    QcReferenceSample,
+    QcRun,
+)
 from app.models.masters import Customer
 from app.models.tenant import Branch, Company
 from app.models.user import User
@@ -25,13 +36,21 @@ from app.schemas.laboratory import (
     LabTestDefinitionCreate,
     LabTestDefinitionOut,
     LabTestOrderOut,
+    QcDuplicateRunCreate,
+    QcReferenceRunCreate,
+    QcReferenceSampleCreate,
+    QcReferenceSampleOut,
+    QcRunOut,
 )
 from app.services.laboratory import (
     accept_sample,
     accession_sample,
     authorize_result,
+    create_qc_reference_sample,
     enter_result,
     generate_report,
+    record_duplicate_qc_run,
+    record_reference_qc_run,
     register_sample,
     reject_sample,
     supersede_report,
@@ -222,3 +241,47 @@ def list_sample_reports(sample_id: uuid.UUID, db: Session = Depends(get_db_tenan
 @router.post("/reports/{report_id}/supersede", response_model=LabReportOut, status_code=201)
 def supersede_report_endpoint(report_id: uuid.UUID, db: Session = Depends(get_db_tenant), user: User = Depends(require_permission("laboratory.approve"))) -> LabReport:
     return supersede_report(db, report_id=report_id, user_id=user.id)
+
+
+# -------------------------------------------------------------------- QC
+
+@router.get("/qc-reference-samples", response_model=list[QcReferenceSampleOut])
+def list_qc_reference_samples(
+    test_definition_id: uuid.UUID | None = None, db: Session = Depends(get_db_tenant), _user: User = Depends(require_permission("laboratory.view")),
+) -> list[QcReferenceSample]:
+    stmt = select(QcReferenceSample).where(QcReferenceSample.is_active == True).order_by(QcReferenceSample.name)  # noqa: E712
+    if test_definition_id:
+        stmt = stmt.where(QcReferenceSample.test_definition_id == test_definition_id)
+    return db.execute(stmt).scalars().all()
+
+
+@router.post("/qc-reference-samples", response_model=QcReferenceSampleOut, status_code=201)
+def create_qc_reference_sample_endpoint(
+    payload: QcReferenceSampleCreate, db: Session = Depends(get_db_tenant), user: User = Depends(require_permission("laboratory.create")),
+) -> QcReferenceSample:
+    company, _ = _company_and_branch(db, user.tenant_id)
+    return create_qc_reference_sample(db, tenant_id=user.tenant_id, company_id=company.id, **payload.model_dump())
+
+
+@router.get("/qc-runs", response_model=list[QcRunOut])
+def list_qc_runs(
+    test_definition_id: uuid.UUID | None = None, db: Session = Depends(get_db_tenant), _user: User = Depends(require_permission("laboratory.view")),
+) -> list[QcRun]:
+    stmt = select(QcRun).order_by(QcRun.performed_at.desc())
+    if test_definition_id:
+        stmt = stmt.where(QcRun.test_definition_id == test_definition_id)
+    return db.execute(stmt).scalars().all()
+
+
+@router.post("/qc-runs/reference", response_model=QcRunOut, status_code=201)
+def record_reference_qc_run_endpoint(
+    payload: QcReferenceRunCreate, db: Session = Depends(get_db_tenant), user: User = Depends(require_permission("laboratory.edit")),
+) -> QcRun:
+    return record_reference_qc_run(db, reference_sample_id=payload.reference_sample_id, result_value=payload.result_value, user_id=user.id)
+
+
+@router.post("/qc-runs/duplicate", response_model=QcRunOut, status_code=201)
+def record_duplicate_qc_run_endpoint(
+    payload: QcDuplicateRunCreate, db: Session = Depends(get_db_tenant), user: User = Depends(require_permission("laboratory.edit")),
+) -> QcRun:
+    return record_duplicate_qc_run(db, source_test_order_id=payload.source_test_order_id, result_value=payload.result_value, user_id=user.id)

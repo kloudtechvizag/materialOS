@@ -141,6 +141,7 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
     items: [
       { id: "lab-samples", label: "Samples", href: "/lab/samples", icon: FlaskConical, module: "laboratory" },
       { id: "lab-test-catalog", label: "Test catalog", href: "/lab/test-catalog", icon: Microscope, module: "laboratory" },
+      { id: "lab-qc", label: "Quality control", href: "/lab/qc", icon: ShieldCheck, module: "laboratory" },
     ],
   },
   {

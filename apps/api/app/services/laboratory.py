@@ -13,7 +13,18 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.errors import AppError, ErrorCode
-from app.models.laboratory import RESULT_TYPES, SAMPLE_PRIORITIES, LabReport, LabResult, LabSample, LabTestDefinition, LabTestOrder
+from app.models.laboratory import (
+    QC_TYPES,
+    RESULT_TYPES,
+    SAMPLE_PRIORITIES,
+    LabReport,
+    LabResult,
+    LabSample,
+    LabTestDefinition,
+    LabTestOrder,
+    QcReferenceSample,
+    QcRun,
+)
 from app.services.numbering import next_document_number
 
 
@@ -180,6 +191,16 @@ def validate_result(db: Session, *, result_id: uuid.UUID, user_id: uuid.UUID) ->
     return result
 
 
+def _latest_qc_status_for_test(db: Session, *, test_definition_id: uuid.UUID) -> str | None:
+    """None = no QC run has ever been recorded for this test (not a
+    block -- a lab that hasn't configured QC for it yet isn't bricked).
+    Otherwise the status of the single most recent run, of any type."""
+    latest = db.execute(
+        select(QcRun.status).where(QcRun.test_definition_id == test_definition_id).order_by(QcRun.performed_at.desc()).limit(1)
+    ).scalar_one_or_none()
+    return latest
+
+
 def authorize_result(db: Session, *, result_id: uuid.UUID, user_id: uuid.UUID) -> LabResult:
     """spec sec46 segregation of duties, enforced for real: the person
     who entered a result may not be the one who authorizes it. This is
@@ -197,6 +218,17 @@ def authorize_result(db: Session, *, result_id: uuid.UUID, user_id: uuid.UUID) -
             status_code=409,
             details={"result_id": str(result.id)},
         )
+
+    test_order_for_qc = db.get(LabTestOrder, result.test_order_id)
+    qc_status = _latest_qc_status_for_test(db, test_definition_id=test_order_for_qc.test_definition_id)
+    if qc_status == "fail":
+        raise AppError(
+            ErrorCode.VALIDATION_ERROR,
+            "This test's most recent QC run failed -- record a passing QC run before authorizing results for it.",
+            status_code=409,
+            details={"test_definition_id": str(test_order_for_qc.test_definition_id)},
+        )
+
     result.status = "authorized"
     result.authorized_by_user_id = user_id
     result.authorized_at = datetime.now(timezone.utc)
@@ -254,3 +286,96 @@ def supersede_report(db: Session, *, report_id: uuid.UUID, user_id: uuid.UUID) -
     old_report.superseded_by_report_id = new_report.id
     db.flush()
     return new_report
+
+
+def create_qc_reference_sample(
+    db: Session,
+    *,
+    tenant_id: uuid.UUID,
+    company_id: uuid.UUID,
+    test_definition_id: uuid.UUID,
+    qc_type: str,
+    name: str,
+    lot_number: str | None,
+    expiry_date: date | None,
+    expected_low: Decimal | None,
+    expected_high: Decimal | None,
+) -> QcReferenceSample:
+    if qc_type not in ("blank", "control"):
+        raise AppError(ErrorCode.VALIDATION_ERROR, f"qc_type must be 'blank' or 'control' (reference-sample-backed types of {QC_TYPES}), got {qc_type!r}.")
+    reference = QcReferenceSample(
+        tenant_id=tenant_id, company_id=company_id, test_definition_id=test_definition_id, qc_type=qc_type, name=name,
+        lot_number=lot_number, expiry_date=expiry_date, expected_low=expected_low, expected_high=expected_high,
+    )
+    db.add(reference)
+    db.flush()
+    return reference
+
+
+def record_reference_qc_run(db: Session, *, reference_sample_id: uuid.UUID, result_value: str, user_id: uuid.UUID) -> QcRun:
+    """Blanks and controls are structurally identical here: both are a
+    result compared against a QcReferenceSample's own expected_low/
+    expected_high. Which one this is is just the reference sample's own
+    qc_type, copied onto the run."""
+    reference = db.get(QcReferenceSample, reference_sample_id)
+    if reference is None:
+        raise AppError(ErrorCode.NOT_FOUND, "QC reference sample not found.", status_code=404)
+    try:
+        numeric_value = Decimal(result_value)
+    except Exception as exc:
+        raise AppError(ErrorCode.VALIDATION_ERROR, f"'{result_value}' is not a valid numeric QC result.") from exc
+
+    status = "pass"
+    if reference.expected_low is not None and numeric_value < reference.expected_low:
+        status = "fail"
+    if reference.expected_high is not None and numeric_value > reference.expected_high:
+        status = "fail"
+
+    run = QcRun(
+        tenant_id=reference.tenant_id, test_definition_id=reference.test_definition_id, qc_type=reference.qc_type,
+        reference_sample_id=reference.id, result_value=result_value, numeric_value=numeric_value, status=status,
+        performed_by_user_id=user_id, performed_at=datetime.now(timezone.utc),
+    )
+    db.add(run)
+    db.flush()
+    return run
+
+
+def record_duplicate_qc_run(db: Session, *, source_test_order_id: uuid.UUID, result_value: str, user_id: uuid.UUID) -> QcRun:
+    """Compares against the *original* result already recorded for the
+    same test order via RPD (relative percent difference). Without a
+    duplicate_rpd_limit_percent configured on the test, the run is still
+    recorded (for the historical record) but always reads as "pass" --
+    there is no threshold to fail it against, and inventing a default
+    limit would be a fabricated acceptance criterion, not a real one.
+    """
+    source_order = db.get(LabTestOrder, source_test_order_id)
+    if source_order is None:
+        raise AppError(ErrorCode.NOT_FOUND, "Test order not found.", status_code=404)
+    original_result = db.execute(select(LabResult).where(LabResult.test_order_id == source_test_order_id)).scalar_one_or_none()
+    if original_result is None or original_result.numeric_value is None:
+        raise AppError(ErrorCode.VALIDATION_ERROR, "The original test order has no numeric result yet to duplicate against.")
+
+    try:
+        duplicate_value = Decimal(result_value)
+    except Exception as exc:
+        raise AppError(ErrorCode.VALIDATION_ERROR, f"'{result_value}' is not a valid numeric QC result.") from exc
+
+    original_value = original_result.numeric_value
+    mean = (original_value + duplicate_value) / 2
+    rpd_percent = (abs(original_value - duplicate_value) / mean * 100) if mean != 0 else Decimal("0")
+
+    test_def = db.get(LabTestDefinition, source_order.test_definition_id)
+    status = "pass"
+    if test_def.duplicate_rpd_limit_percent is not None and rpd_percent > test_def.duplicate_rpd_limit_percent:
+        status = "fail"
+
+    run = QcRun(
+        tenant_id=source_order.tenant_id, test_definition_id=source_order.test_definition_id, qc_type="duplicate",
+        source_test_order_id=source_order.id, result_value=result_value, numeric_value=duplicate_value,
+        rpd_percent=rpd_percent.quantize(Decimal("0.01")), status=status,
+        performed_by_user_id=user_id, performed_at=datetime.now(timezone.utc),
+    )
+    db.add(run)
+    db.flush()
+    return run

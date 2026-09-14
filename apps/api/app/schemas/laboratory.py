@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 
 from pydantic import BaseModel
@@ -53,6 +53,7 @@ class LabTestDefinitionCreate(BaseModel):
     critical_high: Decimal | None = None
     turnaround_hours: int | None = None
     standard_price: Decimal = Decimal("0")
+    duplicate_rpd_limit_percent: Decimal | None = None
 
 
 class LabTestDefinitionOut(BaseModel):
@@ -70,6 +71,7 @@ class LabTestDefinitionOut(BaseModel):
     critical_high: Decimal | None
     turnaround_hours: int | None
     standard_price: Decimal
+    duplicate_rpd_limit_percent: Decimal | None
     is_active: bool
 
     class Config:
@@ -151,6 +153,58 @@ class LabReportOut(BaseModel):
     generated_at: datetime
     released_by_user_id: uuid.UUID
     superseded_by_report_id: uuid.UUID | None
+
+    class Config:
+        from_attributes = True
+
+
+class QcReferenceSampleCreate(BaseModel):
+    test_definition_id: uuid.UUID
+    qc_type: str
+    name: str
+    lot_number: str | None = None
+    expiry_date: date | None = None
+    expected_low: Decimal | None = None
+    expected_high: Decimal | None = None
+
+
+class QcReferenceSampleOut(BaseModel):
+    id: uuid.UUID
+    test_definition_id: uuid.UUID
+    qc_type: str
+    name: str
+    lot_number: str | None
+    expiry_date: date | None
+    expected_low: Decimal | None
+    expected_high: Decimal | None
+    is_active: bool
+
+    class Config:
+        from_attributes = True
+
+
+class QcReferenceRunCreate(BaseModel):
+    reference_sample_id: uuid.UUID
+    result_value: str
+
+
+class QcDuplicateRunCreate(BaseModel):
+    source_test_order_id: uuid.UUID
+    result_value: str
+
+
+class QcRunOut(BaseModel):
+    id: uuid.UUID
+    test_definition_id: uuid.UUID
+    qc_type: str
+    reference_sample_id: uuid.UUID | None
+    source_test_order_id: uuid.UUID | None
+    result_value: str
+    numeric_value: Decimal | None
+    rpd_percent: Decimal | None
+    status: str
+    performed_by_user_id: uuid.UUID
+    performed_at: datetime
 
     class Config:
         from_attributes = True

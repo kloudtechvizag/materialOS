@@ -3,21 +3,38 @@ skeleton of the sample lifecycle described in the LIMS master prompt's
 sec3/sec88: Client -> Sample -> Accession -> Test Order -> Result ->
 Report, with real status transitions and a versioned, never-overwritten
 report. Deliberately NOT built in this pass (named, not faked):
-worksheets/batch testing, instrument integration, QC subsystem, chain
-of custody as its own ledger, storage hierarchy, aliquot genealogy,
-reflex/dilution rules, multi-stage technical/QC/pathologist review
-(collapsed here to entry -> validate -> authorize), competency-gated
-RBAC, electronic-signature workflow (a real second-user check exists,
-but it is not a compliant e-signature per the spec's own sec36), and
-the customer portal. Client reuses the existing Customer model (spec
-sec28 explicitly asks for this), not a new lab_clients table.
+worksheets/batch testing, instrument integration, chain of custody as
+its own ledger, storage hierarchy, aliquot genealogy, reflex/dilution
+rules, multi-stage technical/QC/pathologist review (collapsed here to
+entry -> validate -> authorize), competency-gated RBAC, electronic-
+signature workflow (a real second-user check exists, but it is not a
+compliant e-signature per the spec's own sec36), and the customer
+portal. Client reuses the existing Customer model (spec sec28
+explicitly asks for this), not a new lab_clients table.
+
+**QC subsystem (blanks/controls/duplicates), second pass:** real, not
+config-only. `QcReferenceSample` is a scoped-down merge of the spec's
+separate "Reference Sample" and "Reference Analysis" concepts (sec30-
+31) -- one row per control/blank *for one specific test*, carrying its
+own acceptance range, rather than a generic reference material that
+supports many analyses each with their own expected-result row. A real
+lab QC failure is meant to be scoped to one worksheet's batch of
+samples (sec67); since worksheets don't exist yet, the honest, buildable
+substitute here is coarser but real: `authorize_result` checks the
+*most recent* QcRun for that result's test definition, of any type --
+if it's a fail, authorization is blocked until a fresh QC run for that
+test passes. No QC run ever recorded for a test does not block (a lab
+that hasn't configured QC for that test yet isn't bricked), but a
+recorded failure does, until superseded by a pass. Westgard-style
+multi-rule statistics (sec66), Levey-Jennings charts (sec65), and
+QC-per-worksheet scoping are named, later gaps.
 """
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -32,6 +49,8 @@ RESULT_TYPES = ["quantitative", "qualitative", "text"]
 RESULT_STATUSES = ["draft", "validated", "authorized"]
 RESULT_FLAGS = ["normal", "abnormal", "critical"]
 REPORT_STATUSES = ["released", "superseded"]
+QC_TYPES = ["blank", "control", "duplicate"]
+QC_STATUSES = ["pass", "fail"]
 
 
 class LabSampleType(Base, UUIDPk, TenantMixin, TimestampMixin):
@@ -86,6 +105,10 @@ class LabTestDefinition(Base, UUIDPk, TenantMixin, TimestampMixin):
     critical_high: Mapped[Decimal | None] = mapped_column(Numeric(18, 4), nullable=True)
     turnaround_hours: Mapped[int | None] = mapped_column(Integer, nullable=True)
     standard_price: Mapped[Decimal] = mapped_column(MONEY, nullable=False, default=0)
+    # spec sec27's RPD acceptance criteria -- null means duplicate QC
+    # isn't configured for this test (duplicates can still be recorded,
+    # just never auto-flagged pass/fail without a threshold to compare against).
+    duplicate_rpd_limit_percent: Mapped[Decimal | None] = mapped_column(Numeric(6, 2), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
 
@@ -165,3 +188,48 @@ class LabReport(Base, UUIDPk, TenantMixin, TimestampMixin):
     generated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     released_by_user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
     superseded_by_report_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("lab_reports.id", ondelete="SET NULL"), nullable=True)
+
+
+class QcReferenceSample(Base, UUIDPk, TenantMixin, TimestampMixin):
+    """One control/blank material *for one specific test*, with its own
+    acceptance range -- a scoped-down merge of the spec's separate
+    Reference Sample (sec30) and Reference Analysis (sec31) concepts.
+    A "blank" typically expects ~0 (expected_low/high bracket zero); a
+    "control" carries whatever range the CRM certificate states.
+    """
+
+    __tablename__ = "qc_reference_samples"
+
+    company_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("companies.id", ondelete="RESTRICT"), nullable=False, index=True)
+    test_definition_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("lab_test_definitions.id", ondelete="RESTRICT"), nullable=False, index=True)
+    qc_type: Mapped[str] = mapped_column(String(20), nullable=False)  # blank | control
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    lot_number: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    expiry_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    expected_low: Mapped[Decimal | None] = mapped_column(Numeric(18, 4), nullable=True)
+    expected_high: Mapped[Decimal | None] = mapped_column(Numeric(18, 4), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+
+class QcRun(Base, UUIDPk, TenantMixin, TimestampMixin):
+    """A real, recorded QC execution -- blank/control runs compare
+    against a QcReferenceSample's expected range; duplicate runs
+    compare against the original result's own value via RPD and the
+    test definition's duplicate_rpd_limit_percent. Exactly one of
+    reference_sample_id / source_test_order_id is set, matching this
+    codebase's usual "exactly one of" convention (enforced in the
+    service layer, not a DB CHECK constraint).
+    """
+
+    __tablename__ = "qc_runs"
+
+    test_definition_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("lab_test_definitions.id", ondelete="RESTRICT"), nullable=False, index=True)
+    qc_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    reference_sample_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("qc_reference_samples.id", ondelete="RESTRICT"), nullable=True)
+    source_test_order_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("lab_test_orders.id", ondelete="RESTRICT"), nullable=True)
+    result_value: Mapped[str] = mapped_column(String(500), nullable=False)
+    numeric_value: Mapped[Decimal | None] = mapped_column(Numeric(18, 4), nullable=True)
+    rpd_percent: Mapped[Decimal | None] = mapped_column(Numeric(6, 2), nullable=True)
+    status: Mapped[str] = mapped_column(String(10), nullable=False)  # pass | fail
+    performed_by_user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    performed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

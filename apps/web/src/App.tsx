@@ -99,6 +99,7 @@ import { SubscriptionInvoicesPage } from "@/routes/settings/SubscriptionInvoices
 import { SubscriptionPage } from "@/routes/settings/SubscriptionPage";
 import { CapabilityMarketplacePage } from "@/routes/settings/CapabilityMarketplacePage";
 import { LabSampleDetailPage } from "@/routes/laboratory/LabSampleDetailPage";
+import { LabQcPage } from "@/routes/laboratory/LabQcPage";
 import { LabSamplesPage } from "@/routes/laboratory/LabSamplesPage";
 import { LabTestCatalogPage } from "@/routes/laboratory/LabTestCatalogPage";
 import { MetalRatesPage } from "@/routes/settings/MetalRatesPage";
@@ -300,6 +301,7 @@ export default function App() {
         <Route path="/lab/samples" element={<LabSamplesPage />} />
         <Route path="/lab/samples/:sampleId" element={<LabSampleDetailPage />} />
         <Route path="/lab/test-catalog" element={<LabTestCatalogPage />} />
+        <Route path="/lab/qc" element={<LabQcPage />} />
         <Route path="/settings/webhooks" element={<WebhooksPage />} />
       </Route>
 
