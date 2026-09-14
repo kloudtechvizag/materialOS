@@ -12,9 +12,17 @@ export function PlatformLayout() {
   return (
     <div className="min-h-screen bg-[#0B1220] text-white">
       <header className="flex h-14 items-center justify-between border-b border-white/10 px-6">
-        <Link to="/platform/tenants" className="text-sm font-semibold tracking-wide">
-          MaterialOS Platform
-        </Link>
+        <div className="flex items-center gap-6">
+          <Link to="/platform/tenants" className="text-sm font-semibold tracking-wide">
+            MaterialOS Platform
+          </Link>
+          <nav className="flex items-center gap-4 text-sm text-white/60">
+            <Link to="/platform/tenants" className="hover:text-white">Tenants</Link>
+            <Link to="/platform/plans" className="hover:text-white">Plans</Link>
+            <Link to="/platform/support-tickets" className="hover:text-white">Support</Link>
+            <Link to="/platform/admins" className="hover:text-white">Admins</Link>
+          </nav>
+        </div>
         <button
           type="button"
           onClick={() => {

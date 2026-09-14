@@ -44,6 +44,7 @@ from app.api.v1 import (
     subscription,
     webhooks,
     suppliers,
+    support,
     system_health,
     tally_export,
     tenants,
@@ -102,3 +103,4 @@ api_router.include_router(reports.router)
 api_router.include_router(search.router)
 api_router.include_router(serial.router)
 api_router.include_router(webhooks.router)
+api_router.include_router(support.router)

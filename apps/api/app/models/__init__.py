@@ -35,8 +35,10 @@ from app.models.payroll import (
     PayrollRun,
     SalaryComponent,
 )
+from app.models.impersonation import ImpersonationSession
 from app.models.platform_admin import PlatformAdmin
 from app.models.portal import PortalDocument
+from app.models.support import SupportTicket, SupportTicketMessage
 from app.models.pos import WalkInSale
 from app.models.pricing import CustomerItemPrice, RateContract
 from app.models.receipts import ReceiptSettings

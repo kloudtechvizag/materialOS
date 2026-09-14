@@ -16,9 +16,10 @@ list).
 
 from decimal import Decimal
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
+from app.errors import AppError, ErrorCode
 from app.models.billing_plans import AddonOffering, Feature, Plan, PlanFeature, PlanLimit
 
 # ------------------------------------------------------------- Features (spec sec14-15)
@@ -256,6 +257,66 @@ def ensure_plan_catalog(db: Session) -> None:
         ))
 
     db.flush()
+
+
+def create_plan_version(
+    db: Session,
+    *,
+    slug: str,
+    name: str,
+    description: str | None,
+    tier_order: int,
+    is_active: bool,
+    is_public: bool,
+    is_default_signup_plan: bool,
+    currency: str,
+    monthly_price: Decimal | None,
+    yearly_price: Decimal | None,
+    trial_days: int,
+    feature_codes: list[str],
+    limits: dict[str, int | None],
+) -> Plan:
+    """The only way a Plan's terms ever change (ADR-020's deferred "plan
+    editing UI", now built): a brand-new row, one version higher than
+    whatever currently exists for this slug, with the previous version's
+    `is_current` flipped off. No existing Plan row's price/features/
+    limits columns are ever written to after creation -- a Subscription
+    keeps pointing at the exact plan_id it was sold, so this can never
+    retroactively reprice or re-scope anyone already subscribed (see the
+    Plan model's own docstring).
+    """
+    existing_versions = db.execute(select(Plan.version).where(Plan.slug == slug)).scalars().all()
+    next_version = (max(existing_versions) + 1) if existing_versions else 1
+
+    if existing_versions:
+        db.execute(update(Plan).where(Plan.slug == slug, Plan.is_current == True).values(is_current=False))  # noqa: E712
+
+    if is_default_signup_plan:
+        db.execute(update(Plan).where(Plan.is_default_signup_plan == True).values(is_default_signup_plan=False))  # noqa: E712
+
+    plan = Plan(
+        slug=slug, version=next_version, is_current=True, name=name, description=description,
+        tier_order=tier_order, is_active=is_active, is_public=is_public, is_default_signup_plan=is_default_signup_plan,
+        currency=currency, monthly_price=monthly_price, yearly_price=yearly_price, trial_days=trial_days,
+    )
+    db.add(plan)
+    db.flush()
+
+    features_by_code = {f.code: f for f in db.execute(select(Feature)).scalars().all()}
+    unknown = set(feature_codes) - set(features_by_code)
+    if unknown:
+        raise AppError(ErrorCode.VALIDATION_ERROR, f"Unknown feature codes: {sorted(unknown)}.", status_code=422)
+    for code in feature_codes:
+        db.add(PlanFeature(plan_id=plan.id, feature_id=features_by_code[code].id, is_enabled=True))
+
+    unknown_limits = set(limits) - set(LIMIT_KEYS)
+    if unknown_limits:
+        raise AppError(ErrorCode.VALIDATION_ERROR, f"Unknown limit keys: {sorted(unknown_limits)}.", status_code=422)
+    for limit_key, limit_value in limits.items():
+        db.add(PlanLimit(plan_id=plan.id, limit_key=limit_key, limit_value=limit_value, is_hard_limit=limit_key in ENFORCED_LIMIT_KEYS))
+
+    db.flush()
+    return plan
 
 
 def list_plans(db: Session, *, public_only: bool = True) -> list[Plan]:

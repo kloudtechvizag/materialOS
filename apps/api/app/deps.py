@@ -5,7 +5,7 @@ from fastapi import Depends, Header
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.db import SessionLocal, set_session_context
+from app.db import SessionLocal, set_platform_context, set_session_context
 from app.errors import AppError, ErrorCode
 from app.models.masters import Customer
 from app.models.platform_admin import PlatformAdmin
@@ -36,6 +36,11 @@ def get_db_tenant(authorization: str | None = Header(default=None)) -> Generator
         set_session_context(db, tenant_id=payload["tenant_id"], user_id=payload["sub"])
         db.info["tenant_id"] = uuid.UUID(payload["tenant_id"])
         db.info["user_id"] = uuid.UUID(payload["sub"])
+        # Only create_impersonation_token ever sets this claim (ADR-020) --
+        # stashed here so /auth/me can surface it without re-decoding the
+        # token, which is how the tenant-facing UI knows to show its
+        # "you are being impersonated" banner.
+        db.info["impersonated_by"] = payload.get("impersonated_by")
         yield db
         db.commit()
     except Exception:
@@ -86,10 +91,14 @@ def get_platform_db() -> Generator[Session, None, None]:
     anything tenant-scoped (e.g. a Company name) needs an explicit,
     one-tenant-at-a-time set_session_context call, the same pattern
     billing_tasks.py's daily job already uses to loop every active
-    tenant. See ADR-020.
+    tenant. Also sets app.platform_context=true -- support_tickets/
+    support_ticket_messages are the only two tables whose RLS policy
+    checks that GUC at all, so setting it unconditionally here has zero
+    effect on every other tenant-scoped table's isolation. See ADR-020.
     """
     db = SessionLocal()
     try:
+        set_platform_context(db, enabled=True)
         yield db
         db.commit()
     except Exception:

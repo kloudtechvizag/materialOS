@@ -54,6 +54,27 @@ def decode_token(token: str) -> dict:
         raise ValueError("invalid token") from exc
 
 
+def create_impersonation_token(*, user_id: uuid.UUID, tenant_id: uuid.UUID, admin_id: uuid.UUID) -> str:
+    """A real access token (RLS/get_db_tenant treat it exactly like one --
+    same `type: access`, same tenant_id claim) plus one extra claim,
+    `impersonated_by`, that a normal access token never carries. That
+    claim is what /auth/me surfaces so the tenant-facing UI can show a
+    persistent "you are being impersonated" banner (ADR-020), and it's
+    deliberately much shorter-lived than a normal session (15 minutes,
+    not settings.access_token_expire_minutes) since it grants a platform
+    admin real access to a tenant's own account."""
+    now = datetime.now(timezone.utc)
+    payload = {
+        "sub": str(user_id),
+        "tenant_id": str(tenant_id),
+        "type": "access",
+        "impersonated_by": str(admin_id),
+        "iat": now,
+        "exp": now + timedelta(minutes=15),
+    }
+    return jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
+
+
 def create_platform_admin_token(*, admin_id: uuid.UUID) -> str:
     """Deliberately has no tenant_id claim at all -- unlike create_token,
     not just a different `type` value. get_db_tenant requires tenant_id to

@@ -18,6 +18,7 @@ import {
   History,
   KanbanSquare,
   LayoutDashboard,
+  LifeBuoy,
   MapPin,
   Package,
   Printer,
@@ -157,6 +158,7 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
       { id: "capabilities", label: "Capabilities", href: "/settings/capabilities", icon: Store, permission: "subscription.view" },
       { id: "receipt-settings", label: "Receipts", href: "/settings/receipts", icon: Printer, permission: "receipts.manage" },
       { id: "webhooks", label: "Webhooks", href: "/settings/webhooks", icon: Webhook, permission: "webhooks.view" },
+      { id: "support", label: "Support", href: "/support", icon: LifeBuoy },
     ],
   },
 ];

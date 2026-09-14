@@ -3,7 +3,12 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "@/components/layout/AppShell";
 import { PortalShell } from "@/components/layout/PortalShell";
 import { PlatformLayout } from "@/routes/platform/PlatformLayout";
+import { PlatformAdminsPage } from "@/routes/platform/PlatformAdminsPage";
 import { PlatformLoginPage } from "@/routes/platform/PlatformLoginPage";
+import { PlatformPlansPage } from "@/routes/platform/PlatformPlansPage";
+import { PlatformSupportTicketDetailPage } from "@/routes/platform/PlatformSupportTicketDetailPage";
+import { PlatformSupportTicketsPage } from "@/routes/platform/PlatformSupportTicketsPage";
+import { PlatformTenantAuditLogPage } from "@/routes/platform/PlatformTenantAuditLogPage";
 import { PlatformTenantDetailPage } from "@/routes/platform/PlatformTenantDetailPage";
 import { PlatformTenantsPage } from "@/routes/platform/PlatformTenantsPage";
 import { MarketingLayout } from "@/components/marketing/MarketingLayout";
@@ -44,6 +49,7 @@ import { ImportsPage } from "@/routes/imports/ImportsPage";
 import { InvoiceDetailPage } from "@/routes/InvoiceDetailPage";
 import { ItemsPage } from "@/routes/ItemsPage";
 import { LeadsPage } from "@/routes/LeadsPage";
+import { ImpersonationEntryPage } from "@/routes/ImpersonationEntryPage";
 import { LoginPage } from "@/routes/LoginPage";
 import { GoodsReceiptDetailPage } from "@/routes/procurement/GoodsReceiptDetailPage";
 import { PurchaseBillDetailPage } from "@/routes/procurement/PurchaseBillDetailPage";
@@ -70,6 +76,8 @@ import { ProductionBoardPage } from "@/routes/printing/ProductionBoardPage";
 import { NewQuotationPage } from "@/routes/quotations/NewQuotationPage";
 import { QuotationDetailPage } from "@/routes/quotations/QuotationDetailPage";
 import { QuotationsPage } from "@/routes/quotations/QuotationsPage";
+import { SupportTicketDetailPage } from "@/routes/support/SupportTicketDetailPage";
+import { SupportTicketsPage } from "@/routes/support/SupportTicketsPage";
 import { ReportsPage } from "@/routes/ReportsPage";
 import { AuditLogPage } from "@/routes/operations/AuditLogPage";
 import { BackupPage } from "@/routes/operations/BackupPage";
@@ -141,6 +149,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+      <Route path="/impersonate" element={<ImpersonationEntryPage />} />
       <Route path="/server-settings" element={<ServerSettingsPage />} />
       <Route path="/pricing" element={<MarketingLayout><PricingPage /></MarketingLayout>} />
       <Route path="/portal/login" element={<PortalLoginPage />} />
@@ -187,6 +196,11 @@ export default function App() {
       >
         <Route path="/platform/tenants" element={<PlatformTenantsPage />} />
         <Route path="/platform/tenants/:tenantId" element={<PlatformTenantDetailPage />} />
+        <Route path="/platform/tenants/:tenantId/audit-logs" element={<PlatformTenantAuditLogPage />} />
+        <Route path="/platform/plans" element={<PlatformPlansPage />} />
+        <Route path="/platform/admins" element={<PlatformAdminsPage />} />
+        <Route path="/platform/support-tickets" element={<PlatformSupportTicketsPage />} />
+        <Route path="/platform/support-tickets/:ticketId" element={<PlatformSupportTicketDetailPage />} />
       </Route>
 
       {/* Standalone, no sidebar -- this is the page a driver opens on their phone (ADR-005). */}
@@ -231,6 +245,8 @@ export default function App() {
         <Route path="/quotations" element={<QuotationsPage />} />
         <Route path="/quotations/new" element={<NewQuotationPage />} />
         <Route path="/quotations/:quotationId" element={<QuotationDetailPage />} />
+        <Route path="/support" element={<SupportTicketsPage />} />
+        <Route path="/support/:ticketId" element={<SupportTicketDetailPage />} />
         <Route path="/sales-orders/:orderId" element={<SalesOrderDetailPage />} />
         <Route path="/invoices/:invoiceId" element={<InvoiceDetailPage />} />
         <Route path="/dispatch-board" element={<DispatchBoardPage />} />

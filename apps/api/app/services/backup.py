@@ -12,7 +12,7 @@ import base64
 import hashlib
 import json
 import uuid
-from datetime import date, datetime, timezone
+from datetime import date, datetime, time, timezone
 from decimal import Decimal
 
 from cryptography.fernet import Fernet, InvalidToken
@@ -169,7 +169,7 @@ def _json_default(value):
         return str(value)
     if isinstance(value, Decimal):
         return str(value)
-    if isinstance(value, (datetime, date)):
+    if isinstance(value, (datetime, date, time)):
         return value.isoformat()
     raise TypeError(f"Object of type {type(value)} is not JSON serializable")
 

@@ -20,6 +20,8 @@ def login(req: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse:
     tenant = db.execute(select(Tenant).where(Tenant.slug == req.tenant_slug)).scalar_one_or_none()
     if tenant is None:
         raise AppError(ErrorCode.UNAUTHORIZED, "Invalid tenant, email, or password.", status_code=401)
+    if tenant.status != "active":
+        raise AppError(ErrorCode.UNAUTHORIZED, "This workspace is not available. Contact support.", status_code=401)
 
     set_session_context(db, tenant_id=str(tenant.id), user_id=None)
 
@@ -34,7 +36,7 @@ def login(req: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse:
 
 
 @router.post("/refresh", response_model=TokenResponse)
-def refresh(req: RefreshRequest) -> TokenResponse:
+def refresh(req: RefreshRequest, db: Session = Depends(get_db)) -> TokenResponse:
     try:
         payload = decode_token(req.refresh_token)
     except ValueError as exc:
@@ -44,6 +46,16 @@ def refresh(req: RefreshRequest) -> TokenResponse:
 
     user_id = uuid.UUID(payload["sub"])
     tenant_id = uuid.UUID(payload["tenant_id"])
+
+    # A suspended/archived tenant's already-issued access token still
+    # works until it naturally expires (short-lived by design), but a
+    # refresh is the checkpoint that stops the session from being
+    # renewed indefinitely -- without this, "Suspend tenant" (ADR-020)
+    # would have no real effect on anyone already logged in.
+    tenant = db.get(Tenant, tenant_id)
+    if tenant is None or tenant.status != "active":
+        raise AppError(ErrorCode.UNAUTHORIZED, "This workspace is not available. Contact support.", status_code=401)
+
     return TokenResponse(
         access_token=create_access_token(user_id=user_id, tenant_id=tenant_id),
         refresh_token=create_refresh_token(user_id=user_id, tenant_id=tenant_id),
@@ -62,4 +74,5 @@ def me(db: Session = Depends(get_db_tenant), user: User = Depends(get_current_us
         tenant_id=str(user.tenant_id),
         roles=list(roles),
         customer_id=str(user.customer_id) if user.customer_id else None,
+        impersonated_by_admin_id=db.info.get("impersonated_by"),
     )

@@ -25,6 +25,18 @@ def set_session_context(db: Session, *, tenant_id: str | None, user_id: str | No
     db.execute(text("SELECT set_config('app.current_user', :v, true)"), {"v": user_id or ""})
 
 
+def set_platform_context(db: Session, *, enabled: bool) -> None:
+    """A second, separate GUC from set_session_context's tenant/user pair
+    -- consumed only by support_tickets/support_ticket_messages' RLS
+    policies (ADR-020), which OR it into their normal tenant_isolation
+    check. Only get_platform_db's callers ever set this to true; a
+    regular tenant request (get_db_tenant) never touches it, so there is
+    no code path where a tenant's own request could read another
+    tenant's tickets by any means.
+    """
+    db.execute(text("SELECT set_config('app.platform_context', :v, true)"), {"v": "true" if enabled else ""})
+
+
 def get_db() -> Generator[Session, None, None]:
     """Plain DB session with no tenant context set. RLS-protected tables
     return zero rows in this state by design (B9) -- use for platform-level
