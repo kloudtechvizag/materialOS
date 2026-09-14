@@ -313,3 +313,66 @@ def test_samples_are_tenant_isolated():
 
     b_listing = client.get("/api/v1/lab/samples", headers=headers_b).json()
     assert b_listing == []
+
+
+def test_registering_a_sample_rejects_an_invalid_priority():
+    slug = f"lab-badpriority-{uuid.uuid4().hex[:8]}"
+    owner_token = _signup(slug)
+    headers = {"Authorization": f"Bearer {owner_token}"}
+    setup = _setup_lab(headers)
+
+    resp = client.post(
+        "/api/v1/lab/samples", headers=headers,
+        json={
+            "client_id": setup["customer"]["id"], "sample_type_id": setup["sample_type"]["id"],
+            "priority": "asap", "test_definition_ids": [setup["test_def"]["id"]],
+        },
+    )
+    assert resp.status_code == 400
+
+
+def test_creating_a_test_definition_rejects_an_invalid_result_type():
+    slug = f"lab-badresulttype-{uuid.uuid4().hex[:8]}"
+    owner_token = _signup(slug)
+    headers = {"Authorization": f"Bearer {owner_token}"}
+
+    resp = client.post(
+        "/api/v1/lab/test-definitions", headers=headers,
+        json={"code": "BAD", "name": "Bad Test", "result_type": "numberish"},
+    )
+    assert resp.status_code == 400
+
+
+def test_qualitative_result_is_never_auto_flagged_and_carries_no_numeric_value():
+    """The flag/numeric_value machinery only applies to quantitative
+    tests -- a qualitative test (e.g. a Positive/Negative microbiology
+    result) must round-trip its raw text untouched, with no numeric
+    parsing attempted and no flag fabricated from a comparison that
+    doesn't apply to it.
+    """
+    slug = f"lab-qualitative-{uuid.uuid4().hex[:8]}"
+    owner_token = _signup(slug)
+    headers = {"Authorization": f"Bearer {owner_token}"}
+
+    sample_type = client.post("/api/v1/lab/sample-types", headers=headers, json={"code": "SWAB", "name": "Swab"}).json()
+    test_def = client.post(
+        "/api/v1/lab/test-definitions", headers=headers,
+        json={"code": "MICRO", "name": "E. coli", "result_type": "qualitative"},
+    ).json()
+    customer = client.post("/api/v1/customers", headers=headers, json={"name": "Micro Client", "billing_state": "Andhra Pradesh"}).json()
+
+    sample = client.post(
+        "/api/v1/lab/samples", headers=headers,
+        json={"client_id": customer["id"], "sample_type_id": sample_type["id"], "test_definition_ids": [test_def["id"]]},
+    ).json()
+    sample_id = sample["id"]
+    test_order_id = sample["test_orders"][0]["id"]
+    client.post(f"/api/v1/lab/samples/{sample_id}/accession", headers=headers)
+    client.post(f"/api/v1/lab/samples/{sample_id}/accept", headers=headers)
+
+    result = client.post(f"/api/v1/lab/test-orders/{test_order_id}/result", headers=headers, json={"result_value": "Not Detected"})
+    assert result.status_code == 201, result.text
+    body = result.json()
+    assert body["result_value"] == "Not Detected"
+    assert body["numeric_value"] is None
+    assert body["flag"] is None

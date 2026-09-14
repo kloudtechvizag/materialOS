@@ -10,7 +10,7 @@ import { paletteColor } from "@/marketing/palette";
 
 const BREADCRUMB_ITEMS = [{ label: "Home", href: "/" }, { label: "Industries" }];
 
-/** Lists all 24 real industries MaterialOS supports (mirroring
+/** Lists all 25 real industries MaterialOS supports (mirroring
  * app/services/industry.py's PROFILE_DEFINITIONS) -- only the ones with
  * a full content entry (getIndustryBySlug) are linked; the rest render
  * as plain unlinked cards rather than thin pages (§105). */
@@ -18,8 +18,8 @@ export function IndustriesIndexPage() {
   return (
     <div className="mx-auto max-w-6xl px-6 py-12">
       <Seo
-        title="Industries -- Business Software for 24 Industries"
-        description="MaterialOS is configured for 24 industries, from building materials and retail to pharmacy and printing -- one platform, industry-specific workflows."
+        title="Industries -- Business Software for 25 Industries"
+        description="MaterialOS is configured for 25 industries, from building materials and retail to pharmacy, printing, and laboratory testing -- one platform, industry-specific workflows."
         path="/industries"
         jsonLd={breadcrumbJsonLd(BREADCRUMB_ITEMS, "/industries")}
       />

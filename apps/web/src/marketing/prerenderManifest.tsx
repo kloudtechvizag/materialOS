@@ -29,8 +29,8 @@ function wrap(node: React.ReactNode) {
 
 /** Single source of truth for scripts/prerender.mjs: every public route
  * to statically render at build time, and (via ALL_INDUSTRIES) the full
- * 24-industry slug list robots.txt/sitemap.xml need. ALL_INDUSTRIES has
- * 24 entries but only the 5 in INDUSTRIES have full content -- only
+ * 25-industry slug list robots.txt/sitemap.xml need. ALL_INDUSTRIES has
+ * 25 entries but only the 5 in INDUSTRIES have full content -- only
  * those get a prerendered page + sitemap entry (§105: no thin pages). */
 export const PRERENDER_ENTRIES: PrerenderEntry[] = [
   { path: "/", routePath: "/", element: wrap(<HomePage />) },

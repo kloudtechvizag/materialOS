@@ -220,3 +220,11 @@ FEFO enforcement (Pharmacy/FMCG/Food & Beverage/Agriculture/Grocery)
 remains the one other profile-declared-but-unimplemented gap from this
 ADR, unchanged by the above -- still just a near-expiry dashboard
 widget, no batch-aware picking.
+
+**Third addendum: industry #25, Laboratory & Scientific Testing.** The
+catalog is now 25 profiles, not 24 (`test_all_25_industries_from_the_
+brief_are_defined_with_no_typos` in `test_industry_profile.py`).
+Like Printing Press, this one is not config-only -- it's backed by a
+real new domain (`models/laboratory.py`, real sample/test/result/report
+tables and a real workflow state machine), documented in its own
+ADR-021 rather than repeated here.

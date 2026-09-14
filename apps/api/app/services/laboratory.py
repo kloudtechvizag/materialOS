@@ -13,7 +13,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.errors import AppError, ErrorCode
-from app.models.laboratory import LabReport, LabResult, LabSample, LabTestDefinition, LabTestOrder
+from app.models.laboratory import RESULT_TYPES, SAMPLE_PRIORITIES, LabReport, LabResult, LabSample, LabTestDefinition, LabTestOrder
 from app.services.numbering import next_document_number
 
 
@@ -44,6 +44,8 @@ def register_sample(
 ) -> LabSample:
     if not test_definition_ids:
         raise AppError(ErrorCode.VALIDATION_ERROR, "A sample must be registered with at least one test.")
+    if priority not in SAMPLE_PRIORITIES:
+        raise AppError(ErrorCode.VALIDATION_ERROR, f"priority must be one of {SAMPLE_PRIORITIES}, got {priority!r}.")
 
     sample_number = next_document_number(
         db, company_id=company_id, branch_id=branch_id, financial_year_id=financial_year_id,

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.deps import get_db_tenant, require_permission
 from app.errors import AppError, ErrorCode
-from app.models.laboratory import LabContainer, LabReport, LabResult, LabSample, LabSampleType, LabTestDefinition, LabTestOrder
+from app.models.laboratory import RESULT_TYPES, LabContainer, LabReport, LabResult, LabSample, LabSampleType, LabTestDefinition, LabTestOrder
 from app.models.masters import Customer
 from app.models.tenant import Branch, Company
 from app.models.user import User
@@ -91,6 +91,8 @@ def list_test_definitions(db: Session = Depends(get_db_tenant), _user: User = De
 def create_test_definition(
     payload: LabTestDefinitionCreate, db: Session = Depends(get_db_tenant), user: User = Depends(require_permission("laboratory.create")),
 ) -> LabTestDefinition:
+    if payload.result_type not in RESULT_TYPES:
+        raise AppError(ErrorCode.VALIDATION_ERROR, f"result_type must be one of {RESULT_TYPES}, got {payload.result_type!r}.")
     company, _ = _company_and_branch(db, user.tenant_id)
     test_def = LabTestDefinition(tenant_id=user.tenant_id, company_id=company.id, **payload.model_dump())
     db.add(test_def)
