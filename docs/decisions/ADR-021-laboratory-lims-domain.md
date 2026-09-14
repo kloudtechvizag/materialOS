@@ -531,3 +531,69 @@ gated on the `laboratory` module. None of it touches any existing
 table, endpoint, or profile. Removing it means dropping the seven
 migrations and the industry-profile entry — no other domain depends on
 `lab_*` or `qc_*` tables.
+
+## Addendum: "Create where you work" (Sample Registration)
+
+A platform-wide 80-section spec asked for a universal quick-create
+capability — never send a user away from a workflow just because a
+referenced record (customer, sample type, container, ...) doesn't
+exist yet. Before building anything, an audit found this is **not**
+green-field: `SearchableSelect` (a real searchable combobox with a
+built-in "+ Quick Add" row) and `QuickAddContactModal`/`QuickAddItemModal`/
+`QuickAddProjectModal`/`QuickAddSiteModal` already exist and are live in
+two real screens (New Quotation, Purchase Orders). What was missing was
+LIMS itself: Sample Registration's Client, Sample Type, and Container
+fields were still plain `<select>` elements, and Sample Type had only a
+one-off inline "New type..." input duplicating logic the platform
+pattern already generalizes. This addendum closes that specific gap
+rather than attempting the full 80-section platform build in one pass.
+
+**Client** now uses `SearchableSelect` + the existing `QuickAddContactModal<Customer>`
+— no new backend code, since LIMS Client already reuses the `Customer`
+model (per this ADR's own "What shipped" section).
+
+**New reusable component**: `QuickAddCodeNameModal` (`apps/web/src/components/entities/`)
+— for the many simple `{code, name}` catalog entities across every
+industry profile (not just LIMS), parameterized by endpoint/queryKey/
+title exactly like `QuickAddContactModal`. Code is auto-derived from
+the typed name and shown read-only (e.g. typing "Groundwater" shows
+"Code: GROUNDWATER" live) rather than asked for as a separate field —
+the platform's "capture minimum viable master data now" principle.
+Sample Type and Container both use it today; it's generic enough to
+reuse for Unit, Payment Method, or any other industry's simple
+reference catalogs without a new bespoke component per entity.
+
+**Deliberately NOT built in this pass** (real, later gaps from the
+80-section spec, not silently approximated): backend duplicate
+detection (quick-add still POSTs straight to the normal endpoint, same
+as the pre-existing Customer/Supplier quick-add already did — no
+regression, but no new capability either), audit provenance
+(`source_module` / "created via quick_create from Sample Registration"
+is not recorded anywhere yet), a config-driven Quick Create Registry
+(each entity still gets its own small parameterized component, not a
+registry that auto-configures from an entity's schema), and Tests'
+multi-select quick-add (per the spec's own §50 example, creating a Test
+inline should also auto-add it to the sample's selected-tests list —
+not wired in this pass).
+
+**Verification**: `tsc --noEmit` and `vite build` both clean; existing
+`tests/test_laboratory.py` suite (12 tests) still passes unchanged (no
+backend touched this pass). Live-verified against the running
+`docker-compose` stack via headless Chromium/CDP: opened Register
+Sample, searched Client for a name that doesn't exist ("No clients
+match."), clicked "+ Quick Add Client" — a nested dialog opened
+correctly on top of the still-open Register Sample dialog (Radix's
+portal + shared z-50 stacking works cleanly for one level of nesting,
+no visual chaos), filled just a name, submitted — the nested dialog
+closed, a "Client created and selected / ABC Water Testing Lab" toast
+appeared, and the Register Sample dialog's Client field showed the new
+client selected while every other field (Sample Type, Container,
+Priority, Tests) remained exactly as before — the "search → not found
+→ create here → auto-select → continue workflow" loop end-to-end, never
+leaving the dialog. Repeated for Sample Type (typed "Groundwater",
+watched the code preview update live, submitted, confirmed "Sample
+Type created and selected" and auto-selection). Confirmed pre-existing
+records (a client and sample type created directly via the API) still
+appear correctly in the same searchable pickers alongside the newly
+quick-created ones, with code shown as the sublabel — the migration
+from plain `<select>` didn't regress normal search/select behavior.

@@ -3,12 +3,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FlaskConical } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
+import { QuickAddCodeNameModal } from "@/components/entities/QuickAddCodeNameModal";
+import { QuickAddContactModal } from "@/components/entities/QuickAddContactModal";
+import { SearchableSelect } from "@/components/entities/SearchableSelect";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
@@ -46,7 +48,9 @@ export function LabSamplesPage() {
   const queryClient = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
-  const [newTypeName, setNewTypeName] = useState("");
+  const [quickAddClientOpen, setQuickAddClientOpen] = useState(false);
+  const [quickAddSampleTypeOpen, setQuickAddSampleTypeOpen] = useState(false);
+  const [quickAddContainerOpen, setQuickAddContainerOpen] = useState(false);
 
   const { data: samples, isLoading, error, refetch } = useQuery({
     queryKey: ["lab-samples"],
@@ -56,15 +60,6 @@ export function LabSamplesPage() {
   const { data: sampleTypes } = useQuery({ queryKey: ["lab-sample-types"], queryFn: () => apiFetch<LabSampleType[]>("/lab/sample-types") });
   const { data: containers } = useQuery({ queryKey: ["lab-containers"], queryFn: () => apiFetch<LabContainer[]>("/lab/containers") });
   const { data: testDefs } = useQuery({ queryKey: ["lab-test-definitions"], queryFn: () => apiFetch<LabTestDefinition[]>("/lab/test-definitions") });
-
-  const addSampleType = useMutation({
-    mutationFn: () => apiFetch<LabSampleType>("/lab/sample-types", { method: "POST", body: { code: newTypeName.toUpperCase().replace(/\s+/g, "_"), name: newTypeName } }),
-    onSuccess: (created) => {
-      setNewTypeName("");
-      queryClient.invalidateQueries({ queryKey: ["lab-sample-types"] });
-      setForm((f) => ({ ...f, sample_type_id: created.id }));
-    },
-  });
 
   const createSample = useMutation({
     mutationFn: () =>
@@ -140,41 +135,43 @@ export function LabSamplesPage() {
           <div className="space-y-4">
             <div className="space-y-1.5">
               <Label>Client</Label>
-              <select
-                className="flex h-[var(--control-h)] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              <SearchableSelect
+                options={(customers ?? []).map((c) => ({ id: c.id, label: c.name }))}
                 value={form.client_id}
-                onChange={(e) => setForm((f) => ({ ...f, client_id: e.target.value }))}
-              >
-                <option value="">Select client...</option>
-                {(customers ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+                onChange={(id) => setForm((f) => ({ ...f, client_id: id }))}
+                placeholder="Select client..."
+                searchPlaceholder="Search clients..."
+                emptyText="No clients match."
+                quickAddLabel="Quick Add Client"
+                onQuickAdd={() => setQuickAddClientOpen(true)}
+              />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Sample type</Label>
-                <select
-                  className="flex h-[var(--control-h)] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                <SearchableSelect
+                  options={(sampleTypes ?? []).map((t) => ({ id: t.id, label: t.name, sublabel: t.code }))}
                   value={form.sample_type_id}
-                  onChange={(e) => setForm((f) => ({ ...f, sample_type_id: e.target.value }))}
-                >
-                  <option value="">Select type...</option>
-                  {(sampleTypes ?? []).map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-                </select>
-                <div className="flex gap-1.5 pt-1">
-                  <Input className="h-8 text-xs" placeholder="New type..." value={newTypeName} onChange={(e) => setNewTypeName(e.target.value)} />
-                  <Button size="sm" variant="outline" className="h-8 shrink-0 px-2 text-xs" disabled={!newTypeName || addSampleType.isPending} onClick={() => addSampleType.mutate()}>Add</Button>
-                </div>
+                  onChange={(id) => setForm((f) => ({ ...f, sample_type_id: id }))}
+                  placeholder="Select type..."
+                  searchPlaceholder="Search sample types..."
+                  emptyText="No sample types match."
+                  quickAddLabel="Quick Add Sample Type"
+                  onQuickAdd={() => setQuickAddSampleTypeOpen(true)}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label>Container</Label>
-                <select
-                  className="flex h-[var(--control-h)] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                <SearchableSelect
+                  options={(containers ?? []).map((c) => ({ id: c.id, label: c.name, sublabel: c.code }))}
                   value={form.container_id}
-                  onChange={(e) => setForm((f) => ({ ...f, container_id: e.target.value }))}
-                >
-                  <option value="">None</option>
-                  {(containers ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
+                  onChange={(id) => setForm((f) => ({ ...f, container_id: id }))}
+                  placeholder="None"
+                  searchPlaceholder="Search containers..."
+                  emptyText="No containers match."
+                  quickAddLabel="Quick Add Container"
+                  onQuickAdd={() => setQuickAddContainerOpen(true)}
+                />
               </div>
             </div>
             <div className="space-y-1.5">
@@ -215,6 +212,31 @@ export function LabSamplesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <QuickAddContactModal<Customer>
+        open={quickAddClientOpen}
+        onOpenChange={setQuickAddClientOpen}
+        title="Client"
+        endpoint="/customers"
+        queryKey="customers-for-lab"
+        onCreated={(client) => setForm((f) => ({ ...f, client_id: client.id }))}
+      />
+      <QuickAddCodeNameModal<LabSampleType>
+        open={quickAddSampleTypeOpen}
+        onOpenChange={setQuickAddSampleTypeOpen}
+        title="Sample Type"
+        endpoint="/lab/sample-types"
+        queryKey="lab-sample-types"
+        onCreated={(sampleType) => setForm((f) => ({ ...f, sample_type_id: sampleType.id }))}
+      />
+      <QuickAddCodeNameModal<LabContainer>
+        open={quickAddContainerOpen}
+        onOpenChange={setQuickAddContainerOpen}
+        title="Container"
+        endpoint="/lab/containers"
+        queryKey="lab-containers"
+        onCreated={(container) => setForm((f) => ({ ...f, container_id: container.id }))}
+      />
     </div>
   );
 }
