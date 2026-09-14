@@ -103,6 +103,11 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
       { id: "production-board", label: "Production board", href: "/production-board", icon: KanbanSquare, module: "printing" },
       { id: "print-jobs", label: "Print jobs", href: "/print-jobs", icon: Printer, module: "printing" },
       { id: "print-machines", label: "Machines", href: "/print-machines", icon: Factory, module: "printing" },
+      // The Item catalog, relabeled "Materials" for this profile (paper,
+      // ink, ...) -- lives here, not in generic Setup, because for a
+      // print shop it IS this section's own stock, not administrative
+      // config. See GENERIC_ITEMS_HOME_MODULES.
+      { id: "items", label: "Items", href: "/items", icon: Package, module: "printing" },
     ],
   },
   {
@@ -156,6 +161,11 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
       { id: "lab-worksheets", label: "Worksheets", href: "/lab/worksheets", icon: ClipboardList, module: "laboratory" },
       { id: "lab-instruments", label: "Instruments", href: "/lab/instruments", icon: Cpu, module: "laboratory" },
       { id: "lab-storage", label: "Storage", href: "/lab/storage", icon: Warehouse, module: "laboratory" },
+      // The Item catalog, relabeled "Reagents & Supplies" for this
+      // profile -- lives here, not in generic Setup, because for a lab
+      // it IS this section's own inventory, not administrative config.
+      // See GENERIC_ITEMS_HOME_MODULES.
+      { id: "items", label: "Items", href: "/items", icon: Package, module: "laboratory" },
       { id: "lab-qc", label: "Quality control", href: "/lab/qc", icon: ShieldCheck, module: "laboratory" },
     ],
   },
@@ -191,6 +201,17 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
   },
 ];
 
+/** Profiles whose own dedicated section (laboratory, printing) carries
+ * its own copy of the "items" entry above, module-gated to that
+ * section only -- for these, the Item catalog isn't generic admin
+ * config, it's that domain's own inventory (Reagents & Supplies,
+ * Materials), so it doesn't belong under Setup too. buildNavigation
+ * drops Setup's generic "items" entry whenever one of these modules is
+ * active, so it never appears twice under two different section
+ * labels for the same catalog. Every other profile keeps it in Setup,
+ * unchanged, since it has no more specific section to live in. */
+const GENERIC_ITEMS_HOME_MODULES = ["laboratory", "printing"];
+
 /** Same filter GLOBAL_NAV_ITEMS would need if a global item ever gains a
  * module gate -- neither does today (that's the point of "global"), but
  * this keeps the two item lists behaving identically instead of one
@@ -207,10 +228,12 @@ export function buildGlobalNavItems(enabledModules: string[] | undefined): Navig
  * everything rather than flashing an empty sidebar while it loads. */
 export function buildNavigation(enabledModules: string[] | undefined, terminology?: Record<string, string>): NavigationSection[] {
   const itemsLabel = terminology?.items_label;
+  const itemsHasOwnSection = enabledModules !== undefined && GENERIC_ITEMS_HOME_MODULES.some((m) => enabledModules.includes(m));
   return ALL_NAV_SECTIONS.map((section) => ({
     ...section,
     items: section.items
       .filter((item) => !item.module || enabledModules === undefined || enabledModules.includes(item.module))
+      .filter((item) => !(item.id === "items" && section.id === "setup" && itemsHasOwnSection))
       .map((item) => (item.id === "items" && itemsLabel ? { ...item, label: itemsLabel } : item)),
   })).filter((section) => section.items.length > 0);
 }

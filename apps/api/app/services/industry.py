@@ -371,11 +371,22 @@ PROFILE_DEFINITIONS: list[dict] = [
     # master prompt; worksheets, QC, instruments, storage, the customer
     # portal, and billing integration are explicitly deferred (see that
     # module's own docstring), not approximated by anything here.
+    #
+    # terminology.items_label relabels the generic Item catalog
+    # (SETUP > Items) -- originally set to "Samples" back when this
+    # profile was config-only and Items stood in for the sample
+    # concept, before LabSample existed. Now that real Samples live
+    # under LABORATORY, that label collided with a genuinely different
+    # entity of the same name (generic product/SKU catalog vs. the real
+    # sample domain object) and confused which "Samples" a user was
+    # looking at. Relabeled to what the Item catalog actually holds for
+    # a lab -- reagents and consumable supplies -- matching this same
+    # profile's own supplier_name_example below.
     {
         "slug": "laboratory",
         "name": "Laboratory & Scientific Testing",
         "category": "laboratory",
-        "terminology": {"item_label": "Sample", "items_label": "Samples", "item_name_example": "Water Sample - Borewell A", "item_uom_example": "ML", "customer_name_example": "ABC Diagnostics Pvt Ltd", "supplier_name_example": "Lab Reagents & Supplies Co"},
+        "terminology": {"item_label": "Reagent", "items_label": "Reagents & Supplies", "item_name_example": "Sodium Hydroxide (NaOH) 500g", "item_uom_example": "BTL", "customer_name_example": "ABC Diagnostics Pvt Ltd", "supplier_name_example": "Lab Reagents & Supplies Co"},
         "enabled_modules": ["laboratory"],
         "navigation_config": [],
         # A real Laboratory Command Center (spec sec5/sec63) is a later

@@ -698,6 +698,67 @@ exactly the scenario the specification system exists to solve. The
 sidebar's Laboratory section correctly shows the new "Specifications"
 nav item between Test catalog and Worksheets.
 
+## Fix: SETUP > Samples / LABORATORY > Samples label collision
+
+Reported live via screenshot: the sidebar showed "Samples" twice —
+once under LABORATORY (the real `LabSample` domain entity, added in
+the first pass) and once under SETUP (the generic Item catalog,
+relabeled by `terminology.items_label` back when this profile was
+config-only and Items stood in for the sample concept, before
+`LabSample` existed). Two genuinely different entities sharing one
+label, not a duplicate menu entry for the same thing — confirmed by
+reading the config rather than assumed, since that distinction decided
+the fix. Relabeled `services/industry.py`'s laboratory profile
+terminology to what the Item catalog actually holds for a lab —
+"Reagents & Supplies" (`item_label: "Reagent"`) — rather than removing
+it or adding a settings affordance inside the Samples screen, since
+Items and Samples are unrelated tables underneath, not a config/
+operate pair for one entity.
+
+Fixed in two places, matching `c9d4f27a5e83`'s own precedent exactly:
+the `PROFILE_DEFINITIONS` dict (for any environment seeded fresh from
+here on) and a new migration (`b4c5d6e7f8a9`) that `UPDATE`s the
+already-seeded `laboratory` row directly, since
+`ensure_industry_profile_catalog()` only ever `INSERT`s a missing
+slug and never touches an existing row. Verified against a tenant that
+pre-dated this fix by the length of this entire session (`lab-
+388b8bb4`, created during the very first LIMS pass): after the
+migration, its sidebar shows SETUP > "Reagents & Supplies" and its
+Items page header/button read "Reagents & Supplies"/"Add reagent" —
+proving the correction reached already-seeded data, not only fresh
+signups, without requiring every existing lab tenant to be recreated.
+
+**Follow-up — the label fix alone wasn't the real fix.** Renaming the
+label removed the literal string collision but left "Reagents &
+Supplies" sitting under SETUP, next to Branches/Users/Company
+settings/Industry — genuinely wrong: for a lab, that catalog isn't
+administrative config, it's the domain's own inventory, exactly the
+"Lab Inventory" capability later master prompts describe as belonging
+alongside Samples/Worksheets/Instruments. Checked whether the same
+misplacement existed anywhere else before treating it as
+laboratory-only: `printing_press` has the identical shape —
+`items_label: "Materials"` (paper, ink, ...) also sat under SETUP
+instead of its own PRINTING section. Every other profile's Items entry
+stays in SETUP unchanged, correctly, since none of them has a
+dedicated section of its own to move into.
+
+**Fix** (`lib/navigation.ts`): the "items" entry now lives directly
+inside the `laboratory` and `printing` sections' own item arrays
+(module-gated the same way every other item in those sections is),
+and a new `GENERIC_ITEMS_HOME_MODULES` list tells `buildNavigation` to
+drop the generic SETUP copy whenever one of those modules is active —
+so the same catalog never renders under two section headers at once.
+Live-verified in both directions: `lab-388b8bb4` (the same pre-existing
+tenant from the label fix) now shows "Reagents & Supplies" positioned
+inside LABORATORY, between Storage and Quality control, with SETUP
+starting directly at Customers; a fresh printing tenant shows
+"Materials" inside PRINTING after Machines, with its own SETUP
+likewise skipping straight to Customers/Projects; a fresh Building
+Materials tenant (a profile with no dedicated section of its own) was
+confirmed unaffected — "Items" still appears under SETUP exactly as
+before. `tsc --noEmit` and `vite build` both clean; no backend touched
+in this follow-up.
+
 ## Reversibility (all six passes)
 
 Fully additive: eight migrations total (domain tables, permission
