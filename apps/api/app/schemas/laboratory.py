@@ -104,6 +104,8 @@ class LabResultOut(BaseModel):
     instrument_id: uuid.UUID | None
     unit: str | None
     flag: str | None
+    specification_id: uuid.UUID | None
+    specification_result: str | None
     status: str
     entered_by_user_id: uuid.UUID
     entered_at: datetime
@@ -325,3 +327,34 @@ class CustodyEventOut(BaseModel):
     performed_by_user_id: uuid.UUID
     performed_at: datetime
     notes: str | None
+
+
+class LabSpecificationCreate(BaseModel):
+    test_definition_id: uuid.UUID
+    client_id: uuid.UUID | None = None
+    sample_type_id: uuid.UUID | None = None
+    name: str
+    criteria_type: str = "range"
+    min_value: Decimal | None = None
+    max_value: Decimal | None = None
+    target_value: Decimal | None = None
+    tolerance: Decimal | None = None
+    text_value: str | None = None
+
+
+class LabSpecificationOut(BaseModel):
+    id: uuid.UUID
+    test_definition_id: uuid.UUID
+    test_name: str
+    client_id: uuid.UUID | None
+    client_name: str | None
+    sample_type_id: uuid.UUID | None
+    sample_type_name: str | None
+    name: str
+    criteria_type: str
+    min_value: Decimal | None
+    max_value: Decimal | None
+    target_value: Decimal | None
+    tolerance: Decimal | None
+    text_value: str | None
+    is_active: bool

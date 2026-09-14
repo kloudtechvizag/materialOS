@@ -17,6 +17,7 @@ from app.models.laboratory import (
     LabResult,
     LabSample,
     LabSampleType,
+    LabSpecification,
     LabStorageLocation,
     LabTestDefinition,
     LabTestOrder,
@@ -44,6 +45,8 @@ from app.schemas.laboratory import (
     LabSampleOut,
     LabSampleTypeCreate,
     LabSampleTypeOut,
+    LabSpecificationCreate,
+    LabSpecificationOut,
     LabStorageLocationCreate,
     LabStorageLocationOut,
     LabTestDefinitionCreate,
@@ -68,6 +71,7 @@ from app.services.laboratory import (
     complete_worksheet,
     create_instrument,
     create_qc_reference_sample,
+    create_specification,
     create_storage_location,
     create_worksheet,
     enter_result,
@@ -537,3 +541,38 @@ def record_custody_event_endpoint(
 ) -> CustodyEventOut:
     event = record_custody_event(db, sample_id=sample_id, user_id=user.id, **payload.model_dump())
     return _custody_event_out(db, event)
+
+
+# ------------------------------------------------------------- Specifications
+
+def _specification_out(db: Session, spec: LabSpecification) -> LabSpecificationOut:
+    test_def = db.get(LabTestDefinition, spec.test_definition_id)
+    client = db.get(Customer, spec.client_id) if spec.client_id else None
+    sample_type = db.get(LabSampleType, spec.sample_type_id) if spec.sample_type_id else None
+    return LabSpecificationOut(
+        id=spec.id, test_definition_id=spec.test_definition_id, test_name=test_def.name if test_def else "",
+        client_id=spec.client_id, client_name=client.name if client else None,
+        sample_type_id=spec.sample_type_id, sample_type_name=sample_type.name if sample_type else None,
+        name=spec.name, criteria_type=spec.criteria_type, min_value=spec.min_value, max_value=spec.max_value,
+        target_value=spec.target_value, tolerance=spec.tolerance, text_value=spec.text_value, is_active=spec.is_active,
+    )
+
+
+@router.get("/specifications", response_model=list[LabSpecificationOut])
+def list_specifications(
+    test_definition_id: uuid.UUID | None = None, db: Session = Depends(get_db_tenant), _user: User = Depends(require_permission("laboratory.view")),
+) -> list[LabSpecificationOut]:
+    stmt = select(LabSpecification).where(LabSpecification.is_active == True).order_by(LabSpecification.name)  # noqa: E712
+    if test_definition_id:
+        stmt = stmt.where(LabSpecification.test_definition_id == test_definition_id)
+    specs = db.execute(stmt).scalars().all()
+    return [_specification_out(db, s) for s in specs]
+
+
+@router.post("/specifications", response_model=LabSpecificationOut, status_code=201)
+def create_specification_endpoint(
+    payload: LabSpecificationCreate, db: Session = Depends(get_db_tenant), user: User = Depends(require_permission("laboratory.create")),
+) -> LabSpecificationOut:
+    company, _ = _company_and_branch(db, user.tenant_id)
+    spec = create_specification(db, tenant_id=user.tenant_id, company_id=company.id, **payload.model_dump())
+    return _specification_out(db, spec)

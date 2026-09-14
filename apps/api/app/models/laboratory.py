@@ -71,6 +71,28 @@ spoofed into recording a movement that didn't happen. Aliquot
 genealogy (sec9 -- splitting one sample into independently trackable
 child aliquots) is a real, later gap: this pass tracks one sample's
 whole-sample movement, not sub-sample lineage.
+
+**Specifications, sixth pass:** real, additive, and deliberately
+layered rather than a replacement. `LabTestDefinition.reference_range_*`
+/`critical_*` remain exactly what they were -- the lab-wide default
+`flag` (normal/abnormal/critical) computed in `_compute_flag`.
+`LabSpecification` is a *second*, independent pass/fail mechanism for
+what those flat columns structurally cannot express: a specific
+client's own tighter contractual limit, or a different limit per
+sample type sharing the same test (spec sec24's own example -- Concrete
+M30 and M40 both run Compressive Strength, but each grade needs its own
+minimum). A result's `specification_result` (pass/fail) is computed
+only when a specification actually resolves for that (test, client,
+sample type) combination -- no specification configured means no
+verdict, never a fabricated one. Resolution precedence when several
+specifications could apply to the same test:
+(client + sample_type) > client-only > sample_type-only > the
+tenant-wide default (neither set). Deliberately NOT built: arbitrary
+"conditional rules" (spec sec24's own phrase) -- a real rule engine
+evaluating expressions over sample metadata is a much bigger, separate
+feature than a scoped range/target-tolerance/text comparison, and
+faking one behind a config field nobody could actually configure would
+be worse than not having it.
 """
 
 import uuid
@@ -97,6 +119,8 @@ QC_STATUSES = ["pass", "fail"]
 WORKSHEET_STATUSES = ["open", "in_progress", "completed"]
 STORAGE_LOCATION_TYPES = ["room", "freezer", "refrigerator", "cabinet", "shelf", "rack", "box"]
 CUSTODY_EVENT_TYPES = ["received", "stored", "moved", "checked_out", "checked_in", "disposed"]
+SPECIFICATION_CRITERIA_TYPES = ["range", "text"]
+SPECIFICATION_RESULTS = ["pass", "fail"]
 
 
 class LabSampleType(Base, UUIDPk, TenantMixin, TimestampMixin):
@@ -215,6 +239,12 @@ class LabResult(Base, UUIDPk, TenantMixin, TimestampMixin):
     instrument_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("lab_instruments.id", ondelete="SET NULL"), nullable=True, index=True)
     unit: Mapped[str | None] = mapped_column(String(30), nullable=True)
     flag: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    # The specification actually resolved for this result's (test,
+    # client, sample type) at entry time, and the pass/fail verdict --
+    # both null if no specification was configured (see module
+    # docstring: no fabricated verdicts).
+    specification_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("lab_specifications.id", ondelete="SET NULL"), nullable=True, index=True)
+    specification_result: Mapped[str | None] = mapped_column(String(10), nullable=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="draft")
     entered_by_user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
     entered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -367,3 +397,38 @@ class LabCustodyEvent(Base, UUIDPk, TenantMixin, TimestampMixin):
     performed_by_user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
     performed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     notes: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+
+class LabSpecification(Base, UUIDPk, TenantMixin, TimestampMixin):
+    """A pass/fail criterion for one test, optionally scoped to a
+    specific client and/or sample type -- see module docstring for why
+    this exists alongside (not instead of) LabTestDefinition's own flat
+    reference_range/critical columns. `client_id`/`sample_type_id` null
+    means "applies regardless" at that axis; both null is the tenant-
+    wide default for the test. Exactly one specification may exist per
+    (test_definition_id, client_id, sample_type_id) triple -- enforced
+    in the service layer with a null-safe query rather than a DB
+    UNIQUE constraint, since Postgres treats NULL as distinct from NULL
+    in unique constraints and would silently allow duplicate defaults.
+
+    criteria_type "range" evaluates numeric_value against min_value/
+    max_value, or against target_value +/- tolerance when neither bound
+    is set directly. criteria_type "text" evaluates result_value as an
+    exact (case-insensitive) match against text_value -- e.g. a
+    microbiology test whose specification is simply "Absent".
+    """
+
+    __tablename__ = "lab_specifications"
+
+    company_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("companies.id", ondelete="RESTRICT"), nullable=False, index=True)
+    test_definition_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("lab_test_definitions.id", ondelete="RESTRICT"), nullable=False, index=True)
+    client_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("customers.id", ondelete="CASCADE"), nullable=True, index=True)
+    sample_type_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("lab_sample_types.id", ondelete="CASCADE"), nullable=True, index=True)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    criteria_type: Mapped[str] = mapped_column(String(10), nullable=False, default="range")
+    min_value: Mapped[Decimal | None] = mapped_column(Numeric(18, 4), nullable=True)
+    max_value: Mapped[Decimal | None] = mapped_column(Numeric(18, 4), nullable=True)
+    target_value: Mapped[Decimal | None] = mapped_column(Numeric(18, 4), nullable=True)
+    tolerance: Mapped[Decimal | None] = mapped_column(Numeric(18, 4), nullable=True)
+    text_value: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)

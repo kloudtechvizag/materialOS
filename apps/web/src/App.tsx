@@ -103,6 +103,7 @@ import { LabSampleDetailPage } from "@/routes/laboratory/LabSampleDetailPage";
 import { LabInstrumentsPage } from "@/routes/laboratory/LabInstrumentsPage";
 import { LabQcPage } from "@/routes/laboratory/LabQcPage";
 import { LabSamplesPage } from "@/routes/laboratory/LabSamplesPage";
+import { LabSpecificationsPage } from "@/routes/laboratory/LabSpecificationsPage";
 import { LabStorageLocationsPage } from "@/routes/laboratory/LabStorageLocationsPage";
 import { LabTestCatalogPage } from "@/routes/laboratory/LabTestCatalogPage";
 import { LabWorksheetDetailPage } from "@/routes/laboratory/LabWorksheetDetailPage";
@@ -306,6 +307,7 @@ export default function App() {
         <Route path="/lab/samples" element={<RequireModule module="laboratory"><LabSamplesPage /></RequireModule>} />
         <Route path="/lab/samples/:sampleId" element={<RequireModule module="laboratory"><LabSampleDetailPage /></RequireModule>} />
         <Route path="/lab/test-catalog" element={<RequireModule module="laboratory"><LabTestCatalogPage /></RequireModule>} />
+        <Route path="/lab/specifications" element={<RequireModule module="laboratory"><LabSpecificationsPage /></RequireModule>} />
         <Route path="/lab/qc" element={<RequireModule module="laboratory"><LabQcPage /></RequireModule>} />
         <Route path="/lab/worksheets" element={<RequireModule module="laboratory"><LabWorksheetsPage /></RequireModule>} />
         <Route path="/lab/worksheets/:worksheetId" element={<RequireModule module="laboratory"><LabWorksheetDetailPage /></RequireModule>} />

@@ -597,3 +597,116 @@ records (a client and sample type created directly via the API) still
 appear correctly in the same searchable pickers alongside the newly
 quick-created ones, with code shown as the sublabel — the migration
 from plain `<select>` didn't regress normal search/select behavior.
+
+## Addendum: Specifications (sixth pass)
+
+A separate, later master prompt re-covering the same LIMS territory
+(comparable to SENAITE) named `Specifications` as a first-class,
+still-missing entity (its own sec24-25): pass/fail limits that can
+vary per client or per sample type/product for the same test — its own
+worked example being "Concrete M30" and "Concrete M40" sharing one
+Compressive Strength test but needing different minimums. Confirmed
+real before building: `LabTestDefinition`'s `reference_range_*`/
+`critical_*` were the only pass/fail-adjacent columns anywhere in the
+domain — flat, tenant-wide, with no per-client or per-sample-type
+override possible.
+
+**New table** (`models/laboratory.py`, migration `a3b4c5d6e7f8`):
+`lab_specifications`. Deliberately additive, not a replacement:
+`LabTestDefinition`'s own reference/critical columns keep computing the
+existing `flag` (normal/abnormal/critical) exactly as before — every
+prior pass's tests keep passing unchanged. `LabSpecification` is a
+*second*, independent pass/fail mechanism layered on top, for what the
+flat columns structurally cannot express. `LabResult` gained
+`specification_id`/`specification_result`, both nullable: no
+specification configured for a (test, client, sample type) combination
+means no verdict, never a fabricated one — the same "don't invent an
+acceptance criterion nobody configured" rule the QC subsystem's
+duplicate-without-threshold case already established.
+
+**Design decision — resolution precedence, not "first match wins."**
+`resolve_specification` tries four scopes in order: (client +
+sample_type) → client-only → sample_type-only → the tenant-wide
+default (neither set) — returning the *most specific* applicable
+specification, not an arbitrary one. Proven directly by a backend test
+where four specifications exist for the same test at every precedence
+level simultaneously (min 50 / 30 / 20 / 10 respectively), and a
+40 MPa result correctly fails only the most-specific (client +
+sample_type) one, despite passing every less-specific bound.
+
+**Design decision — a null-safe uniqueness check in the service
+layer, not a DB constraint.** Postgres `UNIQUE` treats `NULL` as
+distinct from `NULL`, so a naive constraint on
+`(test_definition_id, client_id, sample_type_id)` would silently allow
+two "default" (both null) specifications for the same test.
+`create_specification` instead queries with `.is_(None)` for unset
+scope fields before insert and 409s on a match — proven by a test that
+creates a second default specification for the same test and confirms
+rejection, the exact case a DB constraint alone would have missed.
+
+**Design decision — two criteria types, not an arbitrary rule
+engine.** `criteria_type: "range"` evaluates `numeric_value` against
+`min_value`/`max_value`, or against `target_value ± tolerance` when
+neither bound is set directly (both evaluated by one function,
+`_evaluate_specification`, proven for both forms). `criteria_type:
+"text"` evaluates `result_value` as an exact case-insensitive match
+against `text_value` — e.g. a microbiology test whose specification is
+simply "Absent". The master prompt's own "conditional rules" (sec24)
+— an expression engine over sample metadata — is a materially larger,
+separate feature and is named as a deliberate, later gap rather than
+faked behind an unconfigurable field.
+
+**Frontend**: new `/lab/specifications` page — list with scope shown
+as a badge ("Default" / client name / sample-type name / both) and
+human-readable criteria, and a create dialog (test, optional client,
+optional sample type, criteria type, then either min/max or
+target/tolerance or expected text depending on criteria type). The
+Sample Detail page's result row gained a `spec: pass`/`spec: fail`
+badge alongside the existing reference-range flag badge, shown only
+when a specification actually resolved. Wired into `lib/navigation.ts`
+(a new "Specifications" item between Test catalog and Worksheets) and
+`App.tsx`.
+
+## Verification (Specifications)
+
+10 new backend tests (`tests/test_laboratory_specifications.py`) — no
+specification configured yields no verdict, a tenant-wide default
+evaluates both pass and fail, a sample-type-specific specification
+reproduces the spec's own Concrete M30-vs-M40 example exactly (the
+same 35 MPa result passes M30's spec and fails M40's), the full
+four-level precedence order proven with all four scopes populated
+simultaneously for one test, target±tolerance evaluated correctly
+without explicit min/max, text-criteria pass and fail, the null-safe
+duplicate-scope rejection, invalid criteria payloads rejected (400),
+RBAC denial and tenant isolation (404/401 as applicable) — all passing
+inside `materialos_api_1` against the real Postgres. Full suite: 215
+passed, zero regressions (up from 205). Frontend `tsc --noEmit` and
+`vite build` both clean.
+
+Live-verified against the running `docker-compose` stack via headless
+Chromium/CDP — the master prompt's own headline example, reproduced
+live rather than only in the test suite: a real "Compressive Strength"
+test, two real sample types ("Concrete M30", "Concrete M40") each
+created through the `/lab/specifications` page with its own minimum
+(30 and 40 MPa respectively) scoped to that sample type, then two real
+samples registered (one of each sample type) and given the *identical*
+result value (35.0 MPa) through the real Sample Detail result-entry
+flow. The M30 sample's result showed a green "spec: pass" badge; the
+M40 sample's identical result showed a red "spec: fail" badge — the
+same number, two different sample types, two different verdicts,
+exactly the scenario the specification system exists to solve. The
+sidebar's Laboratory section correctly shows the new "Specifications"
+nav item between Test catalog and Worksheets.
+
+## Reversibility (all six passes)
+
+Fully additive: eight migrations total (domain tables, permission
+backfill, QC tables, worksheet table + two opt-in columns, instrument
+table + one opt-in column, storage tables + one opt-in column,
+specifications table + two opt-in columns on `lab_results`), one
+service/router/schema module extended six times, one industry profile
+entry, nine frontend routes, and seven nav items gated on the
+`laboratory` module. None of it touches any existing table, endpoint,
+or profile from outside the laboratory domain. Removing it means
+dropping the eight migrations and the industry-profile entry — no
+other domain depends on `lab_*` or `qc_*` tables.

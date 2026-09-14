@@ -24,7 +24,7 @@ from app.models.idempotency import IdempotencyKey
 from app.models.importing import ImportBatch, ImportBatchRow
 from app.models.industry import IndustryProfile
 from app.models.jewellery import MetalRate
-from app.models.laboratory import LabContainer, LabCustodyEvent, LabInstrument, LabReport, LabResult, LabSample, LabSampleType, LabStorageLocation, LabTestDefinition, LabTestOrder, LabWorksheet, QcReferenceSample, QcRun
+from app.models.laboratory import LabContainer, LabCustodyEvent, LabInstrument, LabReport, LabResult, LabSample, LabSampleType, LabSpecification, LabStorageLocation, LabTestDefinition, LabTestOrder, LabWorksheet, QcReferenceSample, QcRun
 from app.models.inventory import StockBalance, StockLedger, StockReservation
 from app.models.leave import LeaveBalance, LeaveRequest, LeaveType
 from app.models.masters import Customer, Item, Supplier

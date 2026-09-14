@@ -2,10 +2,11 @@
 behind Register -> Accession -> Accept/Reject -> Result entry ->
 Validate -> Authorize -> Report, plus the QC subsystem (blanks/
 controls/duplicates), worksheets (batch testing), CSV-based instrument
-result import, and storage/chain-of-custody tracking built on top of
-it -- see app.models.laboratory's module docstring for what's real
-here versus named, deferred gaps (live ASTM/HL7 protocol, aliquot
-genealogy, etc.).
+result import, storage/chain-of-custody tracking, and client/sample-
+type-scoped specifications built on top of it -- see
+app.models.laboratory's module docstring for what's real here versus
+named, deferred gaps (live ASTM/HL7 protocol, aliquot genealogy, an
+arbitrary specification rule engine, etc.).
 """
 
 import uuid
@@ -21,12 +22,14 @@ from app.models.laboratory import (
     QC_TYPES,
     RESULT_TYPES,
     SAMPLE_PRIORITIES,
+    SPECIFICATION_CRITERIA_TYPES,
     STORAGE_LOCATION_TYPES,
     LabCustodyEvent,
     LabInstrument,
     LabReport,
     LabResult,
     LabSample,
+    LabSpecification,
     LabStorageLocation,
     LabTestDefinition,
     LabTestOrder,
@@ -140,6 +143,54 @@ def _compute_flag(test_def: LabTestDefinition, numeric_value: Decimal | None) ->
     return None
 
 
+def resolve_specification(db: Session, *, test_definition_id: uuid.UUID, client_id: uuid.UUID, sample_type_id: uuid.UUID) -> LabSpecification | None:
+    """Precedence: (client + sample_type) > client-only > sample_type-
+    only > the tenant-wide default (neither set) -- see LabSpecification's
+    own docstring. Returns the first (and only, by the service-layer
+    uniqueness check in create_specification) match, or None if nothing
+    was ever configured for this test."""
+    scopes = [
+        (LabSpecification.client_id == client_id, LabSpecification.sample_type_id == sample_type_id),
+        (LabSpecification.client_id == client_id, LabSpecification.sample_type_id.is_(None)),
+        (LabSpecification.client_id.is_(None), LabSpecification.sample_type_id == sample_type_id),
+        (LabSpecification.client_id.is_(None), LabSpecification.sample_type_id.is_(None)),
+    ]
+    for client_clause, sample_type_clause in scopes:
+        spec = db.execute(
+            select(LabSpecification).where(
+                LabSpecification.test_definition_id == test_definition_id,
+                LabSpecification.is_active == True,  # noqa: E712
+                client_clause,
+                sample_type_clause,
+            )
+        ).scalar_one_or_none()
+        if spec is not None:
+            return spec
+    return None
+
+
+def _evaluate_specification(spec: LabSpecification, *, result_value: str, numeric_value: Decimal | None) -> str | None:
+    """None = nothing to evaluate against (e.g. a range spec with no
+    bounds set) -- never a fabricated verdict."""
+    if spec.criteria_type == "text":
+        if spec.text_value is None:
+            return None
+        return "pass" if result_value.strip().lower() == spec.text_value.strip().lower() else "fail"
+
+    if numeric_value is None:
+        return None
+    low, high = spec.min_value, spec.max_value
+    if low is None and high is None and spec.target_value is not None and spec.tolerance is not None:
+        low, high = spec.target_value - spec.tolerance, spec.target_value + spec.tolerance
+    if low is None and high is None:
+        return None
+    if low is not None and numeric_value < low:
+        return "fail"
+    if high is not None and numeric_value > high:
+        return "fail"
+    return "pass"
+
+
 def enter_result(db: Session, *, test_order_id: uuid.UUID, result_value: str, user_id: uuid.UUID) -> LabResult:
     test_order = db.get(LabTestOrder, test_order_id)
     if test_order is None:
@@ -162,6 +213,8 @@ def enter_result(db: Session, *, test_order_id: uuid.UUID, result_value: str, us
 
     existing = db.execute(select(LabResult).where(LabResult.test_order_id == test_order_id)).scalar_one_or_none()
     flag = _compute_flag(test_def, numeric_value)
+    spec = resolve_specification(db, test_definition_id=test_def.id, client_id=sample.client_id, sample_type_id=sample.sample_type_id)
+    spec_result = _evaluate_specification(spec, result_value=result_value, numeric_value=numeric_value) if spec else None
     now = datetime.now(timezone.utc)
     if existing is not None:
         if existing.status != "draft":
@@ -170,13 +223,16 @@ def enter_result(db: Session, *, test_order_id: uuid.UUID, result_value: str, us
         existing.numeric_value = numeric_value
         existing.unit = test_def.unit
         existing.flag = flag
+        existing.specification_id = spec.id if spec else None
+        existing.specification_result = spec_result
         existing.entered_by_user_id = user_id
         existing.entered_at = now
         result = existing
     else:
         result = LabResult(
             tenant_id=sample.tenant_id, test_order_id=test_order_id, result_value=result_value, numeric_value=numeric_value,
-            unit=test_def.unit, flag=flag, status="draft", entered_by_user_id=user_id, entered_at=now,
+            unit=test_def.unit, flag=flag, specification_id=spec.id if spec else None, specification_result=spec_result,
+            status="draft", entered_by_user_id=user_id, entered_at=now,
         )
         db.add(result)
 
@@ -651,3 +707,43 @@ def record_custody_event(
     sample.current_location_id = to_location_id
     db.flush()
     return event
+
+
+def create_specification(
+    db: Session, *, tenant_id: uuid.UUID, company_id: uuid.UUID, test_definition_id: uuid.UUID,
+    client_id: uuid.UUID | None, sample_type_id: uuid.UUID | None, name: str, criteria_type: str,
+    min_value: Decimal | None, max_value: Decimal | None, target_value: Decimal | None,
+    tolerance: Decimal | None, text_value: str | None,
+) -> LabSpecification:
+    if criteria_type not in SPECIFICATION_CRITERIA_TYPES:
+        raise AppError(ErrorCode.VALIDATION_ERROR, f"criteria_type must be one of {SPECIFICATION_CRITERIA_TYPES}, got {criteria_type!r}.")
+    if criteria_type == "text" and not text_value:
+        raise AppError(ErrorCode.VALIDATION_ERROR, "text_value is required for a 'text' criteria_type specification.")
+    if criteria_type == "range" and min_value is None and max_value is None and (target_value is None or tolerance is None):
+        raise AppError(ErrorCode.VALIDATION_ERROR, "A 'range' specification needs min_value and/or max_value, or both target_value and tolerance.")
+
+    # Null-safe uniqueness check -- Postgres UNIQUE treats NULL as
+    # distinct from NULL, so a DB constraint alone would silently allow
+    # two "default" (client_id=None, sample_type_id=None) rows for the
+    # same test. See LabSpecification's own docstring.
+    client_clause = LabSpecification.client_id == client_id if client_id else LabSpecification.client_id.is_(None)
+    sample_type_clause = LabSpecification.sample_type_id == sample_type_id if sample_type_id else LabSpecification.sample_type_id.is_(None)
+    existing = db.execute(
+        select(LabSpecification).where(LabSpecification.test_definition_id == test_definition_id, client_clause, sample_type_clause)
+    ).scalar_one_or_none()
+    if existing is not None:
+        raise AppError(
+            ErrorCode.VALIDATION_ERROR,
+            "A specification already exists for this exact test/client/sample-type combination.",
+            status_code=409,
+            details={"existing_specification_id": str(existing.id)},
+        )
+
+    spec = LabSpecification(
+        tenant_id=tenant_id, company_id=company_id, test_definition_id=test_definition_id, client_id=client_id,
+        sample_type_id=sample_type_id, name=name, criteria_type=criteria_type, min_value=min_value, max_value=max_value,
+        target_value=target_value, tolerance=tolerance, text_value=text_value,
+    )
+    db.add(spec)
+    db.flush()
+    return spec

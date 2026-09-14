@@ -26,6 +26,7 @@ interface Result {
   numeric_value: string | null;
   unit: string | null;
   flag: string | null;
+  specification_result: string | null;
   status: string;
   entered_by_user_id: string;
   entered_at: string;
@@ -207,6 +208,11 @@ export function LabSampleDetailPage() {
                       <div className="flex flex-wrap items-center gap-3 text-sm">
                         <span className="font-mono">{result.result_value}{result.unit ? ` ${result.unit}` : ""}</span>
                         {result.flag && <Badge variant={FLAG_VARIANT[result.flag] ?? "outline"}>{result.flag}</Badge>}
+                        {result.specification_result && (
+                          <Badge variant={result.specification_result === "pass" ? "success" : "destructive"}>
+                            spec: {result.specification_result}
+                          </Badge>
+                        )}
                         <Badge variant="outline">{result.status}</Badge>
                         {result.status === "draft" && <Button size="sm" variant="outline" onClick={() => validateResult.mutate(result.id)} disabled={validateResult.isPending}>Validate</Button>}
                         {result.status === "validated" && <Button size="sm" variant="outline" onClick={() => authorizeResult.mutate(result.id)} disabled={authorizeResult.isPending}>Authorize</Button>}
