@@ -13,7 +13,8 @@ import { downloadCsv } from "@/lib/csv";
 import { formatINR } from "@/lib/format";
 
 interface DatasetField { key: string; label: string }
-interface DatasetInfo { key: string; label: string; group_by_options: DatasetField[]; metric_options: DatasetField[] }
+interface MetricField extends DatasetField { is_currency: boolean }
+interface DatasetInfo { key: string; label: string; group_by_options: DatasetField[]; metric_options: MetricField[] }
 interface ReportRow { group: string; value: string }
 interface ReportResult { dataset: string; group_by: string; metric: string; rows: ReportRow[] }
 
@@ -57,8 +58,9 @@ export function ReportsPage() {
   });
 
   const chartData = useMemo(() => (result?.rows ?? []).map((r) => ({ group: r.group, value: Number(r.value) })), [result]);
-  const metricLabel = activeDataset?.metric_options.find((m) => m.key === metric)?.label ?? "Value";
-  const isCurrencyMetric = metric !== "count" && metric !== "qty_on_hand";
+  const activeMetric = activeDataset?.metric_options.find((m) => m.key === metric);
+  const metricLabel = activeMetric?.label ?? "Value";
+  const isCurrencyMetric = activeMetric?.is_currency ?? true;
 
   function exportCsv() {
     if (!result || !activeDataset) return;

@@ -11,7 +11,8 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.errors import AppError, ErrorCode
-from app.models.masters import Customer
+from app.models.masters import Customer, Supplier
+from app.models.procurement import PurchaseBill, PurchaseReturn, SupplierPaymentAllocation
 from app.models.sales import Invoice, PaymentAllocation
 from app.models.warehouse_ops import SalesReturn
 
@@ -40,6 +41,37 @@ def compute_outstanding(db: Session, customer_id: uuid.UUID) -> Decimal:
     ).scalar_one()
 
     return customer.opening_balance + Decimal(invoiced_total) - Decimal(allocated_total) - Decimal(returned_total)
+
+
+def compute_supplier_outstanding(db: Session, supplier_id: uuid.UUID) -> Decimal:
+    """The payables mirror of compute_outstanding above: what this
+    tenant owes a supplier, not what a customer owes this tenant.
+    Outstanding = opening_balance + posted bill totals - allocated
+    payments - purchase returns (PurchaseReturn.purchase_bill_id, the
+    AP-side equivalent of SalesReturn.invoice_id)."""
+    supplier = db.get(Supplier, supplier_id)
+    if supplier is None:
+        raise ValueError(f"Unknown supplier {supplier_id}")
+
+    billed_total = db.execute(
+        select(func.coalesce(func.sum(PurchaseBill.total), 0)).where(
+            PurchaseBill.supplier_id == supplier_id, PurchaseBill.status == "posted"
+        )
+    ).scalar_one()
+
+    allocated_total = db.execute(
+        select(func.coalesce(func.sum(SupplierPaymentAllocation.amount), 0))
+        .join(PurchaseBill, PurchaseBill.id == SupplierPaymentAllocation.purchase_bill_id)
+        .where(PurchaseBill.supplier_id == supplier_id)
+    ).scalar_one()
+
+    returned_total = db.execute(
+        select(func.coalesce(func.sum(PurchaseReturn.total), 0))
+        .join(PurchaseBill, PurchaseBill.id == PurchaseReturn.purchase_bill_id)
+        .where(PurchaseBill.supplier_id == supplier_id)
+    ).scalar_one()
+
+    return supplier.opening_balance + Decimal(billed_total) - Decimal(allocated_total) - Decimal(returned_total)
 
 
 def check_credit(db: Session, customer_id: uuid.UUID, additional_amount: Decimal) -> None:
