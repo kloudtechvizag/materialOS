@@ -227,6 +227,20 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
  * unchanged, since it has no more specific section to live in. */
 const GENERIC_ITEMS_HOME_MODULES = ["laboratory", "printing"];
 
+/** For a profile with its own dedicated section (laboratory ->
+ * "laboratory", printing -> "printing"), that section is what the
+ * tenant's business actually IS -- it belongs directly under the two
+ * global items (Dashboard, Approvals), ahead of cross-cutting sections
+ * like People & Payroll and Setup that exist for every business
+ * regardless of industry. Every other profile has no single section
+ * that plays this role (Sell/Buy/Dispatch/Books together form its
+ * primary workflow, not one section), so their relative order is left
+ * exactly as ALL_NAV_SECTIONS declares it. */
+const PRIMARY_SECTION_BY_MODULE: Record<string, string> = {
+  laboratory: "laboratory",
+  printing: "printing",
+};
+
 /** Same filter GLOBAL_NAV_ITEMS would need if a global item ever gains a
  * module gate -- neither does today (that's the point of "global"), but
  * this keeps the two item lists behaving identically instead of one
@@ -244,13 +258,29 @@ export function buildGlobalNavItems(enabledModules: string[] | undefined): Navig
 export function buildNavigation(enabledModules: string[] | undefined, terminology?: Record<string, string>): NavigationSection[] {
   const itemsLabel = terminology?.items_label;
   const itemsHasOwnSection = enabledModules !== undefined && GENERIC_ITEMS_HOME_MODULES.some((m) => enabledModules.includes(m));
-  return ALL_NAV_SECTIONS.map((section) => ({
+  const sections = ALL_NAV_SECTIONS.map((section) => ({
     ...section,
     items: section.items
       .filter((item) => !item.module || enabledModules === undefined || enabledModules.includes(item.module))
       .filter((item) => !(item.id === "items" && section.id === "setup" && itemsHasOwnSection))
       .map((item) => (item.id === "items" && itemsLabel ? { ...item, label: itemsLabel } : item)),
   })).filter((section) => section.items.length > 0);
+
+  // Promote the active profile's own dedicated section (if it has one)
+  // to the very top, right after the global items -- "this is YOUR
+  // business" ahead of People & Payroll / Operations / Setup, which
+  // exist for every business regardless of industry.
+  const primaryModule = enabledModules?.find((m) => PRIMARY_SECTION_BY_MODULE[m]);
+  const primarySectionId = primaryModule ? PRIMARY_SECTION_BY_MODULE[primaryModule] : undefined;
+  if (primarySectionId) {
+    const primaryIndex = sections.findIndex((s) => s.id === primarySectionId);
+    if (primaryIndex > 0) {
+      const [primarySection] = sections.splice(primaryIndex, 1);
+      sections.unshift(primarySection);
+    }
+  }
+
+  return sections;
 }
 
 /** Exported for callers that need "everything" without a profile (e.g.

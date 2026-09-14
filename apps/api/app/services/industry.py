@@ -360,6 +360,10 @@ PROFILE_DEFINITIONS: list[dict] = [
         # (all False) rather than padded with irrelevant flags.
         "inventory_flags": _flags(),
         "pricing_strategy": "job_costing",
+        "golden_workflow": {
+            "cta_label": "New print job", "cta_href": "/print-jobs",
+            "steps": ["New print job", "Production", "Finishing", "Dispatch", "Invoice"],
+        },
     },
     # -- Laboratory & Scientific Testing (industry #25). Like Printing
     # Press, NOT config-only: "laboratory" is a real module backed by
@@ -395,6 +399,10 @@ PROFILE_DEFINITIONS: list[dict] = [
         "dashboard_widgets": [],
         "inventory_flags": _flags(),
         "pricing_strategy": "standard",
+        "golden_workflow": {
+            "cta_label": "Register sample", "cta_href": "/lab/samples",
+            "steps": ["Register sample", "Run tests", "Generate report", "Sign off"],
+        },
     },
 ]
 

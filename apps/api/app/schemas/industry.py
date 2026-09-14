@@ -14,6 +14,7 @@ class IndustryProfileOut(BaseModel):
     dashboard_widgets: list[str]
     inventory_flags: dict
     pricing_strategy: str
+    golden_workflow: dict
 
     class Config:
         from_attributes = True

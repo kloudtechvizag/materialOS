@@ -14,9 +14,10 @@ class IndustryProfile(Base, UUIDPk, TimestampMixin):
     A profile is pure configuration: adding a new industry should mean
     adding a row here (via ensure_industry_profile_catalog), not writing
     `if industry == "..."` branches through the app. terminology/
-    enabled_modules/navigation_config/dashboard_widgets/inventory_flags
-    are read by the frontend to adapt the sidebar, dashboard, item forms
-    and labels without a second codebase per industry.
+    enabled_modules/navigation_config/dashboard_widgets/inventory_flags/
+    golden_workflow are read by the frontend to adapt the sidebar,
+    dashboard, item forms and labels without a second codebase per
+    industry.
     """
 
     __tablename__ = "industry_profiles"
@@ -41,4 +42,11 @@ class IndustryProfile(Base, UUIDPk, TimestampMixin):
     # Informational for now -- resolve_price() itself is unchanged in this
     # phase; this documents intent for a future pricing-strategy switch.
     pricing_strategy: Mapped[str] = mapped_column(String(50), nullable=False, default="standard")
+    # The Dashboard's "Start the golden transaction" card:
+    # {"cta_label": "New sample", "cta_href": "/lab/samples", "steps":
+    # ["Register sample", "Run tests", "Generate report", "Sign off"]}.
+    # {} means "no profile-specific workflow configured" -- the frontend
+    # falls back to the generic quotation-to-payment flow rather than
+    # rendering nothing (see DashboardPage's own DEFAULT_GOLDEN_WORKFLOW).
+    golden_workflow: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)

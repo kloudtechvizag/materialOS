@@ -137,3 +137,32 @@ def test_switching_to_unknown_industry_slug_is_rejected():
     )
     assert resp.status_code == 422, resp.text
     assert resp.json()["error"]["code"] == "VALIDATION_ERROR"
+
+
+def test_laboratory_and_printing_have_their_own_golden_workflow_every_other_profile_defaults_to_empty():
+    """Dashboard's "Start the golden transaction" card (previously
+    hardcoded to the trade flow for every profile) now reads this per
+    profile -- {} means "no override, frontend uses its own generic
+    default", not "show nothing" (unlike dashboard_widgets)."""
+    resp = client.get("/api/v1/industry-profiles")
+    profiles = {p["slug"]: p for p in resp.json()}
+
+    assert profiles["laboratory"]["golden_workflow"] == {
+        "cta_label": "Register sample", "cta_href": "/lab/samples",
+        "steps": ["Register sample", "Run tests", "Generate report", "Sign off"],
+    }
+    assert profiles["printing_press"]["golden_workflow"] == {
+        "cta_label": "New print job", "cta_href": "/print-jobs",
+        "steps": ["New print job", "Production", "Finishing", "Dispatch", "Invoice"],
+    }
+    assert profiles["building_materials"]["golden_workflow"] == {}
+    assert profiles["retail"]["golden_workflow"] == {}
+
+
+def test_a_laboratory_tenants_dashboard_config_round_trips_through_companies():
+    slug = f"industry-golden-lab-{uuid.uuid4().hex[:8]}"
+    token = _signed_up_token(slug, industry_slug="laboratory")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    company = client.get("/api/v1/companies", headers=headers).json()[0]
+    assert company["industry_profile"]["golden_workflow"]["cta_href"] == "/lab/samples"

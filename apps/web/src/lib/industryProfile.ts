@@ -3,6 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 
+export interface GoldenWorkflow {
+  cta_label: string;
+  cta_href: string;
+  steps: string[];
+}
+
 export interface IndustryProfile {
   id: string;
   slug: string;
@@ -14,6 +20,11 @@ export interface IndustryProfile {
   dashboard_widgets: string[];
   inventory_flags: Record<string, boolean>;
   pricing_strategy: string;
+  /** {} means "no profile-specific override -- use the generic
+   * quotation flow" (DashboardPage's DEFAULT_GOLDEN_WORKFLOW), NOT
+   * "show nothing" the way an empty dashboard_widgets list means for
+   * laboratory. Deliberately different semantics for this field. */
+  golden_workflow: Partial<GoldenWorkflow>;
 }
 
 interface CompanyWithProfile {

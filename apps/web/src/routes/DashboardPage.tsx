@@ -6,7 +6,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ErrorState } from "@/components/ui/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
-import { useIndustryProfile } from "@/lib/industryProfile";
+import { useIndustryProfile, type GoldenWorkflow } from "@/lib/industryProfile";
+
+/** The trade/dealer flow every profile without its own bespoke
+ * workflow falls back to -- still a real, working flow (Quotation,
+ * SalesOrder, Dispatch, Invoice, Payment all genuinely exist), not a
+ * placeholder. Laboratory and Printing override this via
+ * IndustryProfile.golden_workflow (see ADR-022's golden-workflow
+ * addendum) because their real transaction shape is different; every
+ * other profile intentionally shares this one rather than 23 near-
+ * identical copies of the same trade flow. */
+const DEFAULT_GOLDEN_WORKFLOW: GoldenWorkflow = {
+  cta_label: "New quotation",
+  cta_href: "/quotations/new",
+  steps: ["Approve", "Sales order", "Dispatch", "Invoice", "Payment"],
+};
 
 export function DashboardPage() {
   const { data, isLoading, error, refetch } = useQuery({
@@ -15,6 +29,10 @@ export function DashboardPage() {
   });
   const { profile } = useIndustryProfile();
   const widgetKeys = profile?.dashboard_widgets ?? DEFAULT_DASHBOARD_WIDGETS;
+  const workflow: GoldenWorkflow =
+    profile?.golden_workflow?.cta_href && profile.golden_workflow.cta_label && profile.golden_workflow.steps
+      ? (profile.golden_workflow as GoldenWorkflow)
+      : DEFAULT_GOLDEN_WORKFLOW;
 
   return (
     <div className="space-y-6">
@@ -44,12 +62,12 @@ export function DashboardPage() {
         <CardHeader>
           <CardTitle className="text-base">Start the golden transaction</CardTitle>
         </CardHeader>
-        <CardContent className="flex gap-3">
-          <Link to="/quotations/new" className="text-sm font-medium text-primary hover:underline">
-            New quotation
+        <CardContent className="flex flex-wrap items-center gap-3">
+          <Link to={workflow.cta_href} className="text-sm font-medium text-primary hover:underline">
+            {workflow.cta_label}
           </Link>
           <span className="text-muted-foreground">→</span>
-          <span className="text-sm text-muted-foreground">approve → sales order → dispatch → invoice → payment</span>
+          <span className="text-sm text-muted-foreground">{workflow.steps.join(" → ")}</span>
         </CardContent>
       </Card>
     </div>
