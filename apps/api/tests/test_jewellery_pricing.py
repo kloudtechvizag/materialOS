@@ -137,11 +137,15 @@ def test_other_industry_profiles_are_completely_unaffected(db, tenant_ctx):
 
 
 def _signed_up_token(slug: str) -> str:
+    # industry_slug="jewellery" is required now that /metal-rates is
+    # gated by require_module("jewellery") (ADR-022's pattern extended
+    # to jewellery) -- a non-jewellery tenant genuinely can't call it.
     client.post(
         "/api/v1/tenants/signup",
         json={
             "tenant_name": "X", "tenant_slug": slug, "company_name": "X", "company_legal_name": "X Pvt Ltd",
             "owner_full_name": "Owner", "owner_email": f"owner-{slug}@example.com", "owner_password": "correct-horse-battery-staple",
+            "industry_slug": "jewellery",
         },
     )
     return client.post(

@@ -16,6 +16,7 @@ client = TestClient(app)
 VALID_MODULES = {
     "sales", "purchase", "inventory", "warehouse", "dispatch", "fleet", "credit",
     "collections", "projects", "field_sales", "accounting", "gst", "pos", "printing", "laboratory",
+    "jewellery", "serial_tracking",
 }
 VALID_WIDGETS = {
     "outstanding", "invoiced", "open_quotations", "open_sales_orders", "active_items",

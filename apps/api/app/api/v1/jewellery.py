@@ -3,13 +3,18 @@ from sqlalchemy.orm import Session
 
 from fastapi import APIRouter, Depends
 
-from app.deps import get_db_tenant, require_permission
+from app.deps import get_db_tenant, require_module, require_permission
 from app.models.jewellery import MetalRate
 from app.models.tenant import Company
 from app.models.user import User
 from app.schemas.jewellery import MetalRateCreate, MetalRateOut
 
-router = APIRouter(tags=["jewellery"])
+# require_module (ADR-022) closes the same gap here it closed for
+# laboratory/printing: `items.edit`/`items.view` are generic permissions
+# granted broadly, so without this a non-jewellery tenant's owner could
+# still call these endpoints directly by URL even with the nav item
+# correctly hidden.
+router = APIRouter(tags=["jewellery"], dependencies=[Depends(require_module("jewellery"))])
 
 
 @router.get("/metal-rates", response_model=list[MetalRateOut])

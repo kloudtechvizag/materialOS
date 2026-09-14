@@ -83,3 +83,31 @@ def test_module_gate_applies_before_permission_gate_is_even_reached_for_a_user_w
 
     resp = client.post("/api/v1/lab/instruments", headers=headers, json={"code": "X", "name": "X"})
     assert resp.status_code == 403
+
+
+def test_a_non_jewellery_tenant_cannot_call_metal_rates_despite_having_the_rbac_permission():
+    """Same gap, extended to jewellery: `items.edit`/`items.view` are
+    granted broadly (every tenant's owner has them), so a Building
+    Materials tenant's owner could call /metal-rates by URL alone
+    before this. Reported live via a Laboratory tenant's sidebar
+    showing "Metal rates" -- fixed on the frontend nav first, then here
+    on the backend that actually enforces it."""
+    slug = f"modgate-nonjewel-{uuid.uuid4().hex[:8]}"
+    token = _signup(slug, "building_materials")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    resp = client.get("/api/v1/metal-rates", headers=headers)
+    assert resp.status_code == 403, resp.text
+    assert resp.json()["error"]["details"]["module"] == "jewellery"
+
+    create_resp = client.post("/api/v1/metal-rates", headers=headers, json={"metal": "gold", "purity": "22K", "rate_per_gram": "6000.00", "effective_date": "2026-01-01"})
+    assert create_resp.status_code == 403
+
+
+def test_a_jewellery_tenant_can_still_call_metal_rates():
+    slug = f"modgate-jewelok-{uuid.uuid4().hex[:8]}"
+    token = _signup(slug, "jewellery")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    resp = client.get("/api/v1/metal-rates", headers=headers)
+    assert resp.status_code == 200, resp.text

@@ -127,7 +127,10 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
     items: [
       { id: "purchase-orders", label: "Purchase orders", href: "/purchase-orders", icon: ShoppingCart, module: "purchase" },
       { id: "suppliers", label: "Suppliers", href: "/suppliers", icon: Factory, module: "purchase" },
-      { id: "serial-rma", label: "Serial numbers & RMA", href: "/serial-rma", icon: Smartphone },
+      // Only relevant where individual units carry a serial/IMEI and a
+      // warranty/RMA history (SerialUnit's own docstring names exactly
+      // these four profiles) -- not universal, was unguarded before.
+      { id: "serial-rma", label: "Serial numbers & RMA", href: "/serial-rma", icon: Smartphone, module: "serial_tracking" },
     ],
   },
   {
@@ -136,8 +139,13 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
     items: [
       { id: "financial-reports", label: "Financial reports", href: "/books", icon: FileSpreadsheet, module: "accounting" },
       { id: "gst", label: "GST filing", href: "/gst", icon: Receipt, module: "gst" },
-      { id: "credit-debit-notes", label: "Credit & debit notes", href: "/credit-debit-notes", icon: FileMinus },
-      { id: "reports", label: "Report builder", href: "/reports", icon: BarChart3 },
+      // Both read straight off sales-returns/purchase-returns and the
+      // report datasets are all sales/purchase/inventory/GST-based (see
+      // services/reports.py) -- meaningless without "accounting", which
+      // every profile except laboratory has, so this only changes
+      // laboratory's sidebar.
+      { id: "credit-debit-notes", label: "Credit & debit notes", href: "/credit-debit-notes", icon: FileMinus, module: "accounting" },
+      { id: "reports", label: "Report builder", href: "/reports", icon: BarChart3, module: "accounting" },
     ],
   },
   {
@@ -186,15 +194,22 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
       { id: "items", label: "Items", href: "/items", icon: Package },
       { id: "customers", label: "Customers", href: "/customers", icon: Users },
       { id: "projects", label: "Projects", href: "/projects", icon: Building, module: "projects" },
-      { id: "imports", label: "Import from Tally/Busy", href: "/imports", icon: UploadCloud },
+      // A Tally/Busy accounting-software migration wizard (ImportBatch's
+      // own docstring) -- meaningless without "accounting" (see Books).
+      { id: "imports", label: "Import from Tally/Busy", href: "/imports", icon: UploadCloud, module: "accounting" },
       { id: "branches", label: "Branches", href: "/branches", icon: Building2 },
       { id: "users", label: "Users", href: "/users", icon: Users },
       { id: "company-settings", label: "Company settings", href: "/company-settings", icon: Settings },
       { id: "industry-config", label: "Industry", href: "/settings/industry", icon: SlidersHorizontal },
       { id: "subscription", label: "Subscription", href: "/settings/subscription", icon: CreditCard, permission: "subscription.view" },
       { id: "capabilities", label: "Capabilities", href: "/settings/capabilities", icon: Store, permission: "subscription.view" },
-      { id: "receipt-settings", label: "Receipts", href: "/settings/receipts", icon: Printer, permission: "receipts.manage" },
-      { id: "metal-rates", label: "Metal rates", href: "/settings/metal-rates", icon: Coins, permission: "items.edit" },
+      // Configures the payment-receipt template (POS/sales receipts) --
+      // meaningless without "accounting" (see Books).
+      { id: "receipt-settings", label: "Receipts", href: "/settings/receipts", icon: Printer, permission: "receipts.manage", module: "accounting" },
+      // Jewellery-only: gold/silver rate entry for weight-priced items
+      // (resolve_price()'s jewellery branch, ADR-010's jewellery
+      // addendum) -- was showing for every profile before this fix.
+      { id: "metal-rates", label: "Metal rates", href: "/settings/metal-rates", icon: Coins, permission: "items.edit", module: "jewellery" },
       { id: "webhooks", label: "Webhooks", href: "/settings/webhooks", icon: Webhook, permission: "webhooks.view" },
       { id: "support", label: "Support", href: "/support", icon: LifeBuoy },
     ],
