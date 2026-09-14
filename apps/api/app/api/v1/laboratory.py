@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, File, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.deps import get_db_tenant, require_permission
+from app.deps import get_db_tenant, require_module, require_permission
 from app.errors import AppError, ErrorCode
 from app.models.laboratory import (
     RESULT_TYPES,
@@ -85,7 +85,7 @@ from app.services.laboratory import (
 )
 from app.services.numbering import get_current_financial_year
 
-router = APIRouter(prefix="/lab", tags=["laboratory"])
+router = APIRouter(prefix="/lab", tags=["laboratory"], dependencies=[Depends(require_module("laboratory"))])
 
 
 def _company_and_branch(db: Session, tenant_id: uuid.UUID) -> tuple[Company, Branch]:

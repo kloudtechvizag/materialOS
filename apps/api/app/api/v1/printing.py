@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, File, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.deps import get_db_tenant, require_permission
+from app.deps import get_db_tenant, require_module, require_permission
 from app.errors import AppError, ErrorCode
 from app.models.printing import PrintJob, PrintJobArtwork, PrintMachine
 from app.models.tenant import Branch, Company
@@ -24,7 +24,7 @@ from app.schemas.printing import (
 from app.services import printing as printing_service
 from app.storage import save_file
 
-router = APIRouter(tags=["printing"])
+router = APIRouter(tags=["printing"], dependencies=[Depends(require_module("printing"))])
 
 
 def _default_company_and_branch(db: Session, tenant_id: uuid.UUID) -> tuple[Company, Branch]:

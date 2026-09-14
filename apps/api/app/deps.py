@@ -7,8 +7,10 @@ from sqlalchemy.orm import Session
 
 from app.db import SessionLocal, set_platform_context, set_session_context
 from app.errors import AppError, ErrorCode
+from app.models.industry import IndustryProfile
 from app.models.masters import Customer
 from app.models.platform_admin import PlatformAdmin
+from app.models.tenant import Company
 from app.models.user import Permission, RolePermission, User, UserRole
 from app.security import decode_token
 
@@ -77,6 +79,39 @@ def require_permission(permission_code: str):
                 f"Missing permission: {permission_code}.",
                 status_code=403,
                 details={"permission": permission_code},
+            )
+        return user
+
+    return _check
+
+
+def require_module(module_key: str):
+    """RBAC (require_permission) only proves a role was granted a
+    permission -- it has no idea what the tenant's active industry
+    profile is. Industry-exclusive permission resources (currently
+    "laboratory", "printing") were backfilled onto every existing
+    tenant's owner role when they were introduced (see e.g. migration
+    b8c9d0e1f2a3), so without this check, any tenant's owner can call
+    another industry's API by URL alone, even though the UI never
+    shows them the nav link. This closes that gap: the tenant's
+    Company -> IndustryProfile.enabled_modules must actually list
+    module_key, on top of (not instead of) the normal permission check.
+    A tenant with no company or no industry profile configured yet is
+    treated as having zero modules enabled -- deny, not allow, matching
+    the "unconfigured profile shows nothing" default elsewhere in the
+    platform.
+    """
+
+    def _check(db: Session = Depends(get_db_tenant), user: User = Depends(get_current_user)) -> User:
+        company = db.execute(select(Company).where(Company.tenant_id == user.tenant_id)).scalars().first()
+        profile = db.get(IndustryProfile, company.industry_profile_id) if company and company.industry_profile_id else None
+        enabled_modules = profile.enabled_modules if profile else []
+        if module_key not in enabled_modules:
+            raise AppError(
+                ErrorCode.FORBIDDEN,
+                f"The '{module_key}' module is not enabled for this business.",
+                status_code=403,
+                details={"module": module_key},
             )
         return user
 

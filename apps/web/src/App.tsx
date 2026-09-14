@@ -13,6 +13,7 @@ import { PlatformTenantDetailPage } from "@/routes/platform/PlatformTenantDetail
 import { PlatformTenantsPage } from "@/routes/platform/PlatformTenantsPage";
 import { MarketingLayout } from "@/components/marketing/MarketingLayout";
 import { FeatureGate } from "@/components/billing/FeatureGate";
+import { RequireModule } from "@/components/industry/RequireModule";
 import { AboutPage as MarketingAboutPage } from "@/marketing/pages/AboutPage";
 import { BookDemoPage } from "@/marketing/pages/BookDemoPage";
 import { ComparePage } from "@/marketing/pages/ComparePage";
@@ -243,10 +244,10 @@ export default function App() {
             </FeatureGate>
           }
         />
-        <Route path="/production-board" element={<ProductionBoardPage />} />
-        <Route path="/print-jobs" element={<PrintJobsPage />} />
-        <Route path="/print-jobs/:jobId" element={<PrintJobDetailPage />} />
-        <Route path="/print-machines" element={<PrintMachinesPage />} />
+        <Route path="/production-board" element={<RequireModule module="printing"><ProductionBoardPage /></RequireModule>} />
+        <Route path="/print-jobs" element={<RequireModule module="printing"><PrintJobsPage /></RequireModule>} />
+        <Route path="/print-jobs/:jobId" element={<RequireModule module="printing"><PrintJobDetailPage /></RequireModule>} />
+        <Route path="/print-machines" element={<RequireModule module="printing"><PrintMachinesPage /></RequireModule>} />
         <Route path="/customers" element={<CustomersPage />} />
         <Route path="/customers/:customerId" element={<Customer360Page />} />
         <Route path="/projects" element={<ProjectsPage />} />
@@ -302,14 +303,14 @@ export default function App() {
         <Route path="/settings/subscription/payments" element={<SubscriptionPaymentsPage />} />
         <Route path="/settings/receipts" element={<ReceiptSettingsPage />} />
         <Route path="/settings/metal-rates" element={<MetalRatesPage />} />
-        <Route path="/lab/samples" element={<LabSamplesPage />} />
-        <Route path="/lab/samples/:sampleId" element={<LabSampleDetailPage />} />
-        <Route path="/lab/test-catalog" element={<LabTestCatalogPage />} />
-        <Route path="/lab/qc" element={<LabQcPage />} />
-        <Route path="/lab/worksheets" element={<LabWorksheetsPage />} />
-        <Route path="/lab/worksheets/:worksheetId" element={<LabWorksheetDetailPage />} />
-        <Route path="/lab/instruments" element={<LabInstrumentsPage />} />
-        <Route path="/lab/storage" element={<LabStorageLocationsPage />} />
+        <Route path="/lab/samples" element={<RequireModule module="laboratory"><LabSamplesPage /></RequireModule>} />
+        <Route path="/lab/samples/:sampleId" element={<RequireModule module="laboratory"><LabSampleDetailPage /></RequireModule>} />
+        <Route path="/lab/test-catalog" element={<RequireModule module="laboratory"><LabTestCatalogPage /></RequireModule>} />
+        <Route path="/lab/qc" element={<RequireModule module="laboratory"><LabQcPage /></RequireModule>} />
+        <Route path="/lab/worksheets" element={<RequireModule module="laboratory"><LabWorksheetsPage /></RequireModule>} />
+        <Route path="/lab/worksheets/:worksheetId" element={<RequireModule module="laboratory"><LabWorksheetDetailPage /></RequireModule>} />
+        <Route path="/lab/instruments" element={<RequireModule module="laboratory"><LabInstrumentsPage /></RequireModule>} />
+        <Route path="/lab/storage" element={<RequireModule module="laboratory"><LabStorageLocationsPage /></RequireModule>} />
         <Route path="/settings/webhooks" element={<WebhooksPage />} />
       </Route>
 
