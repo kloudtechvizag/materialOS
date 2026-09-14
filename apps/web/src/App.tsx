@@ -2,6 +2,10 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 import { AppShell } from "@/components/layout/AppShell";
 import { PortalShell } from "@/components/layout/PortalShell";
+import { PlatformLayout } from "@/routes/platform/PlatformLayout";
+import { PlatformLoginPage } from "@/routes/platform/PlatformLoginPage";
+import { PlatformTenantDetailPage } from "@/routes/platform/PlatformTenantDetailPage";
+import { PlatformTenantsPage } from "@/routes/platform/PlatformTenantsPage";
 import { MarketingLayout } from "@/components/marketing/MarketingLayout";
 import { FeatureGate } from "@/components/billing/FeatureGate";
 import { AboutPage as MarketingAboutPage } from "@/marketing/pages/AboutPage";
@@ -91,6 +95,7 @@ import { WebhooksPage } from "@/routes/settings/WebhooksPage";
 import { SubscriptionPaymentsPage } from "@/routes/settings/SubscriptionPaymentsPage";
 import { UsersPage } from "@/routes/UsersPage";
 import { useAuthStore } from "@/store/auth";
+import { usePlatformAuthStore } from "@/store/platformAuth";
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const accessToken = useAuthStore((s) => s.accessToken);
@@ -102,6 +107,12 @@ function RequirePortalAuth({ children }: { children: React.ReactNode }) {
   const accessToken = useAuthStore((s) => s.accessToken);
   const customerId = useAuthStore((s) => s.customerId);
   if (!accessToken || !customerId) return <Navigate to="/portal/login" replace />;
+  return <>{children}</>;
+}
+
+function RequirePlatformAuth({ children }: { children: React.ReactNode }) {
+  const accessToken = usePlatformAuthStore((s) => s.accessToken);
+  if (!accessToken) return <Navigate to="/platform/login" replace />;
   return <>{children}</>;
 }
 
@@ -161,6 +172,21 @@ export default function App() {
         <Route path="/portal/invoices/:invoiceId" element={<PortalInvoiceDetailPage />} />
         <Route path="/portal/deliveries" element={<PortalDeliveriesPage />} />
         <Route path="/portal/statement" element={<PortalStatementPage />} />
+      </Route>
+
+      {/* Platform admin console (ADR-020): MaterialOS-the-company operating
+          MaterialOS-the-product -- its own auth store/token type, no
+          AppShell/PortalShell, never mixed with a tenant or portal login. */}
+      <Route path="/platform/login" element={<PlatformLoginPage />} />
+      <Route
+        element={
+          <RequirePlatformAuth>
+            <PlatformLayout />
+          </RequirePlatformAuth>
+        }
+      >
+        <Route path="/platform/tenants" element={<PlatformTenantsPage />} />
+        <Route path="/platform/tenants/:tenantId" element={<PlatformTenantDetailPage />} />
       </Route>
 
       {/* Standalone, no sidebar -- this is the page a driver opens on their phone (ADR-005). */}

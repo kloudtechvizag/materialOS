@@ -35,6 +35,7 @@ from app.models.payroll import (
     PayrollRun,
     SalaryComponent,
 )
+from app.models.platform_admin import PlatformAdmin
 from app.models.portal import PortalDocument
 from app.models.pos import WalkInSale
 from app.models.pricing import CustomerItemPrice, RateContract

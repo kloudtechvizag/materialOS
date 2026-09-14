@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.db import SessionLocal, set_session_context
 from app.errors import AppError, ErrorCode
 from app.models.masters import Customer
+from app.models.platform_admin import PlatformAdmin
 from app.models.user import Permission, RolePermission, User, UserRole
 from app.security import decode_token
 
@@ -75,6 +76,51 @@ def require_permission(permission_code: str):
         return user
 
     return _check
+
+
+def get_platform_db() -> Generator[Session, None, None]:
+    """No tenant context is ever set on this session -- RLS-protected
+    tables return zero rows here by design (see db.get_db's own
+    docstring). Only platform-root tables (Tenant, PlatformAdmin, Plan,
+    IndustryProfile, ...) are safely readable through it as-is; reading
+    anything tenant-scoped (e.g. a Company name) needs an explicit,
+    one-tenant-at-a-time set_session_context call, the same pattern
+    billing_tasks.py's daily job already uses to loop every active
+    tenant. See ADR-020.
+    """
+    db = SessionLocal()
+    try:
+        yield db
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
+def get_platform_admin(authorization: str | None = Header(default=None), db: Session = Depends(get_platform_db)) -> PlatformAdmin:
+    """Mirrors get_current_user's shape but for the platform-admin console
+    -- deliberately a fully separate dependency (own token type, own
+    table, own session helper) rather than a variant of the tenant-user
+    path, so there's no code path where a tenant user's token could ever
+    be accepted here or vice versa."""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise AppError(ErrorCode.UNAUTHORIZED, "Missing or malformed Authorization header.", status_code=401)
+
+    token = authorization.removeprefix("Bearer ")
+    try:
+        payload = decode_token(token)
+    except ValueError as exc:
+        raise AppError(ErrorCode.UNAUTHORIZED, "Invalid or expired token.", status_code=401) from exc
+
+    if payload.get("type") != "platform":
+        raise AppError(ErrorCode.UNAUTHORIZED, "Token is not a platform admin token.", status_code=401)
+
+    admin = db.get(PlatformAdmin, uuid.UUID(payload["sub"]))
+    if admin is None or not admin.is_active:
+        raise AppError(ErrorCode.UNAUTHORIZED, "Platform admin not found or inactive.", status_code=401)
+    return admin
 
 
 def get_portal_customer(db: Session = Depends(get_db_tenant), user: User = Depends(get_current_user)) -> Customer:

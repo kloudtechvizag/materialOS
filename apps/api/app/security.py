@@ -52,3 +52,19 @@ def decode_token(token: str) -> dict:
         return jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
     except JWTError as exc:
         raise ValueError("invalid token") from exc
+
+
+def create_platform_admin_token(*, admin_id: uuid.UUID) -> str:
+    """Deliberately has no tenant_id claim at all -- unlike create_token,
+    not just a different `type` value. get_db_tenant requires tenant_id to
+    be present to set the RLS session GUC, so a platform token literally
+    cannot be mistaken for or misused as a tenant access token even if
+    someone forgot to check `type`. See ADR-020."""
+    now = datetime.now(timezone.utc)
+    payload = {
+        "sub": str(admin_id),
+        "type": "platform",
+        "iat": now,
+        "exp": now + timedelta(minutes=settings.access_token_expire_minutes),
+    }
+    return jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)

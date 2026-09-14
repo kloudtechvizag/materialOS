@@ -28,6 +28,7 @@ from app.api.v1 import (
     leave,
     notifications,
     payroll,
+    platform_admin,
     portal,
     pos,
     pricing,
@@ -81,6 +82,7 @@ api_router.include_router(gst.router)
 api_router.include_router(compliance.router)
 api_router.include_router(tally_export.router)
 api_router.include_router(portal.router)
+api_router.include_router(platform_admin.router)
 api_router.include_router(notifications.router)
 api_router.include_router(approvals.router)
 api_router.include_router(audit.router)
