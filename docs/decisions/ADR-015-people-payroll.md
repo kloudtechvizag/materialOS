@@ -271,3 +271,81 @@ one Overview page (§93) are not built — the single Overview page
 already surfaces what every role's dashboard would show a subset of,
 and a command palette is an app-wide UX feature, not specific to this
 module.
+
+## Addendum: the Employee Directory drawer
+
+**Context:** a follow-up request asked to redesign Employee creation
+into a multi-step drawer (Personal / Employment / Compensation &
+Payroll) exposing fields the original `/people/employees` create form
+never surfaced — DOB, gender, manager, bank/IFSC/PAN — plus a richer,
+paginated directory table. Investigation confirmed every field the
+request asked for already had real backend support except one:
+**"Pay Frequency (Monthly/Bi-weekly)" has no backing infrastructure
+anywhere** — `EmployeeSalaryAssignment` is monthly by construction
+(`monthly_gross`, no period-length concept, `PayrollRun` is itself
+period-based with no per-employee frequency override). Per this
+project's standing no-fake-functionality rule, that field was **not**
+built as a working control; the drawer instead states "Paid monthly.
+Other pay frequencies aren't supported yet." next to the salary
+fields, so the constraint is disclosed rather than hidden behind a
+selector that silently does nothing.
+
+**What shipped** (`components/entities/EmployeeDrawer.tsx`, wired into
+the existing `EmployeesPage.tsx` in place of the old inline `<Card>`
+form) — purely frontend, zero backend changes, against infrastructure
+this ADR's own base pass already built and tested:
+
+- **Step 1 (Personal info) and Step 2 (Employment details) are one
+  logical `POST /employees` call**, not two — the backend's
+  `EmployeeCreate` schema doesn't separate them, so splitting them into
+  two real API calls would have been fake granularity. They're
+  presented as two screens purely for UI pacing; the actual network
+  call fires once, at the end of Step 2.
+- **Step 3 (Compensation & payroll) is a genuinely separate step**,
+  because it *is* structurally separate on the backend: bank/PAN go
+  through `PATCH /employees/{id}/compensation` and base salary through
+  `POST /employees/{id}/salary`, both gated by
+  `employee_compensation.edit` — a different permission than
+  `employees.create`, and both require the employee to already exist.
+  A user without compensation-edit rights still completes Steps 1-2
+  successfully (the employee is real and saved) and sees an inline
+  "You don't have permission to set compensation/salary details."
+  message on Step 3 rather than a hard failure — same graceful-403
+  pattern `EmployeeDetailPage.tsx`'s existing compensation panel
+  already established, reused rather than reinvented.
+- **"Duplicate employee code" validation was not built** — moot, since
+  `employee_code` is server-auto-generated
+  (`services/hr.py::_next_employee_code`) and was never client-
+  editable to begin with; nothing for a duplicate check to catch.
+- **Client-side validation stayed ad-hoc** (required-field disabled
+  buttons, a regex email check) rather than introducing
+  `react-hook-form`/`zod` — both are dependencies already used
+  elsewhere (Login/Signup/Portal login) but nowhere else in People &
+  Payroll or any other business-object form in the app; adopting them
+  here would have been a new pattern for one form, not an extension of
+  an established one.
+- **Employee Directory table** gained the requested columns (Employee
+  Code, Name, Role via `designation_id`, Department, Branch, Status,
+  Quick Actions) and client-side pagination (20/page) — the existing
+  `/employees` list endpoint already returns the full tenant roster
+  in one call, so pagination is a display concern, not a new backend
+  query parameter.
+
+**Explicitly not built** (out of scope for this slice, per the
+request's own "which piece first" framing): Attendance calendar/grid
+view, Leave-approval routing into the Approvals screen, and PDF
+payslip generation — each is a materially separate feature with its
+own UI and (for payslips) rendering concerns, not an extension of the
+employee-creation flow.
+
+**Verification:** `tsc --noEmit` and `vite build` clean. Live-verified
+against the running `docker-compose` stack via headless Chromium: a
+fresh tenant, real department/designation seeded via the API, an
+employee created through all three drawer steps (including triggering
+and clearing the email-format validation error), compensation and
+salary saved, drawer closed, list updated with a toast — then
+confirmed directly via `curl` against `GET /employees/{id}` (no
+bank/PAN leakage into the base record), `GET /employees/{id}/
+compensation`, and `GET /employees/{id}/salary` that every field
+landed on the correct entity. Full backend suite re-run to confirm the
+zero-backend-change claim: no regressions.
