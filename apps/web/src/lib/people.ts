@@ -14,6 +14,7 @@ export interface Employee {
   designation_id: string | null;
   reporting_manager_id: string | null;
   shift_id: string | null;
+  user_id: string | null;
   email: string | null;
   phone: string | null;
   emergency_contact_name: string | null;

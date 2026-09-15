@@ -78,6 +78,7 @@ class EmployeeOut(BaseModel):
     designation_id: uuid.UUID | None
     reporting_manager_id: uuid.UUID | None
     shift_id: uuid.UUID | None
+    user_id: uuid.UUID | None
     email: str | None
     phone: str | None
     emergency_contact_name: str | None

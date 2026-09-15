@@ -35,6 +35,12 @@ interface SalaryAssignment {
   is_active: boolean;
 }
 
+interface TenantUser {
+  id: string;
+  email: string;
+  full_name: string;
+}
+
 export function EmployeeDetailPage() {
   const { employeeId } = useParams<{ employeeId: string }>();
   const queryClient = useQueryClient();
@@ -57,6 +63,11 @@ export function EmployeeDetailPage() {
     queryKey: ["employee-salary", employeeId],
     queryFn: () => apiFetch<SalaryAssignment[]>(`/employees/${employeeId}/salary`),
   });
+  const { data: users, error: usersError } = useQuery({
+    queryKey: ["users"],
+    queryFn: () => apiFetch<TenantUser[]>("/users"),
+    retry: false,
+  });
 
   const updateStatus = useMutation({
     mutationFn: (status: string) => apiFetch<Employee>(`/employees/${employeeId}`, { method: "PATCH", body: { status } }),
@@ -64,6 +75,11 @@ export function EmployeeDetailPage() {
       queryClient.invalidateQueries({ queryKey: ["employee", employeeId] });
       queryClient.invalidateQueries({ queryKey: ["employee-timeline", employeeId] });
     },
+  });
+
+  const linkUser = useMutation({
+    mutationFn: (user_id: string | null) => apiFetch<Employee>(`/employees/${employeeId}`, { method: "PATCH", body: { user_id } }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["employee", employeeId] }),
   });
 
   const assignSalary = useMutation({
@@ -80,6 +96,8 @@ export function EmployeeDetailPage() {
   if (!employee) return null;
 
   const compensationForbidden = compensationError instanceof ApiError && compensationError.status === 403;
+  const usersForbidden = usersError instanceof ApiError && usersError.status === 403;
+  const linkedUser = users?.find((u) => u.id === employee.user_id);
 
   return (
     <div className="space-y-6">
@@ -109,6 +127,33 @@ export function EmployeeDetailPage() {
             <div className="flex justify-between"><span className="text-muted-foreground">Phone</span><span>{employee.phone ?? "-"}</span></div>
             <div className="flex justify-between"><span className="text-muted-foreground">Email</span><span>{employee.email ?? "-"}</span></div>
             <div className="flex justify-between"><span className="text-muted-foreground">Emergency contact</span><span>{employee.emergency_contact_name ?? "-"}</span></div>
+            <div className="flex items-center justify-between border-t border-border pt-2">
+              <span className="text-muted-foreground">Linked user account</span>
+              {linkedUser ? (
+                <div className="flex items-center gap-2">
+                  <span>{linkedUser.full_name} ({linkedUser.email})</span>
+                  <Button size="sm" variant="outline" onClick={() => linkUser.mutate(null)} disabled={linkUser.isPending}>
+                    Unlink
+                  </Button>
+                </div>
+              ) : usersForbidden ? (
+                <span className="text-muted-foreground">
+                  {employee.user_id ? "Linked (no permission to view users)" : "Not linked"}
+                </span>
+              ) : (
+                <select
+                  className="flex h-9 rounded-md border border-input bg-background px-2 text-sm"
+                  value=""
+                  onChange={(e) => e.target.value && linkUser.mutate(e.target.value)}
+                >
+                  <option value="">Link to a login...</option>
+                  {users?.map((u) => <option key={u.id} value={u.id}>{u.full_name} ({u.email})</option>)}
+                </select>
+              )}
+            </div>
+            {linkUser.error instanceof ApiError && (
+              <p className="text-right text-xs text-destructive">{linkUser.error.message}</p>
+            )}
           </CardContent>
         </Card>
 
