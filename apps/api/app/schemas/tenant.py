@@ -82,3 +82,9 @@ class WarehouseOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class WarehouseCreate(BaseModel):
+    branch_id: uuid.UUID
+    name: str
+    code: str

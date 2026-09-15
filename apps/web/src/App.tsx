@@ -29,6 +29,9 @@ import { WhyMaterialOSPage } from "@/marketing/pages/WhyMaterialOSPage";
 import { ApprovalsPage } from "@/routes/ApprovalsPage";
 import { BooksPage } from "@/routes/BooksPage";
 import { BranchesPage } from "@/routes/BranchesPage";
+import { WarehousesPage } from "@/routes/inventory/WarehousesPage";
+import { BatchesPage } from "@/routes/inventory/BatchesPage";
+import { StockMovementsPage } from "@/routes/inventory/StockMovementsPage";
 import { CollectionsPage } from "@/routes/CollectionsPage";
 import { CompanySettingsPage } from "@/routes/CompanySettingsPage";
 import { CreditDebitNotesPage } from "@/routes/CreditDebitNotesPage";
@@ -279,6 +282,9 @@ export default function App() {
         <Route path="/imports" element={<ImportsPage />} />
         <Route path="/imports/new" element={<ImportWizardPage />} />
         <Route path="/branches" element={<BranchesPage />} />
+        <Route path="/warehouses" element={<RequireModule module="warehouse"><WarehousesPage /></RequireModule>} />
+        <Route path="/batches" element={<RequireModule module="warehouse"><BatchesPage /></RequireModule>} />
+        <Route path="/stock-ledger" element={<RequireModule module="warehouse"><StockMovementsPage /></RequireModule>} />
         <Route path="/users" element={<UsersPage />} />
         <Route path="/books" element={<BooksPage />} />
         <Route path="/gst" element={<GstPage />} />

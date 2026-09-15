@@ -20,6 +20,7 @@ import {
   FileText,
   History,
   KanbanSquare,
+  Layers,
   LayoutDashboard,
   LifeBuoy,
   ListChecks,
@@ -86,14 +87,51 @@ export const GLOBAL_NAV_ITEMS: NavigationItem[] = [
  * *which* items to keep (enabled_modules), not what they look like. */
 const ALL_NAV_SECTIONS: NavigationSection[] = [
   {
-    id: "sell",
-    label: "Sell",
+    id: "inventory-trading",
+    label: "Inventory & Trading",
     items: [
+      // Items/Customers/Branches: relocated here from Setup (never
+      // administrative config -- see OPERATIONAL_ENTITY_IDS). Only one
+      // domain section ever keeps its copy of these three per profile
+      // (buildNavigation resolves the one "entity home" section before
+      // filtering), so a profile with more than one domain module
+      // enabled (e.g. building_materials has both "warehouse" and
+      // "projects") never shows them twice.
+      { id: "items", label: "Items", href: "/items", icon: Package, module: "warehouse" },
+      { id: "customers", label: "Customers", href: "/customers", icon: Users, module: "warehouse" },
+      { id: "branches", label: "Branches", href: "/branches", icon: Building2, module: "warehouse" },
+      { id: "warehouses", label: "Warehouses", href: "/warehouses", icon: Warehouse, module: "warehouse" },
+      { id: "batches", label: "Batches", href: "/batches", icon: Layers, module: "warehouse" },
+      { id: "stock-ledger", label: "Stock movements", href: "/stock-ledger", icon: ArrowLeftRight, module: "warehouse" },
+    ],
+  },
+  {
+    id: "sales-dispatch",
+    label: "Sales & Dispatch",
+    items: [
+      // Fallback home for Items/Customers/Branches: every profile
+      // without its own dedicated domain section (retail, pharmacy,
+      // jewellery, garments, ...) still needs *somewhere* for these
+      // three to live now that Setup is off-limits to them -- this is
+      // "the core domain block immediately following Approvals" for
+      // those profiles. No module gate (unlike every other item here)
+      // since these three aren't sales-specific; buildNavigation drops
+      // this copy whenever the active profile has its own domain
+      // section instead (laboratory/printing/inventory-trading/
+      // projects-services), so they never show twice.
+      { id: "items", label: "Items", href: "/items", icon: Package },
+      { id: "customers", label: "Customers", href: "/customers", icon: Users },
+      { id: "branches", label: "Branches", href: "/branches", icon: Building2 },
       { id: "leads", label: "Leads", href: "/leads", icon: Target, permission: "leads.view", module: "sales" },
       { id: "pos", label: "POS", href: "/pos", icon: CreditCard, module: "pos" },
       { id: "quotations", label: "Quotations", href: "/quotations", icon: FileText, module: "sales" },
       { id: "collections", label: "Collections", href: "/collections", icon: Banknote, module: "collections" },
       { id: "field-sales", label: "Field sales", href: "/field-sales", icon: MapPin, module: "field_sales" },
+      { id: "dispatch-board", label: "Dispatch board", href: "/dispatch-board", icon: Truck, module: "dispatch" },
+      { id: "trips", label: "Trips", href: "/trips", icon: Truck, module: "fleet" },
+      { id: "fleet", label: "Fleet", href: "/fleet", icon: Truck, module: "fleet" },
+      { id: "stock-counts", label: "Stock counts", href: "/stock-counts", icon: ClipboardList, module: "inventory" },
+      { id: "transfers", label: "Transfers", href: "/transfers", icon: ArrowLeftRight, module: "inventory" },
     ],
   },
   {
@@ -106,24 +144,18 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
       // The Item catalog, relabeled "Materials" for this profile (paper,
       // ink, ...) -- lives here, not in generic Setup, because for a
       // print shop it IS this section's own stock, not administrative
-      // config. See GENERIC_ITEMS_HOME_MODULES.
+      // config. Customers/Branches moved here for the same reason --
+      // printing_press has no "sales" module (see PROFILE_DEFINITIONS),
+      // so the Sales & Dispatch fallback section doesn't even exist for
+      // it; this is its only real home for these three.
       { id: "items", label: "Items", href: "/items", icon: Package, module: "printing" },
-    ],
-  },
-  {
-    id: "dispatch",
-    label: "Dispatch",
-    items: [
-      { id: "dispatch-board", label: "Dispatch board", href: "/dispatch-board", icon: Truck, module: "dispatch" },
-      { id: "trips", label: "Trips", href: "/trips", icon: Truck, module: "fleet" },
-      { id: "fleet", label: "Fleet", href: "/fleet", icon: Truck, module: "fleet" },
-      { id: "stock-counts", label: "Stock counts", href: "/stock-counts", icon: ClipboardList, module: "inventory" },
-      { id: "transfers", label: "Transfers", href: "/transfers", icon: ArrowLeftRight, module: "inventory" },
+      { id: "customers", label: "Customers", href: "/customers", icon: Users, module: "printing" },
+      { id: "branches", label: "Branches", href: "/branches", icon: Building2, module: "printing" },
     ],
   },
   {
     id: "buy",
-    label: "Buy",
+    label: "Procurement & Buying",
     items: [
       { id: "purchase-orders", label: "Purchase orders", href: "/purchase-orders", icon: ShoppingCart, module: "purchase" },
       { id: "suppliers", label: "Suppliers", href: "/suppliers", icon: Factory, module: "purchase" },
@@ -134,8 +166,18 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
     ],
   },
   {
+    id: "projects-services",
+    label: "Projects & Services",
+    items: [
+      { id: "projects", label: "Projects", href: "/projects", icon: Building, module: "projects" },
+      { id: "items", label: "Items", href: "/items", icon: Package, module: "projects" },
+      { id: "customers", label: "Customers", href: "/customers", icon: Users, module: "projects" },
+      { id: "branches", label: "Branches", href: "/branches", icon: Building2, module: "projects" },
+    ],
+  },
+  {
     id: "books",
-    label: "Books",
+    label: "Finance & Books",
     items: [
       { id: "financial-reports", label: "Financial reports", href: "/books", icon: FileSpreadsheet, module: "accounting" },
       { id: "gst", label: "GST filing", href: "/gst", icon: Receipt, module: "gst" },
@@ -172,8 +214,13 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
       // The Item catalog, relabeled "Reagents & Supplies" for this
       // profile -- lives here, not in generic Setup, because for a lab
       // it IS this section's own inventory, not administrative config.
-      // See GENERIC_ITEMS_HOME_MODULES.
+      // Customers/Branches moved here for the same reason -- laboratory
+      // has no "sales" module (see PROFILE_DEFINITIONS), so the Sales &
+      // Dispatch fallback section doesn't even exist for it; this is
+      // its only real home for these three.
       { id: "items", label: "Items", href: "/items", icon: Package, module: "laboratory" },
+      { id: "customers", label: "Customers", href: "/customers", icon: Users, module: "laboratory" },
+      { id: "branches", label: "Branches", href: "/branches", icon: Building2, module: "laboratory" },
       { id: "lab-qc", label: "Quality control", href: "/lab/qc", icon: ShieldCheck, module: "laboratory" },
     ],
   },
@@ -190,14 +237,17 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
   {
     id: "setup",
     label: "Setup",
+    // Strictly system-level configuration from here down -- no
+    // transactional/operational entity (Items, Customers, Branches,
+    // Projects) belongs in this section; each has a real home in the
+    // active profile's own domain section instead (see
+    // OPERATIONAL_ENTITY_IDS and the "projects-services"/"inventory-
+    // trading"/"laboratory"/"printing" sections above, or the Sales &
+    // Dispatch fallback for every other profile).
     items: [
-      { id: "items", label: "Items", href: "/items", icon: Package },
-      { id: "customers", label: "Customers", href: "/customers", icon: Users },
-      { id: "projects", label: "Projects", href: "/projects", icon: Building, module: "projects" },
       // A Tally/Busy accounting-software migration wizard (ImportBatch's
       // own docstring) -- meaningless without "accounting" (see Books).
       { id: "imports", label: "Import from Tally/Busy", href: "/imports", icon: UploadCloud, module: "accounting" },
-      { id: "branches", label: "Branches", href: "/branches", icon: Building2 },
       { id: "users", label: "Users", href: "/users", icon: Users },
       { id: "company-settings", label: "Company settings", href: "/company-settings", icon: Settings },
       { id: "industry-config", label: "Industry", href: "/settings/industry", icon: SlidersHorizontal },
@@ -216,30 +266,52 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
   },
 ];
 
-/** Profiles whose own dedicated section (laboratory, printing) carries
- * its own copy of the "items" entry above, module-gated to that
- * section only -- for these, the Item catalog isn't generic admin
- * config, it's that domain's own inventory (Reagents & Supplies,
- * Materials), so it doesn't belong under Setup too. buildNavigation
- * drops Setup's generic "items" entry whenever one of these modules is
- * active, so it never appears twice under two different section
- * labels for the same catalog. Every other profile keeps it in Setup,
- * unchanged, since it has no more specific section to live in. */
-const GENERIC_ITEMS_HOME_MODULES = ["laboratory", "printing"];
-
-/** For a profile with its own dedicated section (laboratory ->
- * "laboratory", printing -> "printing"), that section is what the
- * tenant's business actually IS -- it belongs directly under the two
- * global items (Dashboard, Approvals), ahead of cross-cutting sections
- * like People & Payroll and Setup that exist for every business
- * regardless of industry. Every other profile has no single section
- * that plays this role (Sell/Buy/Dispatch/Books together form its
+/** For a profile with its own dedicated domain section (laboratory ->
+ * "laboratory", printing -> "printing", "warehouse" -> "inventory-
+ * trading", "projects" -> "projects-services"), that section is what
+ * the tenant's business actually IS -- it belongs directly under the
+ * two global items (Dashboard, Approvals), ahead of cross-cutting
+ * sections like People & Payroll and Setup that exist for every
+ * business regardless of industry. Every other profile (retail,
+ * pharmacy, ...) has no single section that plays this role (Sales &
+ * Dispatch/Procurement & Buying/Finance & Books together form its
  * primary workflow, not one section), so their relative order is left
- * exactly as ALL_NAV_SECTIONS declares it. */
+ * exactly as ALL_NAV_SECTIONS declares it.
+ *
+ * Doubles as the answer to "which section owns Items/Customers/
+ * Branches for this profile" (see OPERATIONAL_ENTITY_IDS below) --
+ * `Array.prototype.find` picks the first matching key in the profile's
+ * own `enabled_modules` order, so a profile enabling more than one of
+ * these (building_materials has both "warehouse" and "projects")
+ * deterministically picks one home rather than showing the same three
+ * items twice. */
 const PRIMARY_SECTION_BY_MODULE: Record<string, string> = {
   laboratory: "laboratory",
   printing: "printing",
+  // Every profile that enables "warehouse" is a B2B distributor/trader
+  // whose actual business IS moving stock through godowns (building
+  // materials, FMCG, auto parts, chemicals, electrical, paper, paint,
+  // ecommerce -- see PROFILE_DEFINITIONS) -- Inventory & Trading is
+  // their real primary domain, the same way Laboratory/Printing are for
+  // theirs. Profiles without "warehouse" (retail, pharmacy, grocery,
+  // ...) keep the generic Sales & Dispatch-first order: their own
+  // storefront/counter is the primary interaction, not warehouse ops.
+  warehouse: "inventory-trading",
+  // Furniture and Real Estate are the only two profiles where
+  // "projects" is enabled without "warehouse" also winning first (see
+  // PROFILE_DEFINITIONS) -- for them, project-based work genuinely IS
+  // the primary domain.
+  projects: "projects-services",
 };
+
+/** Items, Customers, and Branches are real business entities, never
+ * administrative config -- this project's own architectural rule is
+ * that none of the three may live under Setup for any profile. Each
+ * lives in exactly one place: the active profile's own primary domain
+ * section (PRIMARY_SECTION_BY_MODULE) if it has one, else the generic
+ * Sales & Dispatch section, which every profile without a dedicated
+ * domain already leads with (see buildNavigation's entityHomeSectionId). */
+const OPERATIONAL_ENTITY_IDS = ["items", "customers", "branches"];
 
 /** Same filter GLOBAL_NAV_ITEMS would need if a global item ever gains a
  * module gate -- neither does today (that's the point of "global"), but
@@ -257,12 +329,24 @@ export function buildGlobalNavItems(enabledModules: string[] | undefined): Navig
  * everything rather than flashing an empty sidebar while it loads. */
 export function buildNavigation(enabledModules: string[] | undefined, terminology?: Record<string, string>): NavigationSection[] {
   const itemsLabel = terminology?.items_label;
-  const itemsHasOwnSection = enabledModules !== undefined && GENERIC_ITEMS_HOME_MODULES.some((m) => enabledModules.includes(m));
+
+  // Resolved once, up front, so the per-item filter below can use it:
+  // whichever section this profile's own primary domain module maps to
+  // (or the generic Sales & Dispatch fallback, for the profiles with no
+  // dedicated domain) is the ONE place Items/Customers/Branches survive
+  // filtering -- every other section's own copy of them (there's one in
+  // each domain section, module-gated) gets dropped, even if that
+  // section's own module happens to also be enabled (see
+  // PRIMARY_SECTION_BY_MODULE's docstring).
+  const primaryModule = enabledModules?.find((m) => PRIMARY_SECTION_BY_MODULE[m]);
+  const primarySectionId = primaryModule ? PRIMARY_SECTION_BY_MODULE[primaryModule] : undefined;
+  const entityHomeSectionId = primarySectionId ?? "sales-dispatch";
+
   const sections = ALL_NAV_SECTIONS.map((section) => ({
     ...section,
     items: section.items
       .filter((item) => !item.module || enabledModules === undefined || enabledModules.includes(item.module))
-      .filter((item) => !(item.id === "items" && section.id === "setup" && itemsHasOwnSection))
+      .filter((item) => !(OPERATIONAL_ENTITY_IDS.includes(item.id) && section.id !== entityHomeSectionId))
       .map((item) => (item.id === "items" && itemsLabel ? { ...item, label: itemsLabel } : item)),
   })).filter((section) => section.items.length > 0);
 
@@ -270,8 +354,6 @@ export function buildNavigation(enabledModules: string[] | undefined, terminolog
   // to the very top, right after the global items -- "this is YOUR
   // business" ahead of People & Payroll / Operations / Setup, which
   // exist for every business regardless of industry.
-  const primaryModule = enabledModules?.find((m) => PRIMARY_SECTION_BY_MODULE[m]);
-  const primarySectionId = primaryModule ? PRIMARY_SECTION_BY_MODULE[primaryModule] : undefined;
   if (primarySectionId) {
     const primaryIndex = sections.findIndex((s) => s.id === primarySectionId);
     if (primaryIndex > 0) {

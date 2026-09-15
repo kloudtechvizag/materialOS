@@ -1,5 +1,5 @@
 import uuid
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 
 from pydantic import BaseModel
@@ -84,3 +84,19 @@ class BatchCreate(BaseModel):
     expiry_date: date | None = None
     heat_number: str | None = None
     cost: Decimal = Decimal("0")
+
+
+class StockLedgerOut(BaseModel):
+    id: uuid.UUID
+    item_id: uuid.UUID
+    warehouse_id: uuid.UUID
+    movement_type: str
+    qty: Decimal
+    rate: Decimal
+    value: Decimal
+    reference_type: str
+    reference_id: uuid.UUID
+    occurred_at: datetime
+
+    class Config:
+        from_attributes = True

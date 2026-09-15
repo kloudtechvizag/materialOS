@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "postbuild": "node scripts/prerender.mjs",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check:nav-modules": "node scripts/check-nav-module-coverage.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",

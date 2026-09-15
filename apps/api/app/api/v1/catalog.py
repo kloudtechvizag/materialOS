@@ -8,9 +8,19 @@ from sqlalchemy.orm import Session
 
 from app.deps import get_db_tenant, require_permission
 from app.models.catalog import Batch, Category
+from app.models.inventory import StockLedger
 from app.models.masters import Item
 from app.models.user import User
-from app.schemas.catalog import BatchCreate, BatchOut, CategoryCreate, CategoryOut, ItemCreate, ItemOut, ItemUpdate
+from app.schemas.catalog import (
+    BatchCreate,
+    BatchOut,
+    CategoryCreate,
+    CategoryOut,
+    ItemCreate,
+    ItemOut,
+    ItemUpdate,
+    StockLedgerOut,
+)
 from app.services.inventory import near_expiry_batches
 from app.storage import read_file, save_file
 
@@ -175,3 +185,25 @@ def create_batch(
     db.add(batch)
     db.flush()
     return batch
+
+
+# ---------------------------------------------------------- Stock ledger
+# Read-only view over the append-only StockLedger (models/inventory.py) --
+# every purchase/sale/transfer/adjustment already writes a row here; this
+# is the first endpoint that reads it back for a UI (previously internal-
+# only, feeding StockBalance).
+
+@router.get("/stock-ledger", response_model=list[StockLedgerOut])
+def list_stock_ledger(
+    item_id: uuid.UUID | None = None,
+    warehouse_id: uuid.UUID | None = None,
+    limit: int = 100,
+    db: Session = Depends(get_db_tenant),
+    _user: User = Depends(require_permission("stock.view")),
+) -> list[StockLedger]:
+    stmt = select(StockLedger).order_by(StockLedger.occurred_at.desc()).limit(min(limit, 500))
+    if item_id:
+        stmt = stmt.where(StockLedger.item_id == item_id)
+    if warehouse_id:
+        stmt = stmt.where(StockLedger.warehouse_id == warehouse_id)
+    return db.execute(stmt).scalars().all()
