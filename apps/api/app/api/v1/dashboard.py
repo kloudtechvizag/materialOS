@@ -1,4 +1,5 @@
-from datetime import date
+from datetime import date, timedelta
+from decimal import Decimal
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import func, select
@@ -116,3 +117,28 @@ def dashboard_summary(
         "inventory_value": str(inventory_value),
         "has_overdue_receivables": has_overdue_receivables,
     }
+
+
+@router.get("/sales-trend")
+def sales_trend(
+    days: int = 30,
+    db: Session = Depends(get_db_tenant),
+    _user=Depends(require_permission("customers.view")),
+) -> list[dict]:
+    """Daily posted-invoice totals for the trailing `days` days (7/30/90
+    from the dashboard's own range toggle) -- the first time-series read
+    this app has ever needed off Invoice. Every day in range is present
+    in the response, zero-filled, so a line chart never has to guess at
+    a gap versus a real zero-sales day."""
+    days = max(1, min(days, 90))
+    start = date.today() - timedelta(days=days - 1)
+    rows = db.execute(
+        select(Invoice.invoice_date, func.coalesce(func.sum(Invoice.total), 0))
+        .where(Invoice.status == "posted", Invoice.invoice_date >= start)
+        .group_by(Invoice.invoice_date)
+    ).all()
+    by_date = {r[0]: r[1] for r in rows}
+    return [
+        {"date": (start + timedelta(days=i)).isoformat(), "total": str(by_date.get(start + timedelta(days=i), Decimal(0)))}
+        for i in range(days)
+    ]

@@ -107,9 +107,6 @@ every other step renders without a fabricated count.
 
 ## Deliberately not built in this pass
 
-- **Sales & revenue / receivables charts** — needs a new time-series
-  backend endpoint (sales grouped by day/week over a range); `recharts`
-  is ready for it, nothing else is.
 - **Recent activity feed** — `GET /audit` is real but raw (table_name/
   action/old_data JSON); this slice is mostly a human-readable
   translation layer, not new data.
@@ -219,3 +216,61 @@ were rewritten in place (old versions recoverable from git history);
 `ItemsPage.tsx`/`CustomersPage.tsx` gained one query-param read each,
 harmless when absent. No route, permission, or existing endpoint
 signature changed.
+
+## Addendum: Sales & revenue trend and Receivables-by-age charts
+
+**What shipped**, in a responsive two-column layout directly below the
+KPI grid: `SalesTrendChart.tsx` (a real per-day posted-invoice area
+chart) and `ReceivablesChart.tsx` (a real ageing-bucket bar chart),
+both using `recharts` (already a dependency, confirmed unused before
+this). Followed the `dataviz` skill's procedure throughout — form
+first, color last: a single time series needs no legend (the card
+title names it), so the sales line uses one categorical-slot color;
+the ageing buckets are a genuine severity scale (current -> overdue),
+so they use the skill's fixed, never-themed **status** palette
+(good/warning/serious/critical) rather than an arbitrary categorical
+hue per bucket — mitigated per the skill's own contrast note (warning/
+serious sub-3:1 on light) by the bars' own axis labels and direct
+value labels, never color alone.
+
+- **`GET /dashboard/sales-trend?days=`** (new, `dashboard.py`) — the
+  one genuinely new endpoint this slice needed: daily `SUM(Invoice.
+  total)` for posted invoices over the trailing 7/30/90 days (capped),
+  zero-filled for every day in range so the chart never has to guess
+  at a gap versus a real zero-sales day. Gated on `days ∈ [1, 90]`
+  server-side regardless of what the client sends.
+- **`GET /collections/ageing`** — zero new backend work; already built
+  for `CollectionsPage.tsx`, rolled up by bucket client-side (a handful
+  of invoices per tenant, not worth a new server-side aggregation).
+- Both charts are gated on the module that actually backs their data —
+  `accounting` for the sales trend, `collections` for receivables — not
+  hardcoded to Building Materials, so the two-column section adapts
+  per profile the same way the rest of the dashboard already does:
+  present for the ~24 profiles with real invoicing, absent (not an
+  empty placeholder) for Laboratory, which has neither module.
+- Each chart owns its own loading skeleton, `ErrorState` with retry,
+  and a real empty state (a "no posted invoices in this range yet"
+  message with a working "New quotation" link for the trend chart; a
+  checkmark "every invoice fully collected" state for receivables when
+  outstanding totals to zero) — independent of the KPI grid and each
+  other, consistent with the dashboard's per-widget loading/error rule.
+- The sales-trend date-range toggle (7d/30d/90d) is the one *working*
+  date-range control this dashboard has — scoped to that one chart
+  since it's the only widget with a real range-parameterized backend;
+  the header's own date-range control is still deliberately absent
+  (see above) since nothing else responds to one yet.
+
+**Verification**: full backend suite 219 passed (one new endpoint, no
+existing behavior changed). `tsc`/`vite build` clean. Live-verified end
+to end on a seeded Building Materials tenant: drove a real quotation
+through send -> approve -> convert-to-order -> dispatch -> invoice,
+producing one real posted ₹24,780 invoice; the sales trend chart showed
+a real zero-filled 30-day line spiking exactly on the invoice date,
+correctly re-fetching and re-rendering when toggled to 7d; the
+receivables chart showed a real green "Current" bar at ₹24,780 (the
+invoice's due date is 30 days out, correctly not-yet-overdue) with the
+other buckets correctly empty; Inventory value simultaneously reflected
+the real post-dispatch stock draw-down. Separately confirmed a
+Laboratory tenant's dashboard renders with neither chart present and no
+dead gap left behind, since Laboratory has neither `accounting` nor
+`collections`.

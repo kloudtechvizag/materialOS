@@ -3,6 +3,8 @@ import { RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { DASHBOARD_WIDGETS, DEFAULT_DASHBOARD_WIDGETS, type DashboardSummary } from "@/components/dashboard/widgets";
+import { ReceivablesChart } from "@/components/dashboard/ReceivablesChart";
+import { SalesTrendChart } from "@/components/dashboard/SalesTrendChart";
 import { WorkQueue } from "@/components/dashboard/WorkQueue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -125,6 +127,13 @@ export function DashboardPage() {
       {data && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {widgetKeys.map((key) => DASHBOARD_WIDGETS[key]?.(data)).filter(Boolean)}
+        </div>
+      )}
+
+      {!isLoading && (enabledModules === undefined || enabledModules.includes("accounting") || enabledModules.includes("collections")) && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          {(enabledModules === undefined || enabledModules.includes("accounting")) && <SalesTrendChart />}
+          {(enabledModules === undefined || enabledModules.includes("collections")) && <ReceivablesChart />}
         </div>
       )}
 
