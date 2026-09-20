@@ -1,30 +1,48 @@
 import { Link } from "react-router-dom";
 
-import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
+/** Compact KPI card -- replaces the old large-icon-box design (40x40
+ * icon + generous padding) that read as a static label rather than a
+ * piece of business intelligence. No icon at all here: a page full of
+ * near-identical purple squares didn't help recognition, and a small
+ * uppercase label plus a real status hint does more real work in less
+ * space. `hint` is optional and only ever a real, backend-derived
+ * status ("Needs review", "In progress") -- never a fabricated trend,
+ * per the "no meaningless comparisons" rule. */
 export function Kpi({
-  icon: Icon,
   label,
   value,
+  hint,
+  hintTone = "muted",
   to,
 }: {
-  icon: React.ElementType;
   label: string;
   value: string | number;
+  hint?: string;
+  hintTone?: "muted" | "warning" | "positive";
   to?: string;
 }) {
+  const toneClass =
+    hintTone === "warning" ? "text-amber-600 dark:text-amber-500" : hintTone === "positive" ? "text-emerald-600 dark:text-emerald-500" : "text-muted-foreground";
+
   const content = (
-    <Card className={to ? "transition-colors hover:bg-accent/50" : undefined}>
-      <CardContent className="flex items-center gap-4 pt-6">
-        <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 text-primary">
-          <Icon className="h-5 w-5" />
-        </div>
-        <div>
-          <p className="text-xs text-muted-foreground">{label}</p>
-          <p className="text-xl font-semibold">{value}</p>
-        </div>
-      </CardContent>
-    </Card>
+    <div
+      className={cn(
+        "flex h-full flex-col justify-between rounded-lg border border-border bg-card px-4 py-3",
+        to && "transition-colors hover:border-primary/40 hover:bg-accent/40"
+      )}
+    >
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="mt-1 text-xl font-semibold tabular-nums">{value}</p>
+      {hint && <p className={cn("mt-0.5 text-xs", toneClass)}>{hint}</p>}
+    </div>
   );
-  return to ? <Link to={to}>{content}</Link> : content;
+  return to ? (
+    <Link to={to} className="block h-full">
+      {content}
+    </Link>
+  ) : (
+    content
+  );
 }

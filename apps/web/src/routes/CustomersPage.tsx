@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Users } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,7 +25,10 @@ interface Customer {
 
 export function CustomersPage() {
   const queryClient = useQueryClient();
-  const [showForm, setShowForm] = useState(false);
+  const [searchParams] = useSearchParams();
+  // "?new=1" opens straight to the create form -- used by the
+  // dashboard's Quick Actions panel.
+  const [showForm, setShowForm] = useState(searchParams.get("new") === "1");
   const [form, setForm] = useState({ name: "", phone: "", billing_state: "", credit_limit: "0", credit_days: "30" });
   const { profile } = useIndustryProfile();
   const nameExample = profile?.terminology?.customer_name_example ?? "Customer name";

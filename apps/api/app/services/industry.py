@@ -20,9 +20,9 @@ from app.models.industry import IndustryProfile
 # added per profile (e.g. serial_tracking for IMEI-driven ones) without
 # a migration or a frontend change -- IndustryConfigPage already renders
 # whatever keys are present generically.
-DEALER_WIDGETS = ["outstanding", "invoiced", "open_sales_orders", "active_items", "active_customers"]
+DEALER_WIDGETS = ["outstanding", "invoiced", "open_sales_orders", "inventory_value", "active_items", "active_customers"]
 DEALER_WIDGETS_WITH_QUOTES = [
-    "outstanding", "invoiced", "open_quotations", "open_sales_orders", "active_items", "active_customers",
+    "outstanding", "invoiced", "open_quotations", "open_sales_orders", "inventory_value", "active_customers",
 ]
 POS_WIDGETS = ["todays_sales", "todays_cash", "todays_upi", "todays_card", "active_items", "active_customers"]
 POS_WIDGETS_COMPACT = ["todays_sales", "todays_cash", "todays_upi", "todays_card", "active_items"]

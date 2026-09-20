@@ -1,8 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { DASHBOARD_WIDGETS, DEFAULT_DASHBOARD_WIDGETS, type DashboardSummary } from "@/components/dashboard/widgets";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
@@ -12,64 +14,148 @@ import { useIndustryProfile, type GoldenWorkflow } from "@/lib/industryProfile";
  * workflow falls back to -- still a real, working flow (Quotation,
  * SalesOrder, Dispatch, Invoice, Payment all genuinely exist), not a
  * placeholder. Laboratory and Printing override this via
- * IndustryProfile.golden_workflow (see ADR-022's golden-workflow
- * addendum) because their real transaction shape is different; every
- * other profile intentionally shares this one rather than 23 near-
- * identical copies of the same trade flow. */
+ * IndustryProfile.golden_workflow (ADR-023) because their real
+ * transaction shape is different; every other profile intentionally
+ * shares this one rather than near-identical copies of the same flow. */
 const DEFAULT_GOLDEN_WORKFLOW: GoldenWorkflow = {
   cta_label: "New quotation",
   cta_href: "/quotations/new",
   steps: ["Approve", "Sales order", "Dispatch", "Invoice", "Payment"],
 };
 
+interface CurrentUser {
+  full_name: string;
+}
+
+function greeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
+
+function timeAgo(timestamp: number): string {
+  if (!timestamp) return "never";
+  const seconds = Math.round((Date.now() - timestamp) / 1000);
+  if (seconds < 10) return "just now";
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  return `${Math.round(minutes / 60)}h ago`;
+}
+
 export function DashboardPage() {
-  const { data, isLoading, error, refetch } = useQuery({
+  const queryClient = useQueryClient();
+  const { data, isLoading, error, refetch, isRefetching, dataUpdatedAt } = useQuery({
     queryKey: ["dashboard-summary"],
     queryFn: () => apiFetch<DashboardSummary>("/dashboard/summary"),
   });
-  const { profile } = useIndustryProfile();
+  // Shares AppShell's own cache (identical queryKey + staleTime) -- one
+  // /auth/me call for the whole app, not a second one just for this
+  // greeting.
+  const { data: me } = useQuery({
+    queryKey: ["current-user"],
+    queryFn: () => apiFetch<CurrentUser>("/auth/me"),
+    staleTime: Infinity,
+  });
+  const { profile, companyName } = useIndustryProfile();
   const widgetKeys = profile?.dashboard_widgets ?? DEFAULT_DASHBOARD_WIDGETS;
+  const enabledModules = profile?.enabled_modules;
   const workflow: GoldenWorkflow =
     profile?.golden_workflow?.cta_href && profile.golden_workflow.cta_label && profile.golden_workflow.steps
       ? (profile.golden_workflow as GoldenWorkflow)
       : DEFAULT_GOLDEN_WORKFLOW;
+  const usingDefaultWorkflow = workflow === DEFAULT_GOLDEN_WORKFLOW;
+
+  const itemLabel = (profile?.terminology?.item_label ?? "item").toLowerCase();
+  // Only real, working entry points -- Sales Order and Invoice have no
+  // standalone "create" form anywhere in the app (a Sales Order only
+  // ever comes from converting an approved Quotation, an Invoice only
+  // from dispatching one), so neither appears here as a fake "+ create".
+  const quickActions: { label: string; href: string }[] = [{ label: workflow.cta_label, href: workflow.cta_href }];
+  if (enabledModules?.includes("sales") && workflow.cta_href !== "/quotations/new") {
+    quickActions.push({ label: "New quotation", href: "/quotations/new" });
+  }
+  quickActions.push({ label: "Add customer", href: "/customers?new=1" });
+  quickActions.push({ label: `Add ${itemLabel}`, href: "/items?new=1" });
+  if (enabledModules?.includes("collections")) {
+    quickActions.push({ label: "Collect payment", href: "/collections" });
+  }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">
-          Outstanding, pipeline, and catalog size, live from Slice 1. Dispatch, procurement, and full accounting
-          statements land as their slices ship.
-        </p>
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold">Dashboard</h1>
+          <p className="text-sm text-muted-foreground">
+            {me ? `${greeting()}, ${me.full_name.split(" ")[0]}. ` : ""}
+            Business performance and daily operations{companyName ? ` for ${companyName}` : ""}.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {profile && <Badge variant="outline">{profile.name}</Badge>}
+          <span className="text-xs text-muted-foreground">Updated {timeAgo(dataUpdatedAt)}</span>
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label="Refresh dashboard"
+            onClick={() => {
+              refetch();
+              queryClient.invalidateQueries({ queryKey: ["current-user"] });
+            }}
+            disabled={isRefetching}
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefetching ? "animate-spin" : ""}`} />
+          </Button>
+          <Button asChild size="sm">
+            <Link to={workflow.cta_href}>+ Create</Link>
+          </Button>
+        </div>
       </div>
 
       {isLoading && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-24" />)}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-20" />)}
         </div>
       )}
 
       {error && <ErrorState error={error} onRetry={() => refetch()} />}
 
       {data && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {widgetKeys.map((key) => DASHBOARD_WIDGETS[key]?.(data)).filter(Boolean)}
         </div>
       )}
 
-      <Card className="border-dashed">
-        <CardHeader>
-          <CardTitle className="text-base">Start the golden transaction</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-wrap items-center gap-3">
-          <Link to={workflow.cta_href} className="text-sm font-medium text-primary hover:underline">
-            {workflow.cta_label}
-          </Link>
-          <span className="text-muted-foreground">→</span>
-          <span className="text-sm text-muted-foreground">{workflow.steps.join(" → ")}</span>
-        </CardContent>
-      </Card>
+      <div className="rounded-lg border border-border p-4">
+        <p className="mb-3 text-sm font-semibold">Quick actions</p>
+        <div className="flex flex-wrap gap-2">
+          {quickActions.map((action) => (
+            <Button key={action.href} asChild variant="outline" size="sm">
+              <Link to={action.href}>+ {action.label}</Link>
+            </Button>
+          ))}
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-border pt-3 text-xs text-muted-foreground">
+          {workflow.steps.map((step, i) => {
+            const count =
+              usingDefaultWorkflow && data
+                ? step === "Sales order"
+                  ? data.open_sales_orders
+                  : undefined
+                : undefined;
+            return (
+              <span key={step} className="flex items-center gap-2">
+                {i > 0 && <span>&rarr;</span>}
+                <span>
+                  {step}
+                  {count !== undefined && <span className="ml-1 font-medium text-foreground">({count})</span>}
+                </span>
+              </span>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }

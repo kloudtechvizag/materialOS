@@ -5,10 +5,12 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.deps import get_db_tenant, require_permission
+from app.models.inventory import StockBalance
 from app.models.masters import Customer, Item
 from app.models.pos import WalkInSale
 from app.models.printing import PrintJob
 from app.models.sales import Invoice, Quotation, SalesOrder
+from app.services.collections import collection_priority
 from app.services.credit import compute_outstanding
 from app.services.inventory import near_expiry_batches
 from app.services.printing import PRODUCTION_STATUSES
@@ -64,6 +66,21 @@ def dashboard_summary(
     ).one()
     near_expiry_count = len(near_expiry_batches(db, tenant_id=user.tenant_id, days=60))
 
+    # Warehouse-based trading profiles' "Inventory value" KPI (dashboard
+    # redesign) -- stock on hand priced at standard cost, the same figure
+    # a physical stock count would value the warehouse at. Real join
+    # against StockBalance (the materialised qty-on-hand projection,
+    # services.inventory.rebuild_stock_balance), not a new table.
+    inventory_value = db.execute(
+        select(func.coalesce(func.sum(StockBalance.qty_on_hand * Item.standard_cost), 0))
+        .join(Item, Item.id == StockBalance.item_id)
+    ).scalar_one()
+
+    # Reuses collections.py's own overdue-invoice rule (amount due,
+    # days_overdue > 0) rather than re-deriving it -- the "Receivables"
+    # KPI's status hint, not a new endpoint.
+    has_overdue_receivables = len(collection_priority(db)) > 0
+
     # Printing profile widgets (sec23/45) -- harmless for every other
     # profile since none of them reference these dashboard_widgets keys.
     open_job_statuses = list(PRODUCTION_STATUSES) + [
@@ -96,4 +113,6 @@ def dashboard_summary(
         "jobs_due_today": jobs_due_today,
         "jobs_overdue": jobs_overdue,
         "jobs_in_production": jobs_in_production,
+        "inventory_value": str(inventory_value),
+        "has_overdue_receivables": has_overdue_receivables,
     }

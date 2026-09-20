@@ -29,6 +29,7 @@ export interface IndustryProfile {
 
 interface CompanyWithProfile {
   id: string;
+  name: string;
   industry_profile: IndustryProfile | null;
 }
 
@@ -51,6 +52,7 @@ export function useIndustryProfile() {
   return {
     profile: query.data?.[0]?.industry_profile ?? null,
     companyId: query.data?.[0]?.id ?? null,
+    companyName: query.data?.[0]?.name ?? null,
     isLoading: query.isLoading,
   };
 }

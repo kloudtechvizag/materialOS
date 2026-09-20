@@ -21,7 +21,7 @@ VALID_MODULES = {
 VALID_WIDGETS = {
     "outstanding", "invoiced", "open_quotations", "open_sales_orders", "active_items",
     "active_customers", "todays_sales", "todays_cash", "todays_upi", "todays_card", "near_expiry",
-    "jobs_due_today", "jobs_overdue", "jobs_in_production",
+    "jobs_due_today", "jobs_overdue", "jobs_in_production", "inventory_value",
 }
 
 

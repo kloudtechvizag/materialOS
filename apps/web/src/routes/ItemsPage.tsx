@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { Package, Sparkles } from "lucide-react";
 
 import { DynamicAttributesFieldset, type AttributeSchemaEntry } from "@/components/items/DynamicAttributesFieldset";
@@ -165,9 +166,13 @@ function ItemImageCell({ item }: { item: Item }) {
 
 export function ItemsPage() {
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
   const [q, setQ] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [showForm, setShowForm] = useState(false);
+  // "?new=1" opens straight to the create form -- used by the
+  // dashboard's Quick Actions panel so "Add {item}" actually lands the
+  // user on the form, not just the list they'd have to click through anyway.
+  const [showForm, setShowForm] = useState(searchParams.get("new") === "1");
   const [newCategoryName, setNewCategoryName] = useState("");
   const [autoCategorizeStatus, setAutoCategorizeStatus] = useState<string | null>(null);
   const [form, setForm] = useState({ sku: "", name: "", base_uom: "PCS", gst_rate: "18", standard_price: "0", standard_cost: "0", category_id: "" });
