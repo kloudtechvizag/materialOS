@@ -32,6 +32,7 @@ class ItemOut(BaseModel):
     standard_price: Decimal
     min_price: Decimal
     standard_cost: Decimal
+    reorder_level: Decimal | None
     is_active: bool
     image_path: str | None
 
@@ -51,12 +52,14 @@ class ItemCreate(BaseModel):
     standard_price: Decimal = Decimal("0")
     min_price: Decimal = Decimal("0")
     standard_cost: Decimal = Decimal("0")
+    reorder_level: Decimal | None = None
 
 
 class ItemUpdate(BaseModel):
     standard_price: Decimal | None = None
     min_price: Decimal | None = None
     standard_cost: Decimal | None = None
+    reorder_level: Decimal | None = None
     is_active: bool | None = None
     category_id: uuid.UUID | None = None
     brand: str | None = None
@@ -84,6 +87,19 @@ class BatchCreate(BaseModel):
     expiry_date: date | None = None
     heat_number: str | None = None
     cost: Decimal = Decimal("0")
+
+
+class LowStockItemOut(BaseModel):
+    item_id: uuid.UUID
+    sku: str
+    name: str
+    base_uom: str
+    warehouse_id: uuid.UUID
+    qty_on_hand: Decimal
+    reorder_level: Decimal
+
+    class Config:
+        from_attributes = True
 
 
 class StockLedgerOut(BaseModel):

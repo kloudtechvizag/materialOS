@@ -95,6 +95,7 @@ import { PayrollPage } from "@/routes/people/PayrollPage";
 import { PayrollRunDetailPage } from "@/routes/people/PayrollRunDetailPage";
 import { PeopleOverviewPage } from "@/routes/people/PeopleOverviewPage";
 import { SalesOrderDetailPage } from "@/routes/SalesOrderDetailPage";
+import { SalesOrdersPage } from "@/routes/SalesOrdersPage";
 import { SerialRmaPage } from "@/routes/SerialRmaPage";
 import { ServerSettingsPage } from "@/routes/ServerSettingsPage";
 import { IndustryConfigPage } from "@/routes/settings/IndustryConfigPage";
@@ -261,6 +262,7 @@ export default function App() {
         <Route path="/quotations/:quotationId" element={<QuotationDetailPage />} />
         <Route path="/support" element={<SupportTicketsPage />} />
         <Route path="/support/:ticketId" element={<SupportTicketDetailPage />} />
+        <Route path="/sales-orders" element={<SalesOrdersPage />} />
         <Route path="/sales-orders/:orderId" element={<SalesOrderDetailPage />} />
         <Route path="/invoices/:invoiceId" element={<InvoiceDetailPage />} />
         <Route path="/dispatch-board" element={<DispatchBoardPage />} />

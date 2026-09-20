@@ -3,6 +3,7 @@ import { RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { DASHBOARD_WIDGETS, DEFAULT_DASHBOARD_WIDGETS, type DashboardSummary } from "@/components/dashboard/widgets";
+import { WorkQueue } from "@/components/dashboard/WorkQueue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
@@ -126,6 +127,8 @@ export function DashboardPage() {
           {widgetKeys.map((key) => DASHBOARD_WIDGETS[key]?.(data)).filter(Boolean)}
         </div>
       )}
+
+      {!isLoading && <WorkQueue enabledModules={enabledModules} />}
 
       <div className="rounded-lg border border-border p-4">
         <p className="mb-3 text-sm font-semibold">Quick actions</p>

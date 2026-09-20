@@ -73,9 +73,12 @@ def create_quotation_endpoint(
 
 @router.get("/quotations", response_model=list[QuotationOut])
 def list_quotations(
-    db: Session = Depends(get_db_tenant), _user=Depends(require_permission("customers.view"))
+    status: str | None = None, db: Session = Depends(get_db_tenant), _user=Depends(require_permission("customers.view"))
 ) -> list[Quotation]:
-    return db.execute(select(Quotation).order_by(Quotation.created_at.desc())).scalars().all()
+    stmt = select(Quotation).order_by(Quotation.created_at.desc())
+    if status:
+        stmt = stmt.where(Quotation.status == status)
+    return db.execute(stmt).scalars().all()
 
 
 @router.get("/quotations/{quotation_id}", response_model=QuotationOut)
@@ -155,9 +158,12 @@ def convert_to_order(
 
 @router.get("/sales-orders", response_model=list[SalesOrderOut])
 def list_sales_orders(
-    db: Session = Depends(get_db_tenant), _user=Depends(require_permission("customers.view"))
+    status: str | None = None, db: Session = Depends(get_db_tenant), _user=Depends(require_permission("customers.view"))
 ) -> list[SalesOrder]:
-    return db.execute(select(SalesOrder).order_by(SalesOrder.created_at.desc())).scalars().all()
+    stmt = select(SalesOrder).order_by(SalesOrder.created_at.desc())
+    if status:
+        stmt = stmt.where(SalesOrder.status == status)
+    return db.execute(stmt).scalars().all()
 
 
 @router.get("/sales-orders/{order_id}", response_model=SalesOrderOut)

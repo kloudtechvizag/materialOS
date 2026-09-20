@@ -42,7 +42,7 @@ export const DASHBOARD_WIDGETS: Record<string, (data: DashboardSummary) => React
     <Kpi key="open_quotations" label="Open quotations" value={data.open_quotations} to="/quotations" hint={data.open_quotations > 0 ? "Awaiting action" : "None pending"} />
   ),
   open_sales_orders: (data) => (
-    <Kpi key="open_sales_orders" label="Open orders" value={data.open_sales_orders} hint={data.open_sales_orders > 0 ? "In progress" : "None open"} />
+    <Kpi key="open_sales_orders" label="Open orders" value={data.open_sales_orders} to="/sales-orders" hint={data.open_sales_orders > 0 ? "In progress" : "None open"} />
   ),
   active_items: (data) => <Kpi key="active_items" label="Active items" value={data.active_items} to="/items" />,
   active_customers: (data) => <Kpi key="active_customers" label="Active customers" value={data.active_customers} to="/customers" />,

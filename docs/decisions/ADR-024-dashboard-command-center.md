@@ -110,11 +110,6 @@ every other step renders without a fabricated count.
 - **Sales & revenue / receivables charts** — needs a new time-series
   backend endpoint (sales grouped by day/week over a range); `recharts`
   is ready for it, nothing else is.
-- **"Needs Attention" work queue** — approvals and orders-to-dispatch
-  reuse existing endpoints; low-stock needs a new endpoint (`Item` ×
-  `StockBalance` vs `reorder_level`, real data, not built yet); overdue
-  invoices' full breakdown already exists via `/collections/priority`
-  and just needs a work-queue-shaped UI around it.
 - **Recent activity feed** — `GET /audit` is real but raw (table_name/
   action/old_data JSON); this slice is mostly a human-readable
   translation layer, not new data.
@@ -144,6 +139,77 @@ Refresh re-fetched without a page reload; the "+ Add customer" quick
 action landed directly on the open create form via `?new=1`, not the
 bare list. Confirmed responsive at 1440px (6-column grid) and 390px
 (2-column stack, no horizontal overflow, header wraps cleanly).
+
+## Addendum: the "Needs Attention" work queue
+
+**What shipped:** five independent React Query calls, not one
+aggregate endpoint — a slow or failing category must not block the
+others (the request's own functional requirement). Each reuses or
+lightly extends a real, already-tested endpoint:
+
+- **Pending approvals** — `GET /approvals?status=pending`, unchanged
+  (this is specifically credit-limit-override blocks on sales orders,
+  ADR-009 — not a generic "things awaiting sign-off" queue; labelled
+  generically since `ApprovalRequest.document_type` is itself generic).
+- **Quotations awaiting response** — `GET /quotations?status=sent`.
+  `list_quotations` gained an optional `status` filter (same pattern as
+  every other filtered list in this codebase); `QuotationsPage.tsx`
+  reads it from the URL too, so the work queue's link actually lands on
+  a pre-filtered list, not the full unfiltered one.
+- **Orders awaiting dispatch** — `GET /sales-orders?status=reserved`
+  (`reserved` is the real, existing status a `SalesOrder` sits in
+  between quotation-conversion and `POST .../dispatch` — see
+  `models/sales.py`'s own lifecycle comment). `list_sales_orders`
+  gained the same optional filter. This surfaced a real, standing gap:
+  **Sales Orders had a detail route but no list page at all** —
+  nothing in the app could show you your full set of orders. Built
+  `SalesOrdersPage.tsx` (mirrors `QuotationsPage.tsx`'s pattern
+  exactly, no create button since a Sales Order is never created
+  standalone) and added it to the nav (`Sales & Dispatch`, module
+  `sales`) and to the `open_sales_orders` KPI's click-through, which
+  previously went nowhere.
+- **Overdue invoices** — `GET /collections/priority`, unchanged; the
+  row's detail line sums `amount_due` client-side.
+- **Low-stock items** — the one genuinely new endpoint,
+  `GET /low-stock-items` (`catalog.py`), matching the exact condition
+  `services/notification_rules.py::check_stock_low_and_notify` already
+  fires a one-off alert on (`StockBalance.qty_on_hand <= Item.
+  reorder_level`, per warehouse, opt-in via a nullable `reorder_level`)
+  — the first endpoint to read that condition back as a live list
+  instead of a point-in-time notification.
+
+**A real gap found while wiring up low-stock, fixed rather than
+worked around**: `Item.reorder_level` has had a real column and real
+notification-trigger logic since ADR-013, but was never in
+`ItemCreate`, `ItemUpdate`, or `ItemOut` — no tenant could ever set it
+through the app, which would have made the new low-stock endpoint
+permanently, silently empty for every real tenant. Added to all three
+schemas (the create/update endpoints already do `**payload.model_
+dump()`, so no other backend code needed to change) and to the "New
+item" form (`ItemsPage.tsx`) as an optional "Reorder level" field.
+Editing the level on an already-existing item still has no dedicated
+UI (the existing inline-edit affordance only covers price) — noted as
+remaining, not silently left broken.
+
+**Rows only render when they have something to say**: a category
+gated on a module the active profile doesn't have is never queried at
+all; a query that resolves to zero renders nothing (not a padded "0");
+if every category is empty, one compact "Nothing needs attention right
+now" line replaces the whole list — not a giant empty container.
+
+**Verification**: full backend suite 219 passed (two filter params
+added to existing endpoints, one new endpoint, one schema widened —
+no existing behavior changed). Live-verified end to end on a seeded
+Building Materials tenant: created a customer, an item with
+`reorder_level=100`, a stock balance of 25 (below reorder — seeded
+directly at the DB layer purely to exercise the read path, since
+building a full purchase-receipt flow just to test a read-only report
+was out of scope here), and a `sent` quotation. The dashboard correctly
+showed exactly two rows — "Quotations awaiting response (1)" and
+"Low-stock items (1)" — with the other three genuinely empty
+categories rendering nothing; clicking through landed on `/quotations?
+status=sent`, pre-filtered. Separately confirmed the "Nothing needs
+attention right now" state on a freshly signed-up, unseeded tenant.
 
 ## Reversibility
 

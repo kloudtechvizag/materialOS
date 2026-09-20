@@ -125,6 +125,7 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
       { id: "leads", label: "Leads", href: "/leads", icon: Target, permission: "leads.view", module: "sales" },
       { id: "pos", label: "POS", href: "/pos", icon: CreditCard, module: "pos" },
       { id: "quotations", label: "Quotations", href: "/quotations", icon: FileText, module: "sales" },
+      { id: "sales-orders", label: "Sales orders", href: "/sales-orders", icon: ClipboardList, module: "sales" },
       { id: "collections", label: "Collections", href: "/collections", icon: Banknote, module: "collections" },
       { id: "field-sales", label: "Field sales", href: "/field-sales", icon: MapPin, module: "field_sales" },
       { id: "dispatch-board", label: "Dispatch board", href: "/dispatch-board", icon: Truck, module: "dispatch" },

@@ -28,6 +28,7 @@ interface Item {
   category_id: string | null;
   standard_price: string;
   standard_cost: string;
+  reorder_level: string | null;
   is_active: boolean;
   image_path: string | null;
 }
@@ -175,7 +176,7 @@ export function ItemsPage() {
   const [showForm, setShowForm] = useState(searchParams.get("new") === "1");
   const [newCategoryName, setNewCategoryName] = useState("");
   const [autoCategorizeStatus, setAutoCategorizeStatus] = useState<string | null>(null);
-  const [form, setForm] = useState({ sku: "", name: "", base_uom: "PCS", gst_rate: "18", standard_price: "0", standard_cost: "0", category_id: "" });
+  const [form, setForm] = useState({ sku: "", name: "", base_uom: "PCS", gst_rate: "18", standard_price: "0", standard_cost: "0", reorder_level: "", category_id: "" });
   const [attributes, setAttributes] = useState<Record<string, string>>({});
   const { profile } = useIndustryProfile();
 
@@ -200,13 +201,14 @@ export function ItemsPage() {
           gst_rate: Number(form.gst_rate),
           standard_price: Number(form.standard_price),
           standard_cost: Number(form.standard_cost),
+          reorder_level: form.reorder_level ? Number(form.reorder_level) : null,
           attributes,
         },
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["items"] });
       setShowForm(false);
-      setForm({ sku: "", name: "", base_uom: "PCS", gst_rate: "18", standard_price: "0", standard_cost: "0", category_id: "" });
+      setForm({ sku: "", name: "", base_uom: "PCS", gst_rate: "18", standard_price: "0", standard_cost: "0", reorder_level: "", category_id: "" });
       setAttributes({});
     },
   });
@@ -331,6 +333,15 @@ export function ItemsPage() {
               <div className="space-y-1.5">
                 <Label>Cost</Label>
                 <Input type="number" value={form.standard_cost} onChange={(e) => setForm((f) => ({ ...f, standard_cost: e.target.value }))} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Reorder level</Label>
+                <Input
+                  type="number"
+                  value={form.reorder_level}
+                  onChange={(e) => setForm((f) => ({ ...f, reorder_level: e.target.value }))}
+                  placeholder="Not tracked"
+                />
               </div>
               <DynamicAttributesFieldset
                 schema={selectedCategory?.parameter_schema ?? []}

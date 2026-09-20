@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { FileText } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,9 +26,11 @@ const STATUS_VARIANT: Record<string, "outline" | "secondary" | "success" | "dest
 };
 
 export function QuotationsPage() {
+  const [searchParams] = useSearchParams();
+  const statusFilter = searchParams.get("status");
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["quotations"],
-    queryFn: () => apiFetch<Quotation[]>("/quotations"),
+    queryKey: ["quotations", statusFilter],
+    queryFn: () => apiFetch<Quotation[]>(`/quotations${statusFilter ? `?status=${statusFilter}` : ""}`),
   });
 
   return (
@@ -36,7 +38,9 @@ export function QuotationsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Quotations</h1>
-          <p className="text-sm text-muted-foreground">Margin and stock availability show before you send.</p>
+          <p className="text-sm text-muted-foreground">
+            {statusFilter ? `Filtered to "${statusFilter}".` : "Margin and stock availability show before you send."}
+          </p>
         </div>
         <Button asChild><Link to="/quotations/new">New quotation</Link></Button>
       </div>

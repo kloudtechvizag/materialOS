@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.deps import get_db_tenant, require_permission
 from app.models.catalog import Batch, Category
-from app.models.inventory import StockLedger
+from app.models.inventory import StockBalance, StockLedger
 from app.models.masters import Item
 from app.models.user import User
 from app.schemas.catalog import (
@@ -19,6 +19,7 @@ from app.schemas.catalog import (
     ItemCreate,
     ItemOut,
     ItemUpdate,
+    LowStockItemOut,
     StockLedgerOut,
 )
 from app.services.inventory import near_expiry_batches
@@ -185,6 +186,32 @@ def create_batch(
     db.add(batch)
     db.flush()
     return batch
+
+
+# ------------------------------------------------------------ Low stock
+# Same rule as services.notification_rules.check_stock_low_and_notify's
+# "stock_low" trigger (dev.md sec20: "WHEN Stock < Reorder Level") --
+# per warehouse, opt-in via Item.reorder_level (NULL = not tracked).
+# That function fires a one-off notification at checkout time; this is
+# the first endpoint to read the same condition back as a live list
+# (the dashboard's Needs Attention panel).
+
+@router.get("/low-stock-items", response_model=list[LowStockItemOut])
+def list_low_stock_items(
+    db: Session = Depends(get_db_tenant), _user: User = Depends(require_permission("items.view"))
+) -> list[dict]:
+    rows = db.execute(
+        select(Item.id, Item.sku, Item.name, Item.base_uom, StockBalance.warehouse_id, StockBalance.qty_on_hand, Item.reorder_level)
+        .join(StockBalance, StockBalance.item_id == Item.id)
+        .where(Item.reorder_level.is_not(None), StockBalance.qty_on_hand <= Item.reorder_level)
+    ).all()
+    return [
+        {
+            "item_id": r.id, "sku": r.sku, "name": r.name, "base_uom": r.base_uom,
+            "warehouse_id": r.warehouse_id, "qty_on_hand": r.qty_on_hand, "reorder_level": r.reorder_level,
+        }
+        for r in rows
+    ]
 
 
 # ---------------------------------------------------------- Stock ledger
