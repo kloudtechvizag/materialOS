@@ -33,6 +33,7 @@ import {
   LifeBuoy,
   ListChecks,
   MapPin,
+  Megaphone,
   Microscope,
   Package,
   Printer,
@@ -190,6 +191,13 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
     items: [
       { id: "admission-enquiries", label: "Enquiries", href: "/admission-enquiries", icon: Inbox, module: "education" },
       { id: "admission-applications", label: "Applications", href: "/admission-applications", icon: ClipboardCheck, module: "education" },
+    ],
+  },
+  {
+    id: "communications",
+    label: "Communications",
+    items: [
+      { id: "announcements", label: "Announcements", href: "/announcements", icon: Megaphone, module: "education" },
     ],
   },
   {

@@ -1,10 +1,13 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, LogOut } from "lucide-react";
+import { LayoutDashboard, LogOut, Megaphone } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth";
 
-const NAV_ITEMS = [{ to: "/guardian-portal", label: "My children", icon: LayoutDashboard, end: true }];
+const NAV_ITEMS = [
+  { to: "/guardian-portal", label: "My children", icon: LayoutDashboard, end: true },
+  { to: "/guardian-portal/announcements", label: "Announcements", icon: Megaphone },
+];
 
 /** Mirrors PortalShell.tsx (customer portal) exactly -- its own
  * chrome, not a reduced view of the internal staff dashboard. */

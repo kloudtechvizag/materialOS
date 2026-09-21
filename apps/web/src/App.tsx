@@ -71,6 +71,7 @@ import { PortalLoginPage } from "@/routes/portal/PortalLoginPage";
 import { GuardianPortalLoginPage } from "@/routes/guardianPortal/GuardianPortalLoginPage";
 import { GuardianPortalDashboardPage } from "@/routes/guardianPortal/GuardianPortalDashboardPage";
 import { GuardianPortalChildPage } from "@/routes/guardianPortal/GuardianPortalChildPage";
+import { GuardianPortalAnnouncementsPage } from "@/routes/guardianPortal/GuardianPortalAnnouncementsPage";
 import { PortalOrdersPage } from "@/routes/portal/PortalOrdersPage";
 import { PortalQuotationDetailPage } from "@/routes/portal/PortalQuotationDetailPage";
 import { PortalQuotationsPage } from "@/routes/portal/PortalQuotationsPage";
@@ -111,6 +112,7 @@ import { ExaminationDetailPage } from "@/routes/education/ExaminationDetailPage"
 import { HomeworkPage } from "@/routes/education/HomeworkPage";
 import { HomeworkDetailPage } from "@/routes/education/HomeworkDetailPage";
 import { FeesPage } from "@/routes/education/FeesPage";
+import { AnnouncementsPage } from "@/routes/education/AnnouncementsPage";
 import { AdmissionEnquiriesPage } from "@/routes/admissions/AdmissionEnquiriesPage";
 import { AdmissionApplicationsPage } from "@/routes/admissions/AdmissionApplicationsPage";
 import { AdmissionApplicationDetailPage } from "@/routes/admissions/AdmissionApplicationDetailPage";
@@ -233,6 +235,7 @@ export default function App() {
       >
         <Route path="/guardian-portal" element={<GuardianPortalDashboardPage />} />
         <Route path="/guardian-portal/children/:studentId" element={<GuardianPortalChildPage />} />
+        <Route path="/guardian-portal/announcements" element={<GuardianPortalAnnouncementsPage />} />
       </Route>
 
       {/* Platform admin console (ADR-020): MaterialOS-the-company operating
@@ -310,6 +313,7 @@ export default function App() {
         <Route path="/homework" element={<RequireModule module="education"><HomeworkPage /></RequireModule>} />
         <Route path="/homework/:homeworkId" element={<RequireModule module="education"><HomeworkDetailPage /></RequireModule>} />
         <Route path="/fees" element={<RequireModule module="education"><FeesPage /></RequireModule>} />
+        <Route path="/announcements" element={<RequireModule module="education"><AnnouncementsPage /></RequireModule>} />
         <Route path="/academic-years" element={<RequireModule module="education"><AcademicYearsPage /></RequireModule>} />
         <Route path="/admission-enquiries" element={<RequireModule module="education"><AdmissionEnquiriesPage /></RequireModule>} />
         <Route path="/admission-applications" element={<RequireModule module="education"><AdmissionApplicationsPage /></RequireModule>} />

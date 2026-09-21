@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from app.api.v1 import (
     accounting,
     admissions,
+    announcements,
     approvals,
     attendance,
     audit,
@@ -92,6 +93,7 @@ api_router.include_router(collections.router)
 api_router.include_router(field_sales.router)
 api_router.include_router(education.router)
 api_router.include_router(admissions.router)
+api_router.include_router(announcements.router)
 api_router.include_router(student_attendance.router)
 api_router.include_router(timetable.router)
 api_router.include_router(examinations.router)

@@ -14,6 +14,7 @@ from app.models.timetable import Subject, TimetableEntry, TimetableSlot
 from app.models.examinations import ExamMark, ExamSubjectSchedule, Examination
 from app.models.homework import Homework, HomeworkSubmission
 from app.models.fees import FeeHead, FeeInvoice, FeeInvoiceLine, FeeStructureItem
+from app.models.announcements import Announcement, AnnouncementRead
 from app.models.field_sales import Visit
 from app.models.attendance import AttendanceCorrection, AttendanceRecord
 from app.models.fleet import Driver, ProofOfDelivery, Trip, Vehicle
