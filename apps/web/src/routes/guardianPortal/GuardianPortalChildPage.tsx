@@ -15,6 +15,7 @@ interface TimetableEntry { day_of_week: number; slot_name: string; start_time: s
 interface Examination { id: string; name: string; is_locked: boolean; }
 interface ReportCardSubject { subject_id: string; subject_name: string; max_marks: string; marks_obtained: string | null; is_absent: boolean; grade: string | null; }
 interface ReportCard { subjects: ReportCardSubject[]; percentage: string | null; overall_grade: string | null; overall_result: string; }
+interface Transport { route_name: string; vehicle_registration_number: string; driver_name: string; driver_phone: string | null; stop_name: string; pickup_time: string; drop_time: string; }
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -49,6 +50,10 @@ export function GuardianPortalChildPage() {
     queryKey: ["guardian-portal-report-card", studentId, selectedExamId],
     queryFn: () => apiFetch<ReportCard>(`/guardian-portal/children/${studentId}/examinations/${selectedExamId}/report-card`),
     enabled: !!selectedExamId,
+  });
+  const { data: transport } = useQuery({
+    queryKey: ["guardian-portal-transport", studentId],
+    queryFn: () => apiFetch<Transport | null>(`/guardian-portal/children/${studentId}/transport`),
   });
 
   if (attendanceLoading) return <Skeleton className="h-96" />;
@@ -139,6 +144,22 @@ export function GuardianPortalChildPage() {
                 ))}
               </div>
             ))}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader><CardTitle className="text-base">Transport</CardTitle></CardHeader>
+          <CardContent className="space-y-1 text-sm">
+            {!transport && <p className="text-muted-foreground">Not assigned to a route yet.</p>}
+            {transport && (
+              <>
+                <div className="flex justify-between"><span className="text-muted-foreground">Route</span><span>{transport.route_name}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Stop</span><span>{transport.stop_name}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Pickup / Drop</span><span>{transport.pickup_time.slice(0, 5)} / {transport.drop_time.slice(0, 5)}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Vehicle</span><span>{transport.vehicle_registration_number}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Driver</span><span>{transport.driver_name}{transport.driver_phone ? ` · ${transport.driver_phone}` : ""}</span></div>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>

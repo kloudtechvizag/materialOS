@@ -30,6 +30,7 @@ from app.services.fees import get_student_fee_summary
 from app.services.homework import get_student_homework
 from app.services.student_attendance import get_student_attendance_history
 from app.services.timetable import get_section_timetable
+from app.services.transport import get_student_transport
 from app.models.timetable import Subject, TimetableSlot
 
 # ------------------------------------------------------------- Provisioning
@@ -154,3 +155,8 @@ def list_child_examinations(db: Session, *, tenant_id: uuid.UUID, guardian_id: u
 def get_child_report_card(db: Session, *, tenant_id: uuid.UUID, guardian_id: uuid.UUID, student_id: uuid.UUID, examination_id: uuid.UUID) -> dict:
     _owned_student(db, tenant_id=tenant_id, guardian_id=guardian_id, student_id=student_id)
     return get_report_card(db, tenant_id=tenant_id, examination_id=examination_id, student_id=student_id)
+
+
+def get_child_transport(db: Session, *, tenant_id: uuid.UUID, guardian_id: uuid.UUID, student_id: uuid.UUID) -> dict | None:
+    _owned_student(db, tenant_id=tenant_id, guardian_id=guardian_id, student_id=student_id)
+    return get_student_transport(db, tenant_id=tenant_id, student_id=student_id)

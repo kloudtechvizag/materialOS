@@ -58,6 +58,7 @@ from app.api.v1 import (
     system_health,
     tally_export,
     timetable,
+    transport,
     tenants,
     users,
     warehouse_ops,
@@ -100,6 +101,7 @@ api_router.include_router(examinations.router)
 api_router.include_router(homework.router)
 api_router.include_router(fees.router)
 api_router.include_router(guardian_portal.router)
+api_router.include_router(transport.router)
 api_router.include_router(accounting.router)
 api_router.include_router(gst.router)
 api_router.include_router(compliance.router)

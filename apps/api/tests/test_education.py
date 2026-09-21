@@ -185,3 +185,21 @@ def test_duplicate_enrolment_for_the_same_academic_year_is_rejected():
         json={"academic_year_id": year["id"], "school_class_id": school_class["id"], "section_id": section["id"]},
     )
     assert second.status_code == 409, second.text
+
+
+def test_students_can_be_filtered_by_section():
+    headers, year, school_class, section = _setup_school()
+    other_section = client.post("/api/v1/sections", headers=headers, json={"school_class_id": school_class["id"], "name": "B"}).json()
+
+    in_section = client.post(
+        "/api/v1/students", headers=headers,
+        json={"first_name": "InSection", "last_name": "Kid", "admission_date": "2026-06-01", "academic_year_id": year["id"], "school_class_id": school_class["id"], "section_id": section["id"]},
+    ).json()
+    client.post(
+        "/api/v1/students", headers=headers,
+        json={"first_name": "OtherSection", "last_name": "Kid", "admission_date": "2026-06-01", "academic_year_id": year["id"], "school_class_id": school_class["id"], "section_id": other_section["id"]},
+    )
+
+    filtered = client.get("/api/v1/students", headers=headers, params={"section_id": section["id"]}).json()
+    assert len(filtered) == 1
+    assert filtered[0]["id"] == in_section["id"]

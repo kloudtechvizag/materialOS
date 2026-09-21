@@ -125,8 +125,13 @@ def create_guardian_portal_access_endpoint(
 # --------------------------------------------------------------------- Students
 
 @router.get("/students", response_model=list[StudentOut])
-def list_students(db: Session = Depends(get_db_tenant), _user=Depends(require_permission("students.view"))) -> list[Student]:
-    return db.execute(select(Student).order_by(Student.admission_number)).scalars().all()
+def list_students(
+    section_id: uuid.UUID | None = None, db: Session = Depends(get_db_tenant), _user=Depends(require_permission("students.view"))
+) -> list[Student]:
+    stmt = select(Student).order_by(Student.admission_number)
+    if section_id:
+        stmt = stmt.join(StudentEnrolment, StudentEnrolment.student_id == Student.id).where(StudentEnrolment.section_id == section_id)
+    return db.execute(stmt).scalars().all()
 
 
 @router.get("/students/{student_id}", response_model=StudentOut)

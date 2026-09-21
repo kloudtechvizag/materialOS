@@ -38,6 +38,7 @@ interface ReportCardSubject { subject_id: string; subject_name: string; max_mark
 interface ReportCard { subjects: ReportCardSubject[]; total_marks_obtained: string; total_max_marks: string; percentage: string | null; overall_grade: string | null; overall_result: string; }
 interface StudentHomeworkEntry { homework: { id: string; title: string; due_date: string }; status: string; }
 interface FeeInvoiceSummary { id: string; invoice_id: string; invoice_number: string; invoice_date: string; customer_id: string; total: string; outstanding: string; }
+interface StudentTransport { route_name: string; vehicle_registration_number: string; driver_name: string; driver_phone: string | null; stop_name: string; pickup_time: string; drop_time: string; }
 
 const STATUS_LABELS: Record<string, string> = { active: "Active", transferred: "Transferred", withdrawn: "Withdrawn", alumni: "Alumni", inactive: "Inactive" };
 
@@ -85,6 +86,10 @@ export function StudentDetailPage() {
   const { data: feeInvoices } = useQuery({
     queryKey: ["student-fees", studentId],
     queryFn: () => apiFetch<FeeInvoiceSummary[]>(`/students/${studentId}/fees`),
+  });
+  const { data: transport } = useQuery({
+    queryKey: ["student-transport", studentId],
+    queryFn: () => apiFetch<StudentTransport | null>(`/students/${studentId}/transport`),
   });
 
   const yearById = new Map((years ?? []).map((y) => [y.id, y.name]));
@@ -371,6 +376,22 @@ export function StudentDetailPage() {
               {recordPayment.error instanceof ApiError && payingInvoiceId === inv.id && <p className="text-xs text-destructive">{recordPayment.error.message}</p>}
             </div>
           ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">Transport</CardTitle></CardHeader>
+        <CardContent className="space-y-1 text-sm">
+          {!transport && <p className="text-muted-foreground">Not assigned to a route yet.</p>}
+          {transport && (
+            <>
+              <div className="flex justify-between"><span className="text-muted-foreground">Route</span><span>{transport.route_name}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Stop</span><span>{transport.stop_name}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Pickup / Drop</span><span>{transport.pickup_time.slice(0, 5)} / {transport.drop_time.slice(0, 5)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Vehicle</span><span>{transport.vehicle_registration_number}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Driver</span><span>{transport.driver_name}{transport.driver_phone ? ` · ${transport.driver_phone}` : ""}</span></div>
+            </>
+          )}
         </CardContent>
       </Card>
 

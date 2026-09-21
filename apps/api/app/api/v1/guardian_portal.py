@@ -11,6 +11,7 @@ from app.schemas.fees import FeeInvoiceOut
 from app.schemas.guardian_portal import ChildSummaryOut, ChildTimetableEntryOut
 from app.schemas.homework import StudentHomeworkEntryOut
 from app.schemas.student_attendance import StudentAttendanceRecordOut
+from app.schemas.transport import StudentTransportOut
 from app.services.announcements import list_visible_announcements_for_guardian, mark_announcement_read
 from app.services.guardian_portal import (
     get_child_attendance,
@@ -18,6 +19,7 @@ from app.services.guardian_portal import (
     get_child_homework,
     get_child_report_card,
     get_child_timetable,
+    get_child_transport,
     list_child_examinations,
     list_own_children,
 )
@@ -60,6 +62,11 @@ def child_report_card(
     student_id: uuid.UUID, examination_id: uuid.UUID, db: Session = Depends(get_db_tenant), guardian: Guardian = Depends(get_portal_guardian)
 ):
     return get_child_report_card(db, tenant_id=guardian.tenant_id, guardian_id=guardian.id, student_id=student_id, examination_id=examination_id)
+
+
+@router.get("/children/{student_id}/transport", response_model=StudentTransportOut | None)
+def child_transport(student_id: uuid.UUID, db: Session = Depends(get_db_tenant), guardian: Guardian = Depends(get_portal_guardian)):
+    return get_child_transport(db, tenant_id=guardian.tenant_id, guardian_id=guardian.id, student_id=student_id)
 
 
 @router.get("/announcements", response_model=list[GuardianAnnouncementOut])
