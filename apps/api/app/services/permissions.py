@@ -64,6 +64,7 @@ RESOURCES = [
     "fees",
     "announcements",
     "transport",
+    "library",
 ]
 
 ACTIONS = ["view", "create", "edit", "delete", "approve", "export", "restore", "manage", "calculate", "lock", "pay"]

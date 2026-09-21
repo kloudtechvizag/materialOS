@@ -16,6 +16,7 @@ interface Examination { id: string; name: string; is_locked: boolean; }
 interface ReportCardSubject { subject_id: string; subject_name: string; max_marks: string; marks_obtained: string | null; is_absent: boolean; grade: string | null; }
 interface ReportCard { subjects: ReportCardSubject[]; percentage: string | null; overall_grade: string | null; overall_result: string; }
 interface Transport { route_name: string; vehicle_registration_number: string; driver_name: string; driver_phone: string | null; stop_name: string; pickup_time: string; drop_time: string; }
+interface LibraryIssue { id: string; book_title: string; accession_number: string; issued_date: string; due_date: string; returned_date: string | null; status: string; fine_amount: string; is_overdue: boolean; }
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -54,6 +55,10 @@ export function GuardianPortalChildPage() {
   const { data: transport } = useQuery({
     queryKey: ["guardian-portal-transport", studentId],
     queryFn: () => apiFetch<Transport | null>(`/guardian-portal/children/${studentId}/transport`),
+  });
+  const { data: libraryHistory } = useQuery({
+    queryKey: ["guardian-portal-library", studentId],
+    queryFn: () => apiFetch<LibraryIssue[]>(`/guardian-portal/children/${studentId}/library`),
   });
 
   if (attendanceLoading) return <Skeleton className="h-96" />;
@@ -160,6 +165,27 @@ export function GuardianPortalChildPage() {
                 <div className="flex justify-between"><span className="text-muted-foreground">Driver</span><span>{transport.driver_name}{transport.driver_phone ? ` · ${transport.driver_phone}` : ""}</span></div>
               </>
             )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader><CardTitle className="text-base">Library</CardTitle></CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            {(!libraryHistory || libraryHistory.length === 0) && <p className="text-muted-foreground">No books issued yet.</p>}
+            {libraryHistory?.map((i) => (
+              <div key={i.id} className="flex items-center justify-between border-b border-border py-1.5 last:border-0">
+                <div>
+                  <p className="font-medium">{i.book_title} <span className="text-xs text-muted-foreground">({i.accession_number})</span></p>
+                  <p className="text-xs text-muted-foreground">
+                    Due {i.due_date}{i.returned_date ? ` · Returned ${i.returned_date}` : ""}
+                    {Number(i.fine_amount) > 0 ? ` · Fine ₹${i.fine_amount}` : ""}
+                  </p>
+                </div>
+                <Badge variant={i.status === "returned" ? "success" : i.status === "lost" ? "destructive" : i.is_overdue ? "warning" : "outline"}>
+                  {i.status === "issued" && i.is_overdue ? "Overdue" : i.status}
+                </Badge>
+              </div>
+            ))}
           </CardContent>
         </Card>
       </div>

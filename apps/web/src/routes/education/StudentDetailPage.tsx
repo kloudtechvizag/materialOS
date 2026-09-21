@@ -39,6 +39,7 @@ interface ReportCard { subjects: ReportCardSubject[]; total_marks_obtained: stri
 interface StudentHomeworkEntry { homework: { id: string; title: string; due_date: string }; status: string; }
 interface FeeInvoiceSummary { id: string; invoice_id: string; invoice_number: string; invoice_date: string; customer_id: string; total: string; outstanding: string; }
 interface StudentTransport { route_name: string; vehicle_registration_number: string; driver_name: string; driver_phone: string | null; stop_name: string; pickup_time: string; drop_time: string; }
+interface LibraryIssue { id: string; book_title: string; accession_number: string; issued_date: string; due_date: string; returned_date: string | null; status: string; fine_amount: string; is_overdue: boolean; }
 
 const STATUS_LABELS: Record<string, string> = { active: "Active", transferred: "Transferred", withdrawn: "Withdrawn", alumni: "Alumni", inactive: "Inactive" };
 
@@ -90,6 +91,10 @@ export function StudentDetailPage() {
   const { data: transport } = useQuery({
     queryKey: ["student-transport", studentId],
     queryFn: () => apiFetch<StudentTransport | null>(`/students/${studentId}/transport`),
+  });
+  const { data: libraryHistory } = useQuery({
+    queryKey: ["student-library", studentId],
+    queryFn: () => apiFetch<LibraryIssue[]>(`/students/${studentId}/library`),
   });
 
   const yearById = new Map((years ?? []).map((y) => [y.id, y.name]));
@@ -392,6 +397,27 @@ export function StudentDetailPage() {
               <div className="flex justify-between"><span className="text-muted-foreground">Driver</span><span>{transport.driver_name}{transport.driver_phone ? ` · ${transport.driver_phone}` : ""}</span></div>
             </>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">Library</CardTitle></CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          {(!libraryHistory || libraryHistory.length === 0) && <p className="text-muted-foreground">No books issued yet.</p>}
+          {libraryHistory?.map((i) => (
+            <div key={i.id} className="flex items-center justify-between border-b border-border py-1.5 last:border-0">
+              <div>
+                <p className="font-medium">{i.book_title} <span className="text-xs text-muted-foreground">({i.accession_number})</span></p>
+                <p className="text-xs text-muted-foreground">
+                  Issued {i.issued_date} · Due {i.due_date}{i.returned_date ? ` · Returned ${i.returned_date}` : ""}
+                  {Number(i.fine_amount) > 0 ? ` · Fine ₹${i.fine_amount}` : ""}
+                </p>
+              </div>
+              <Badge variant={i.status === "returned" ? "success" : i.status === "lost" ? "destructive" : i.is_overdue ? "warning" : "outline"}>
+                {i.status === "issued" && i.is_overdue ? "Overdue" : i.status}
+              </Badge>
+            </div>
+          ))}
         </CardContent>
       </Card>
 

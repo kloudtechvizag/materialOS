@@ -35,6 +35,7 @@ from app.api.v1 import (
     jewellery,
     laboratory,
     leave,
+    library,
     notifications,
     payroll,
     platform_admin,
@@ -102,6 +103,7 @@ api_router.include_router(homework.router)
 api_router.include_router(fees.router)
 api_router.include_router(guardian_portal.router)
 api_router.include_router(transport.router)
+api_router.include_router(library.router)
 api_router.include_router(accounting.router)
 api_router.include_router(gst.router)
 api_router.include_router(compliance.router)

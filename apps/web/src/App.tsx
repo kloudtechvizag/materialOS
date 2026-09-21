@@ -114,6 +114,7 @@ import { HomeworkDetailPage } from "@/routes/education/HomeworkDetailPage";
 import { FeesPage } from "@/routes/education/FeesPage";
 import { AnnouncementsPage } from "@/routes/education/AnnouncementsPage";
 import { TransportPage } from "@/routes/education/TransportPage";
+import { LibraryPage } from "@/routes/education/LibraryPage";
 import { AdmissionEnquiriesPage } from "@/routes/admissions/AdmissionEnquiriesPage";
 import { AdmissionApplicationsPage } from "@/routes/admissions/AdmissionApplicationsPage";
 import { AdmissionApplicationDetailPage } from "@/routes/admissions/AdmissionApplicationDetailPage";
@@ -316,6 +317,7 @@ export default function App() {
         <Route path="/fees" element={<RequireModule module="education"><FeesPage /></RequireModule>} />
         <Route path="/announcements" element={<RequireModule module="education"><AnnouncementsPage /></RequireModule>} />
         <Route path="/transport" element={<RequireModule module="education"><TransportPage /></RequireModule>} />
+        <Route path="/library" element={<RequireModule module="education"><LibraryPage /></RequireModule>} />
         <Route path="/academic-years" element={<RequireModule module="education"><AcademicYearsPage /></RequireModule>} />
         <Route path="/admission-enquiries" element={<RequireModule module="education"><AdmissionEnquiriesPage /></RequireModule>} />
         <Route path="/admission-applications" element={<RequireModule module="education"><AdmissionApplicationsPage /></RequireModule>} />
