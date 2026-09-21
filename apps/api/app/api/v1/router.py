@@ -25,6 +25,7 @@ from app.api.v1 import (
     fleet,
     gst,
     health,
+    homework,
     hr,
     imports,
     industry,
@@ -92,6 +93,7 @@ api_router.include_router(admissions.router)
 api_router.include_router(student_attendance.router)
 api_router.include_router(timetable.router)
 api_router.include_router(examinations.router)
+api_router.include_router(homework.router)
 api_router.include_router(accounting.router)
 api_router.include_router(gst.router)
 api_router.include_router(compliance.router)

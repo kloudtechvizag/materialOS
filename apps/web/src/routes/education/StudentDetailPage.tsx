@@ -36,6 +36,7 @@ interface AttendanceRecord { id: string; attendance_date: string; status: string
 interface Examination { id: string; academic_year_id: string; name: string; is_locked: boolean; }
 interface ReportCardSubject { subject_id: string; subject_name: string; max_marks: string; pass_marks: string; marks_obtained: string | null; is_absent: boolean; is_pass: boolean | null; grade: string | null; }
 interface ReportCard { subjects: ReportCardSubject[]; total_marks_obtained: string; total_max_marks: string; percentage: string | null; overall_grade: string | null; overall_result: string; }
+interface StudentHomeworkEntry { homework: { id: string; title: string; due_date: string }; status: string; }
 
 const STATUS_LABELS: Record<string, string> = { active: "Active", transferred: "Transferred", withdrawn: "Withdrawn", alumni: "Alumni", inactive: "Inactive" };
 
@@ -70,6 +71,10 @@ export function StudentDetailPage() {
     queryKey: ["report-card", selectedExamId, studentId],
     queryFn: () => apiFetch<ReportCard>(`/examinations/${selectedExamId}/report-card/${studentId}`),
     enabled: !!selectedExamId,
+  });
+  const { data: homeworkEntries } = useQuery({
+    queryKey: ["student-homework", studentId],
+    queryFn: () => apiFetch<StudentHomeworkEntry[]>(`/students/${studentId}/homework`),
   });
 
   const yearById = new Map((years ?? []).map((y) => [y.id, y.name]));
@@ -267,6 +272,26 @@ export function StudentDetailPage() {
               </table>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">Homework</CardTitle></CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          {(!homeworkEntries || homeworkEntries.length === 0) && <p className="text-muted-foreground">No homework assigned yet.</p>}
+          {homeworkEntries?.map((entry) => (
+            <div key={entry.homework.id} className="flex items-center justify-between border-b border-border py-1.5 last:border-0">
+              <div>
+                <p className="font-medium">{entry.homework.title}</p>
+                <p className="text-xs text-muted-foreground">Due {entry.homework.due_date}</p>
+              </div>
+              <Badge
+                variant={entry.status === "submitted" ? "success" : entry.status === "late" ? "warning" : entry.status === "missing" ? "destructive" : "outline"}
+              >
+                {entry.status}
+              </Badge>
+            </div>
+          ))}
         </CardContent>
       </Card>
     </div>
