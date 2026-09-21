@@ -5,6 +5,7 @@ from app.models.backup import Backup
 from app.models.billing_plans import AddonOffering, Feature, Plan, PlanFeature, PlanLimit
 from app.models.catalog import Batch, Category, UnitConversion
 from app.models.compliance import EInvoice, EWayBill
+from app.models.admissions import AdmissionApplication, AdmissionEnquiry
 from app.models.crm import Lead
 from app.models.demo_request import DemoRequest
 from app.models.education import AcademicYear, Guardian, SchoolClass, Section, Student, StudentEnrolment, StudentGuardian

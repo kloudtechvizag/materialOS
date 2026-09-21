@@ -1,0 +1,80 @@
+"""Admissions CRM (spec sec7) -- the funnel that feeds the SIS built in
+ADR-025: Enquiry -> Application -> Decision -> real Student +
+Enrolment (services/admissions.py::convert_application_to_student
+calls straight into services/education.py's own create_student/
+enrol_student, not a parallel implementation).
+
+Deliberately NOT built this pass (named, not faked): a public-facing
+enquiry/application web form, document upload (no storage wiring),
+interview *scheduling* (an `interview_date` field is real; a calendar/
+availability system is not), seat-capacity/waitlist-ranking automation
+(SchoolClass has no capacity field yet), and admission-fee collection
+(depends on the not-yet-built Fee Management module, Phase 4).
+"""
+
+import uuid
+from datetime import date, datetime
+
+from sqlalchemy import Date, DateTime, ForeignKey, String, Text
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.models.base import Base, TenantMixin, TimestampMixin, UUIDPk
+
+
+class AdmissionEnquiry(Base, UUIDPk, TenantMixin, TimestampMixin):
+    __tablename__ = "admission_enquiries"
+
+    company_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("companies.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    student_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    date_of_birth: Mapped[date | None] = mapped_column(Date, nullable=True)
+    # Free text, not a SchoolClass FK -- an enquiry routinely predates
+    # the target academic year's classes even existing yet.
+    desired_grade: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    guardian_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    guardian_phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    guardian_email: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    source: Mapped[str | None] = mapped_column(String(50), nullable=True)  # "Walk-in", "Website", "Referral", ...
+    # open|contacted|converted|closed
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="open")
+    follow_up_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class AdmissionApplication(Base, UUIDPk, TenantMixin, TimestampMixin):
+    __tablename__ = "admission_applications"
+
+    company_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("companies.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    enquiry_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("admission_enquiries.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    first_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    last_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    date_of_birth: Mapped[date | None] = mapped_column(Date, nullable=True)
+    desired_grade: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    academic_year_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("academic_years.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    guardian_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    guardian_phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    guardian_email: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    application_date: Mapped[date] = mapped_column(Date, nullable=False)
+    # submitted -> under_review -> interview_scheduled -> interviewed ->
+    # offered | waitlisted | rejected -> admitted | withdrawn.
+    # "admitted" is only ever set by services.admissions.
+    # convert_application_to_student (never a plain status PATCH), so an
+    # application can never read "admitted" without a real student_id.
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="submitted")
+    interview_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    decision_reason: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    decided_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    student_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("students.id", ondelete="SET NULL"), nullable=True, index=True
+    )

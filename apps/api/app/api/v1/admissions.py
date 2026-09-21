@@ -1,0 +1,105 @@
+import uuid
+
+from fastapi import APIRouter, Depends
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.deps import get_db_tenant, require_module, require_permission
+from app.errors import AppError, ErrorCode
+from app.models.admissions import AdmissionApplication, AdmissionEnquiry
+from app.models.tenant import Company
+from app.models.user import User
+from app.schemas.admissions import (
+    AdmissionApplicationCreate,
+    AdmissionApplicationOut,
+    AdmissionApplicationUpdate,
+    AdmissionConvertRequest,
+    AdmissionEnquiryCreate,
+    AdmissionEnquiryOut,
+    AdmissionEnquiryUpdate,
+)
+from app.schemas.education import StudentOut
+from app.services.admissions import convert_application_to_student, create_application, create_enquiry, transition_application, update_enquiry
+
+router = APIRouter(tags=["admissions"], dependencies=[Depends(require_module("education"))])
+
+
+def _company(db: Session, tenant_id: uuid.UUID) -> Company:
+    company = db.execute(select(Company).where(Company.tenant_id == tenant_id)).scalars().first()
+    if company is None:
+        raise AppError(ErrorCode.VALIDATION_ERROR, "No company configured for this tenant.")
+    return company
+
+
+# ------------------------------------------------------------------ Enquiries
+
+@router.get("/admission-enquiries", response_model=list[AdmissionEnquiryOut])
+def list_enquiries(
+    status: str | None = None, db: Session = Depends(get_db_tenant), _user=Depends(require_permission("admissions.view"))
+) -> list[AdmissionEnquiry]:
+    stmt = select(AdmissionEnquiry).order_by(AdmissionEnquiry.created_at.desc())
+    if status:
+        stmt = stmt.where(AdmissionEnquiry.status == status)
+    return db.execute(stmt).scalars().all()
+
+
+@router.post("/admission-enquiries", response_model=AdmissionEnquiryOut, status_code=201)
+def create_enquiry_endpoint(
+    payload: AdmissionEnquiryCreate, db: Session = Depends(get_db_tenant), user: User = Depends(require_permission("admissions.create"))
+) -> AdmissionEnquiry:
+    company = _company(db, user.tenant_id)
+    return create_enquiry(db, tenant_id=user.tenant_id, company_id=company.id, **payload.model_dump())
+
+
+@router.patch("/admission-enquiries/{enquiry_id}", response_model=AdmissionEnquiryOut)
+def update_enquiry_endpoint(
+    enquiry_id: uuid.UUID, payload: AdmissionEnquiryUpdate, db: Session = Depends(get_db_tenant), user: User = Depends(require_permission("admissions.edit"))
+) -> AdmissionEnquiry:
+    return update_enquiry(db, tenant_id=user.tenant_id, enquiry_id=enquiry_id, **payload.model_dump())
+
+
+# --------------------------------------------------------------- Applications
+
+@router.get("/admission-applications", response_model=list[AdmissionApplicationOut])
+def list_applications(
+    status: str | None = None, db: Session = Depends(get_db_tenant), _user=Depends(require_permission("admissions.view"))
+) -> list[AdmissionApplication]:
+    stmt = select(AdmissionApplication).order_by(AdmissionApplication.created_at.desc())
+    if status:
+        stmt = stmt.where(AdmissionApplication.status == status)
+    return db.execute(stmt).scalars().all()
+
+
+@router.get("/admission-applications/{application_id}", response_model=AdmissionApplicationOut)
+def get_application(
+    application_id: uuid.UUID, db: Session = Depends(get_db_tenant), _user=Depends(require_permission("admissions.view"))
+) -> AdmissionApplication:
+    application = db.get(AdmissionApplication, application_id)
+    if application is None:
+        raise AppError(ErrorCode.NOT_FOUND, "Application not found.", status_code=404)
+    return application
+
+
+@router.post("/admission-applications", response_model=AdmissionApplicationOut, status_code=201)
+def create_application_endpoint(
+    payload: AdmissionApplicationCreate, db: Session = Depends(get_db_tenant), user: User = Depends(require_permission("admissions.create"))
+) -> AdmissionApplication:
+    company = _company(db, user.tenant_id)
+    return create_application(db, tenant_id=user.tenant_id, company_id=company.id, **payload.model_dump())
+
+
+@router.patch("/admission-applications/{application_id}", response_model=AdmissionApplicationOut)
+def update_application(
+    application_id: uuid.UUID, payload: AdmissionApplicationUpdate, db: Session = Depends(get_db_tenant), user: User = Depends(require_permission("admissions.edit"))
+) -> AdmissionApplication:
+    return transition_application(db, tenant_id=user.tenant_id, application_id=application_id, decided_by_user_id=user.id, **payload.model_dump())
+
+
+@router.post("/admission-applications/{application_id}/convert", response_model=StudentOut, status_code=201)
+def convert_application(
+    application_id: uuid.UUID, payload: AdmissionConvertRequest, db: Session = Depends(get_db_tenant), user: User = Depends(require_permission("admissions.approve"))
+):
+    company = _company(db, user.tenant_id)
+    return convert_application_to_student(
+        db, tenant_id=user.tenant_id, company_id=company.id, application_id=application_id, decided_by_user_id=user.id, **payload.model_dump()
+    )

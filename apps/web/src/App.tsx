@@ -100,6 +100,9 @@ import { AcademicYearsPage } from "@/routes/education/AcademicYearsPage";
 import { ClassesPage } from "@/routes/education/ClassesPage";
 import { StudentsPage } from "@/routes/education/StudentsPage";
 import { StudentDetailPage } from "@/routes/education/StudentDetailPage";
+import { AdmissionEnquiriesPage } from "@/routes/admissions/AdmissionEnquiriesPage";
+import { AdmissionApplicationsPage } from "@/routes/admissions/AdmissionApplicationsPage";
+import { AdmissionApplicationDetailPage } from "@/routes/admissions/AdmissionApplicationDetailPage";
 import { SerialRmaPage } from "@/routes/SerialRmaPage";
 import { ServerSettingsPage } from "@/routes/ServerSettingsPage";
 import { IndustryConfigPage } from "@/routes/settings/IndustryConfigPage";
@@ -271,6 +274,9 @@ export default function App() {
         <Route path="/students/:studentId" element={<RequireModule module="education"><StudentDetailPage /></RequireModule>} />
         <Route path="/classes" element={<RequireModule module="education"><ClassesPage /></RequireModule>} />
         <Route path="/academic-years" element={<RequireModule module="education"><AcademicYearsPage /></RequireModule>} />
+        <Route path="/admission-enquiries" element={<RequireModule module="education"><AdmissionEnquiriesPage /></RequireModule>} />
+        <Route path="/admission-applications" element={<RequireModule module="education"><AdmissionApplicationsPage /></RequireModule>} />
+        <Route path="/admission-applications/:applicationId" element={<RequireModule module="education"><AdmissionApplicationDetailPage /></RequireModule>} />
         <Route path="/sales-orders/:orderId" element={<SalesOrderDetailPage />} />
         <Route path="/invoices/:invoiceId" element={<InvoiceDetailPage />} />
         <Route path="/dispatch-board" element={<DispatchBoardPage />} />

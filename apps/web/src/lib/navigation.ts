@@ -10,6 +10,7 @@ import {
   ClipboardList,
   Clock,
   Coins,
+  ClipboardCheck,
   Cpu,
   CreditCard,
   Database,
@@ -20,6 +21,7 @@ import {
   FileText,
   GraduationCap,
   History,
+  Inbox,
   KanbanSquare,
   Layers,
   LayoutDashboard,
@@ -175,6 +177,14 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
       { id: "items", label: "Items", href: "/items", icon: Package, module: "projects" },
       { id: "customers", label: "Customers", href: "/customers", icon: Users, module: "projects" },
       { id: "branches", label: "Branches", href: "/branches", icon: Building2, module: "projects" },
+    ],
+  },
+  {
+    id: "admissions",
+    label: "Admissions",
+    items: [
+      { id: "admission-enquiries", label: "Enquiries", href: "/admission-enquiries", icon: Inbox, module: "education" },
+      { id: "admission-applications", label: "Applications", href: "/admission-applications", icon: ClipboardCheck, module: "education" },
     ],
   },
   {
