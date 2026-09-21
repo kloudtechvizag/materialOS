@@ -100,6 +100,8 @@ import { AcademicYearsPage } from "@/routes/education/AcademicYearsPage";
 import { ClassesPage } from "@/routes/education/ClassesPage";
 import { StudentsPage } from "@/routes/education/StudentsPage";
 import { StudentDetailPage } from "@/routes/education/StudentDetailPage";
+import { StudentAttendancePage } from "@/routes/education/StudentAttendancePage";
+import { TimetablePage } from "@/routes/education/TimetablePage";
 import { AdmissionEnquiriesPage } from "@/routes/admissions/AdmissionEnquiriesPage";
 import { AdmissionApplicationsPage } from "@/routes/admissions/AdmissionApplicationsPage";
 import { AdmissionApplicationDetailPage } from "@/routes/admissions/AdmissionApplicationDetailPage";
@@ -273,6 +275,8 @@ export default function App() {
         <Route path="/students" element={<RequireModule module="education"><StudentsPage /></RequireModule>} />
         <Route path="/students/:studentId" element={<RequireModule module="education"><StudentDetailPage /></RequireModule>} />
         <Route path="/classes" element={<RequireModule module="education"><ClassesPage /></RequireModule>} />
+        <Route path="/student-attendance" element={<RequireModule module="education"><StudentAttendancePage /></RequireModule>} />
+        <Route path="/timetable" element={<RequireModule module="education"><TimetablePage /></RequireModule>} />
         <Route path="/academic-years" element={<RequireModule module="education"><AcademicYearsPage /></RequireModule>} />
         <Route path="/admission-enquiries" element={<RequireModule module="education"><AdmissionEnquiriesPage /></RequireModule>} />
         <Route path="/admission-applications" element={<RequireModule module="education"><AdmissionApplicationsPage /></RequireModule>} />

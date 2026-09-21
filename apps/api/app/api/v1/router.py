@@ -45,12 +45,14 @@ from app.api.v1 import (
     sales,
     search,
     serial,
+    student_attendance,
     subscription,
     webhooks,
     suppliers,
     support,
     system_health,
     tally_export,
+    timetable,
     tenants,
     users,
     warehouse_ops,
@@ -86,6 +88,8 @@ api_router.include_router(collections.router)
 api_router.include_router(field_sales.router)
 api_router.include_router(education.router)
 api_router.include_router(admissions.router)
+api_router.include_router(student_attendance.router)
+api_router.include_router(timetable.router)
 api_router.include_router(accounting.router)
 api_router.include_router(gst.router)
 api_router.include_router(compliance.router)

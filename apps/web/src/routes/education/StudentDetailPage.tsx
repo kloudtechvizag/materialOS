@@ -32,6 +32,7 @@ interface Section { id: string; name: string; school_class_id: string; }
 interface StudentEnrolment { id: string; academic_year_id: string; school_class_id: string; section_id: string | null; roll_number: string | null; status: string; enrolment_date: string; }
 interface Guardian { id: string; full_name: string; phone: string | null; email: string | null; }
 interface StudentGuardianLink { id: string; guardian_id: string; relationship_type: string; is_primary_contact: boolean; }
+interface AttendanceRecord { id: string; attendance_date: string; status: string; }
 
 const STATUS_LABELS: Record<string, string> = { active: "Active", transferred: "Transferred", withdrawn: "Withdrawn", alumni: "Alumni", inactive: "Inactive" };
 
@@ -56,6 +57,10 @@ export function StudentDetailPage() {
   const { data: classes } = useQuery({ queryKey: ["all-school-classes"], queryFn: async () => (await Promise.all((await apiFetch<AcademicYear[]>("/academic-years")).map((y) => apiFetch<SchoolClass[]>(`/school-classes?academic_year_id=${y.id}`)))).flat() });
   const { data: sections } = useQuery({ queryKey: ["all-sections"], queryFn: () => apiFetch<Section[]>("/sections") });
   const { data: guardians } = useQuery({ queryKey: ["guardians"], queryFn: () => apiFetch<Guardian[]>("/guardians") });
+  const { data: attendance } = useQuery({
+    queryKey: ["student-attendance-history", studentId],
+    queryFn: () => apiFetch<AttendanceRecord[]>(`/student-attendance?student_id=${studentId}`),
+  });
 
   const yearById = new Map((years ?? []).map((y) => [y.id, y.name]));
   const classById = new Map((classes ?? []).map((c) => [c.id, c.name]));
@@ -174,6 +179,33 @@ export function StudentDetailPage() {
               </Button>
             </div>
           </details>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">Attendance</CardTitle></CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          {(!attendance || attendance.length === 0) && <p className="text-muted-foreground">No attendance recorded yet.</p>}
+          {attendance && attendance.length > 0 && (
+            <>
+              <p className="text-muted-foreground">
+                {Math.round((attendance.filter((a) => a.status === "present").length / attendance.length) * 100)}% present
+                over {attendance.length} recorded day{attendance.length === 1 ? "" : "s"}.
+              </p>
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {attendance.slice(0, 20).map((a) => (
+                  <span
+                    key={a.id}
+                    title={`${a.attendance_date}: ${a.status}`}
+                    className={
+                      "h-2.5 w-2.5 rounded-full " +
+                      (a.status === "present" ? "bg-emerald-500" : a.status === "absent" ? "bg-destructive" : "bg-amber-500")
+                    }
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>

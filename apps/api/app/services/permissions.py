@@ -57,6 +57,8 @@ RESOURCES = [
     "academic_years",
     "school_classes",
     "admissions",
+    "student_attendance",
+    "timetable",
 ]
 
 ACTIONS = ["view", "create", "edit", "delete", "approve", "export", "restore", "manage", "calculate", "lock", "pay"]
