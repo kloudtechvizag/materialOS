@@ -14,6 +14,8 @@ from app.schemas.education import (
     AcademicYearOut,
     GuardianCreate,
     GuardianOut,
+    GuardianPortalAccessCreate,
+    GuardianPortalAccessOut,
     SchoolClassCreate,
     SchoolClassOut,
     SectionCreate,
@@ -104,6 +106,20 @@ def create_guardian_endpoint(
     payload: GuardianCreate, db: Session = Depends(get_db_tenant), user: User = Depends(require_permission("guardians.create"))
 ) -> Guardian:
     return create_guardian(db, tenant_id=user.tenant_id, **payload.model_dump())
+
+
+@router.post("/guardians/{guardian_id}/portal-access", response_model=GuardianPortalAccessOut, status_code=201)
+def create_guardian_portal_access_endpoint(
+    guardian_id: uuid.UUID, payload: GuardianPortalAccessCreate, db: Session = Depends(get_db_tenant), user: User = Depends(require_permission("guardians.edit"))
+):
+    from app.services.guardian_portal import create_guardian_portal_login
+
+    guardian = db.get(Guardian, guardian_id)
+    if guardian is None or guardian.tenant_id != user.tenant_id:
+        raise AppError(ErrorCode.NOT_FOUND, "Guardian not found.", status_code=404)
+
+    portal_user = create_guardian_portal_login(db, tenant_id=user.tenant_id, guardian=guardian, **payload.model_dump())
+    return {"user_id": portal_user.id, "email": portal_user.email, "guardian_id": guardian.id}
 
 
 # --------------------------------------------------------------------- Students

@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 import { AppShell } from "@/components/layout/AppShell";
 import { PortalShell } from "@/components/layout/PortalShell";
+import { GuardianPortalShell } from "@/components/layout/GuardianPortalShell";
 import { PlatformLayout } from "@/routes/platform/PlatformLayout";
 import { PlatformAdminsPage } from "@/routes/platform/PlatformAdminsPage";
 import { PlatformLoginPage } from "@/routes/platform/PlatformLoginPage";
@@ -67,6 +68,9 @@ import { PortalDeliveriesPage } from "@/routes/portal/PortalDeliveriesPage";
 import { PortalInvoiceDetailPage } from "@/routes/portal/PortalInvoiceDetailPage";
 import { PortalInvoicesPage } from "@/routes/portal/PortalInvoicesPage";
 import { PortalLoginPage } from "@/routes/portal/PortalLoginPage";
+import { GuardianPortalLoginPage } from "@/routes/guardianPortal/GuardianPortalLoginPage";
+import { GuardianPortalDashboardPage } from "@/routes/guardianPortal/GuardianPortalDashboardPage";
+import { GuardianPortalChildPage } from "@/routes/guardianPortal/GuardianPortalChildPage";
 import { PortalOrdersPage } from "@/routes/portal/PortalOrdersPage";
 import { PortalQuotationDetailPage } from "@/routes/portal/PortalQuotationDetailPage";
 import { PortalQuotationsPage } from "@/routes/portal/PortalQuotationsPage";
@@ -147,6 +151,13 @@ function RequirePortalAuth({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function RequireGuardianPortalAuth({ children }: { children: React.ReactNode }) {
+  const accessToken = useAuthStore((s) => s.accessToken);
+  const guardianId = useAuthStore((s) => s.guardianId);
+  if (!accessToken || !guardianId) return <Navigate to="/guardian-portal/login" replace />;
+  return <>{children}</>;
+}
+
 function RequirePlatformAuth({ children }: { children: React.ReactNode }) {
   const accessToken = usePlatformAuthStore((s) => s.accessToken);
   if (!accessToken) return <Navigate to="/platform/login" replace />;
@@ -182,6 +193,7 @@ export default function App() {
       <Route path="/server-settings" element={<ServerSettingsPage />} />
       <Route path="/pricing" element={<MarketingLayout><PricingPage /></MarketingLayout>} />
       <Route path="/portal/login" element={<PortalLoginPage />} />
+      <Route path="/guardian-portal/login" element={<GuardianPortalLoginPage />} />
 
       <Route path="/" element={<RootRoute />} />
       <Route path="/industries" element={<MarketingLayout><IndustriesIndexPage /></MarketingLayout>} />
@@ -210,6 +222,17 @@ export default function App() {
         <Route path="/portal/invoices/:invoiceId" element={<PortalInvoiceDetailPage />} />
         <Route path="/portal/deliveries" element={<PortalDeliveriesPage />} />
         <Route path="/portal/statement" element={<PortalStatementPage />} />
+      </Route>
+
+      <Route
+        element={
+          <RequireGuardianPortalAuth>
+            <GuardianPortalShell />
+          </RequireGuardianPortalAuth>
+        }
+      >
+        <Route path="/guardian-portal" element={<GuardianPortalDashboardPage />} />
+        <Route path="/guardian-portal/children/:studentId" element={<GuardianPortalChildPage />} />
       </Route>
 
       {/* Platform admin console (ADR-020): MaterialOS-the-company operating

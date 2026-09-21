@@ -53,6 +53,16 @@ class User(Base, UUIDPk, TenantMixin, TimestampMixin):
     customer_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("customers.id", ondelete="CASCADE"), nullable=True, index=True
     )
+    # Same pattern as customer_id above, for the education vertical's
+    # Guardian (Parent) Portal (ADR-032) -- set only for a guardian-
+    # portal login. Every /guardian-portal/* endpoint scopes to this
+    # guardian via deps.get_portal_guardian, never to the whole tenant.
+    # (Guardian.user_id, added in ADR-025, was a placeholder anchor
+    # that was never wired up -- this column, modeled directly on the
+    # proven customer_id mechanism, is the real one.)
+    guardian_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("guardians.id", ondelete="CASCADE"), nullable=True, index=True
+    )
 
 
 class Permission(Base, UUIDPk, TimestampMixin):

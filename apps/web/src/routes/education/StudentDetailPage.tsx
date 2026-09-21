@@ -48,6 +48,9 @@ export function StudentDetailPage() {
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
   const [payingInvoiceId, setPayingInvoiceId] = useState<string | null>(null);
   const [paymentAmount, setPaymentAmount] = useState("");
+  const [portalAccessGuardianId, setPortalAccessGuardianId] = useState<string | null>(null);
+  const [portalAccessForm, setPortalAccessForm] = useState({ email: "", password: "" });
+  const [portalAccessCreatedFor, setPortalAccessCreatedFor] = useState<string | null>(null);
 
   const { data: student, isLoading, error, refetch } = useQuery({
     queryKey: ["student", studentId],
@@ -103,6 +106,19 @@ export function StudentDetailPage() {
       queryClient.invalidateQueries({ queryKey: ["student-guardians", studentId] });
       queryClient.invalidateQueries({ queryKey: ["guardians"] });
       setGuardianForm({ full_name: "", phone: "", relationship_type: "guardian" });
+    },
+  });
+
+  const createPortalAccess = useMutation({
+    mutationFn: (guardianId: string) =>
+      apiFetch(`/guardians/${guardianId}/portal-access`, {
+        method: "POST",
+        body: { email: portalAccessForm.email, password: portalAccessForm.password, full_name: guardianById.get(guardianId)?.full_name ?? "" },
+      }),
+    onSuccess: (_data, guardianId) => {
+      setPortalAccessCreatedFor(guardianById.get(guardianId)?.full_name ?? null);
+      setPortalAccessGuardianId(null);
+      setPortalAccessForm({ email: "", password: "" });
     },
   });
 
@@ -182,13 +198,39 @@ export function StudentDetailPage() {
         <CardHeader><CardTitle className="text-base">Guardians</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           {(!links || links.length === 0) && <p className="text-sm text-muted-foreground">No guardians linked yet.</p>}
+          {portalAccessCreatedFor && (
+            <p className="rounded-md border border-success/30 bg-success/10 p-2 text-xs text-success">
+              Parent portal login created for {portalAccessCreatedFor}. Share the workspace name, email, and password with them.
+            </p>
+          )}
           <div className="space-y-2">
             {links?.map((l) => {
               const g = guardianById.get(l.guardian_id);
               return (
-                <div key={l.id} className="flex items-center justify-between text-sm">
-                  <span>{g?.full_name ?? "-"} <span className="text-muted-foreground">({l.relationship_type})</span></span>
-                  <span className="text-xs text-muted-foreground">{g?.phone ?? "-"}{l.is_primary_contact && " · Primary"}</span>
+                <div key={l.id} className="space-y-1.5 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span>{g?.full_name ?? "-"} <span className="text-muted-foreground">({l.relationship_type})</span></span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">{g?.phone ?? "-"}{l.is_primary_contact && " · Primary"}</span>
+                      <button
+                        type="button"
+                        className="text-xs text-primary hover:underline"
+                        onClick={() => setPortalAccessGuardianId(portalAccessGuardianId === l.guardian_id ? null : l.guardian_id)}
+                      >
+                        Grant portal access
+                      </button>
+                    </div>
+                  </div>
+                  {portalAccessGuardianId === l.guardian_id && (
+                    <div className="flex flex-wrap items-center gap-2 rounded-md border border-border p-2">
+                      <Input placeholder="Email" type="email" className="h-8 w-48" value={portalAccessForm.email} onChange={(e) => setPortalAccessForm((f) => ({ ...f, email: e.target.value }))} />
+                      <Input placeholder="Password" type="password" className="h-8 w-40" value={portalAccessForm.password} onChange={(e) => setPortalAccessForm((f) => ({ ...f, password: e.target.value }))} />
+                      <Button size="sm" className="h-8" onClick={() => createPortalAccess.mutate(l.guardian_id)} disabled={!portalAccessForm.email || !portalAccessForm.password || createPortalAccess.isPending}>
+                        {createPortalAccess.isPending ? "Creating..." : "Create login"}
+                      </Button>
+                      {createPortalAccess.error instanceof ApiError && <p className="w-full text-xs text-destructive">{createPortalAccess.error.message}</p>}
+                    </div>
+                  )}
                 </div>
               );
             })}

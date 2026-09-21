@@ -25,6 +25,7 @@ from app.api.v1 import (
     field_sales,
     fleet,
     gst,
+    guardian_portal,
     health,
     homework,
     hr,
@@ -96,6 +97,7 @@ api_router.include_router(timetable.router)
 api_router.include_router(examinations.router)
 api_router.include_router(homework.router)
 api_router.include_router(fees.router)
+api_router.include_router(guardian_portal.router)
 api_router.include_router(accounting.router)
 api_router.include_router(gst.router)
 api_router.include_router(compliance.router)

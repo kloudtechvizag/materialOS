@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.db import SessionLocal, set_platform_context, set_session_context
 from app.errors import AppError, ErrorCode
+from app.models.education import Guardian
 from app.models.industry import IndustryProfile
 from app.models.masters import Customer
 from app.models.platform_admin import PlatformAdmin
@@ -178,3 +179,18 @@ def get_portal_customer(db: Session = Depends(get_db_tenant), user: User = Depen
     if customer is None:
         raise AppError(ErrorCode.NOT_FOUND, "Customer not found.", status_code=404)
     return customer
+
+
+def get_portal_guardian(db: Session = Depends(get_db_tenant), user: User = Depends(get_current_user)) -> Guardian:
+    """Every /guardian-portal/* endpoint depends on this, never on
+    require_permission alone -- it scopes to exactly one guardian,
+    regardless of what RBAC permissions the "guardian" role happens to
+    carry (same reasoning as get_portal_customer / ADR-009, applied to
+    ADR-032's Guardian Portal).
+    """
+    if user.guardian_id is None:
+        raise AppError(ErrorCode.FORBIDDEN, "This login is not a guardian-portal account.", status_code=403)
+    guardian = db.get(Guardian, user.guardian_id)
+    if guardian is None:
+        raise AppError(ErrorCode.NOT_FOUND, "Guardian not found.", status_code=404)
+    return guardian

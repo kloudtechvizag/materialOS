@@ -74,5 +74,6 @@ def me(db: Session = Depends(get_db_tenant), user: User = Depends(get_current_us
         tenant_id=str(user.tenant_id),
         roles=list(roles),
         customer_id=str(user.customer_id) if user.customer_id else None,
+        guardian_id=str(user.guardian_id) if user.guardian_id else None,
         impersonated_by_admin_id=db.info.get("impersonated_by"),
     )

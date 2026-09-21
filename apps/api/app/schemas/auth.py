@@ -24,4 +24,5 @@ class CurrentUserResponse(BaseModel):
     tenant_id: str
     roles: list[str]
     customer_id: str | None = None
+    guardian_id: str | None = None
     impersonated_by_admin_id: str | None = None

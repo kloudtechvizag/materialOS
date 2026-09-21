@@ -84,6 +84,18 @@ class GuardianCreate(BaseModel):
     pincode: str | None = None
 
 
+class GuardianPortalAccessCreate(BaseModel):
+    email: str
+    password: str
+    full_name: str
+
+
+class GuardianPortalAccessOut(BaseModel):
+    user_id: uuid.UUID
+    email: str
+    guardian_id: uuid.UUID
+
+
 class StudentGuardianOut(BaseModel):
     id: uuid.UUID
     student_id: uuid.UUID
