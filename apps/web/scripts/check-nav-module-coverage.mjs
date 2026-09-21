@@ -23,7 +23,7 @@ const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const VALID_MODULES = new Set([
   "sales", "purchase", "inventory", "warehouse", "dispatch", "fleet", "credit",
   "collections", "projects", "field_sales", "accounting", "gst", "pos", "printing",
-  "laboratory", "jewellery", "serial_tracking",
+  "laboratory", "jewellery", "serial_tracking", "education",
 ]);
 
 // Modules that deliberately gate no sidebar item because the feature

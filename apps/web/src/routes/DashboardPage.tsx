@@ -71,8 +71,15 @@ export function DashboardPage() {
   if (enabledModules?.includes("sales") && workflow.cta_href !== "/quotations/new") {
     quickActions.push({ label: "New quotation", href: "/quotations/new" });
   }
-  quickActions.push({ label: "Add customer", href: "/customers?new=1" });
-  quickActions.push({ label: `Add ${itemLabel}`, href: "/items?new=1" });
+  // Customers/Items have a real nav home for every profile except
+  // School Management (its own Students section replaces "customer"
+  // with the real Guardian/Student concepts, and has no items/
+  // inventory concept yet -- see lib/navigation.ts's Students section)
+  // -- offering them here would be a dead-end action for that one profile.
+  if (!enabledModules?.includes("education")) {
+    quickActions.push({ label: "Add customer", href: "/customers?new=1" });
+    quickActions.push({ label: `Add ${itemLabel}`, href: "/items?new=1" });
+  }
   if (enabledModules?.includes("collections")) {
     quickActions.push({ label: "Collect payment", href: "/collections" });
   }

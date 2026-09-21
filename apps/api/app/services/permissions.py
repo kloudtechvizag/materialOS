@@ -52,6 +52,10 @@ RESOURCES = [
     "rma",
     "webhooks",
     "laboratory",
+    "students",
+    "guardians",
+    "academic_years",
+    "school_classes",
 ]
 
 ACTIONS = ["view", "create", "edit", "delete", "approve", "export", "restore", "manage", "calculate", "lock", "pay"]

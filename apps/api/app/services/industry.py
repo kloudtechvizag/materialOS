@@ -404,6 +404,30 @@ PROFILE_DEFINITIONS: list[dict] = [
             "steps": ["Register sample", "Run tests", "Generate report", "Sign off"],
         },
     },
+    # School Management (industry #26) -- foundational SIS only this
+    # pass (models/education.py's own docstring): AcademicYear,
+    # SchoolClass, Section, Student, Guardian, StudentEnrolment. No
+    # inventory/items concept is enabled yet (no fee/library/uniform
+    # module exists), so terminology stays empty rather than relabeling
+    # a generic "Items" entry no nav item references for this profile.
+    {
+        "slug": "school_education",
+        "name": "School Management",
+        "category": "education",
+        "terminology": {},
+        "enabled_modules": ["education"],
+        "navigation_config": [],
+        # A real School Command Center (attendance/fee/admissions KPIs)
+        # is a later phase -- left empty rather than padded with
+        # generic trade-ERP widgets a school dashboard has no use for.
+        "dashboard_widgets": [],
+        "inventory_flags": _flags(),
+        "pricing_strategy": "standard",
+        "golden_workflow": {
+            "cta_label": "Add student", "cta_href": "/students?new=1",
+            "steps": ["Add student", "Assign class & section"],
+        },
+    },
 ]
 
 

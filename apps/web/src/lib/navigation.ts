@@ -18,6 +18,7 @@ import {
   FlaskConical,
   FileSpreadsheet,
   FileText,
+  GraduationCap,
   History,
   KanbanSquare,
   Layers,
@@ -177,6 +178,20 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
     ],
   },
   {
+    id: "students",
+    label: "Students",
+    items: [
+      { id: "student-directory", label: "Student Directory", href: "/students", icon: GraduationCap, module: "education" },
+      { id: "school-classes", label: "Classes & Sections", href: "/classes", icon: KanbanSquare, module: "education" },
+      { id: "academic-years", label: "Academic Years", href: "/academic-years", icon: CalendarDays, module: "education" },
+      // Multi-campus (spec's own "School Groups", Phase 7) isn't built
+      // yet -- a single-school tenant still has exactly one real
+      // Branch from signup and needs somewhere to manage it, same
+      // reasoning as inventory-trading/projects-services's own copies.
+      { id: "branches", label: "Branches", href: "/branches", icon: Building2, module: "education" },
+    ],
+  },
+  {
     id: "books",
     label: "Finance & Books",
     items: [
@@ -303,6 +318,11 @@ const PRIMARY_SECTION_BY_MODULE: Record<string, string> = {
   // PROFILE_DEFINITIONS) -- for them, project-based work genuinely IS
   // the primary domain.
   projects: "projects-services",
+  // School Management's entire reason for existing is the student
+  // lifecycle (ADR's own "connected student lifecycle" principle) --
+  // never shares enabled_modules with warehouse/projects, so no
+  // ordering conflict is possible.
+  education: "students",
 };
 
 /** Items, Customers, and Branches are real business entities, never

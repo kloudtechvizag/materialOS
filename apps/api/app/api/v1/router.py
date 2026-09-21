@@ -18,6 +18,7 @@ from app.api.v1 import (
     customers,
     dashboard,
     dispatch,
+    education,
     field_sales,
     fleet,
     gst,
@@ -82,6 +83,7 @@ api_router.include_router(suppliers.router)
 api_router.include_router(procurement.router)
 api_router.include_router(collections.router)
 api_router.include_router(field_sales.router)
+api_router.include_router(education.router)
 api_router.include_router(accounting.router)
 api_router.include_router(gst.router)
 api_router.include_router(compliance.router)
