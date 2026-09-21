@@ -331,16 +331,89 @@ creation, customer creation, branch/company creation). Confirmed no
 horizontal overflow and a correctly single-column chart stack at
 390px alongside the rest of the dashboard.
 
+## Addendum: Recent Activity becomes a collapsible panel
+
+**Context:** a follow-up reported the Recent Activity panel itself as
+a UX problem — always fully expanded, pushing Quick Actions off-screen,
+with scheduled-backup runs (each writing several audit rows — INSERT,
+then an UPDATE per state transition) able to fill most of the visible
+window on a tenant that runs backups. Audited first, per the request's
+own instruction: no collapse state existed at all (confirmed reading
+the prior version of `RecentActivity.tsx`), no dashboard-preference
+store existed yet to persist one, and backups were not in the existing
+`NOISE_TABLES` filter (that set only covered pure bookkeeping tables
+like `role_permissions` — a real backup is genuine, wanted activity,
+just not one-row-per-state-transition wanted).
+
+**What shipped:**
+
+- **The exact collapse mechanic `SidebarSection.tsx` already uses** —
+  found by checking for an existing convention before building a new
+  one (the request's own §8 instruction). Same `grid-rows-[0fr]` /
+  `grid-rows-[1fr]` + `transition-[grid-template-rows]` + `min-h-0`
+  inner wrapper, same `aria-expanded`/`aria-controls` pairing, same
+  `ChevronDown`/`ChevronRight` swap. A real `<button>` wraps the whole
+  header row (not just the chevron), so Enter/Space work for free —
+  no bespoke keyboard handling needed.
+- **`useDashboardPrefsStore`** (`store/dashboardPrefs.ts`, new) — a
+  zustand+persist store shaped exactly like the existing
+  `useSidebarStore`, defaulting `recentActivityExpanded: false`
+  (compact-by-default for first-time users, per the request). A
+  browser-level preference, not tenant-keyed — the same scoping
+  `useSidebarStore`'s own persisted state already has, kept consistent
+  rather than introducing a new per-tenant storage shape for one
+  toggle. Toggling flips only this store; the activity `useQuery`'s
+  key never changes, so opening/closing the panel triggers zero
+  refetches (confirmed: the `users` lookup query is additionally
+  gated `enabled: expanded`, deferring even its first fetch until the
+  panel is actually opened once).
+- **Backup-run grouping**: `SYSTEM_GROUP_TABLES` (`backups`,
+  `notification_deliveries`) collapses every row from that table in
+  the fetched window into one summary line ("15 backup events",
+  linking to the real `/operations/backups` list) instead of one row
+  per INSERT/UPDATE — retained, not dropped, exactly as the request
+  asked ("if backup events are operationally important, retain them
+  but present them... grouped"). Genuine business rows are never
+  grouped, only the two designated system tables.
+- **A real cap with a real overflow path**: at most 8 rows render
+  inline (`ROWS_SHOWN`); a "View all activity →" link appears exactly
+  when there are more, pointing at the already-existing, already-real
+  `/operations/audit-log` page — reused rather than building pagination
+  or infinite-scroll inside the dashboard card, which would have been
+  new UI for a need the app already has a real answer to.
+- The header's own "N events" count reflects the post-filter,
+  post-grouping display list (not the raw over-fetched batch), so the
+  number shown matches what a user would actually count on expanding.
+
+**Verification**: `tsc --noEmit`/`vite build` clean; no backend files
+touched this turn. Live-verified end to end on a seeded tenant:
+triggered 5 real backup runs (15 raw audit rows: 5 INSERT + 10 UPDATE)
+alongside 2 real business events — the panel correctly rendered exactly
+3 display rows ("Item ... created", "Customer ... created", "15 backup
+events"), not 17. Confirmed default-collapsed on first visit
+(`aria-expanded="false"`, `grid-rows-[0fr]`) with Quick Actions
+immediately below the compact header — no blank gap. Toggled open,
+confirmed `aria-expanded="true"` and the row list rendering. Reloaded
+the page (a real full navigation, not just an SPA route change) and
+confirmed the expanded preference survived — genuine `localStorage`
+persistence, not component state. Seeded 7 more quotations (18 raw
+audit rows) and confirmed exactly 8 rows render with a working "View
+all activity" link landing on the real, already-built Audit Log page.
+
 ## What's genuinely done, and what's still open
 
-With this addendum, every section of the original request now has a
-real, live-verified implementation except the two named as out of
-scope from the start: **per-user dashboard customization** (reorder/
-hide widgets, saved layout) and a **working date-range/branch filter
-on the header** (both need real new backend capability — a per-user
-preferences store, and query parameters threaded through every summary
-query — neither of which this project's "reuse real data, no
+With this addendum, every section of the original dashboard request
+now has a real, live-verified implementation except the two named as
+out of scope from the start: **per-user dashboard customization**
+(reorder/hide widgets, saved layout beyond Recent Activity's own
+collapse state) and a **working date-range/branch filter on the
+header** (both need real new backend capability — a per-user
+preferences store for the former already exists now in miniature via
+`useDashboardPrefsStore`, but nothing yet generalizes it to arbitrary
+widget layout; query parameters threaded through every summary query
+for the latter — neither of which this project's "reuse real data, no
 nonfunctional controls" rule permits faking). Header, KPI grid, Quick
 Actions, the Needs Attention work queue, the Sales & Revenue and
-Receivables charts, and Recent Activity are all real, live-verified,
-and adapt correctly per industry profile.
+Receivables charts, and Recent Activity (now collapsible, grouped, and
+capped) are all real, live-verified, and adapt correctly per industry
+profile.

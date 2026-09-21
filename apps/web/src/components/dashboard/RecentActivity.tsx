@@ -1,11 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
-import { History } from "lucide-react";
+import { ChevronDown, ChevronRight, History } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { ErrorState } from "@/components/ui/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch, ApiError } from "@/lib/api";
 import { timeAgo } from "@/lib/format";
+import { useDashboardPrefsStore } from "@/store/dashboardPrefs";
+import { cn } from "@/lib/utils";
 
 interface AuditLog {
   id: string;
@@ -27,6 +29,8 @@ interface TableMeta {
   label: string;
   toHref?: (rowId: string, data: Record<string, unknown> | null) => string;
 }
+
+const ROWS_SHOWN = 8;
 
 // Covers the tables that read as genuine business activity (spec's own
 // example list: quotation/order/invoice/payment/stock/dispatch/
@@ -55,6 +59,21 @@ const TABLE_META: Record<string, TableMeta> = {
 // worth a row) rather than the backend inventing a "business-relevant"
 // concept the audit trigger itself doesn't know about.
 const NOISE_TABLES = new Set(["role_permissions", "user_roles", "roles", "doc_number_counters"]);
+
+// Real, operationally-relevant events -- but a scheduled backup writes
+// several rows (created -> running -> completed) every run, which can
+// dominate a small tenant's whole recent-activity window. Never
+// dropped (see NOISE_TABLES for that); collapsed into one summary row
+// per table instead, same "retain but don't let it overwhelm" the
+// request asked for.
+const SYSTEM_GROUP_TABLES: Record<string, { label: string; href: string }> = {
+  backups: { label: "backup", href: "/operations/backups" },
+  notification_deliveries: { label: "notification", href: "/operations/notification-rules" },
+};
+
+type DisplayRow =
+  | { kind: "log"; id: string; log: AuditLog }
+  | { kind: "group"; id: string; tableName: string; count: number; occurredAt: string };
 
 function friendlyTableLabel(tableName: string): string {
   // Curated entries get a real singular label ("Quotation"); anything
@@ -86,17 +105,52 @@ function describe(log: AuditLog): string {
   return `${subject} updated`;
 }
 
+/** Folds consecutive/nearby SYSTEM_GROUP_TABLES rows into one summary
+ * row per table (positioned at that group's most recent event, so
+ * overall recency ordering still reads correctly), leaving every
+ * genuine business-entity row untouched and individually visible. */
+function buildDisplayRows(logs: AuditLog[]): DisplayRow[] {
+  const rows: DisplayRow[] = [];
+  const groupIndexByTable = new Map<string, number>();
+
+  for (const log of logs) {
+    if (SYSTEM_GROUP_TABLES[log.table_name]) {
+      const existingIndex = groupIndexByTable.get(log.table_name);
+      if (existingIndex !== undefined && rows[existingIndex].kind === "group") {
+        const group = rows[existingIndex] as Extract<DisplayRow, { kind: "group" }>;
+        group.count += 1;
+        continue;
+      }
+      groupIndexByTable.set(log.table_name, rows.length);
+      rows.push({ kind: "group", id: `group-${log.table_name}`, tableName: log.table_name, count: 1, occurredAt: log.occurred_at });
+      continue;
+    }
+    rows.push({ kind: "log", id: log.id, log });
+  }
+  return rows;
+}
+
 /** Real events off the audit_trigger_fn DB trigger (every write since
  * Slice 0 already lands here -- see api/v1/audit.py's own docstring),
  * translated into a human-readable line instead of the raw table_name/
  * action/JSON the endpoint returns. No activity is invented: an entry
- * only appears here because a real INSERT/UPDATE/DELETE happened. */
+ * only appears here because a real INSERT/UPDATE/DELETE happened.
+ *
+ * Collapsible, defaulting closed (compact-by-default for first-time
+ * users): the panel's own expand/collapse preference persists via
+ * useDashboardPrefsStore, independent of this query -- toggling never
+ * refetches, since the queryKey never changes. */
 export function RecentActivity() {
+  const expanded = useDashboardPrefsStore((s) => s.recentActivityExpanded);
+  const setExpanded = useDashboardPrefsStore((s) => s.setRecentActivityExpanded);
+
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["recent-activity"],
-    // Over-fetch so filtering out NOISE_TABLES client-side still leaves
-    // a full 15 real rows rather than a short list on a chatty tenant.
-    queryFn: () => apiFetch<AuditLog[]>("/audit-logs?limit=75").then((rows) => rows.filter((r) => !NOISE_TABLES.has(r.table_name)).slice(0, 15)),
+    // Over-fetch so filtering out NOISE_TABLES and grouping system
+    // tables client-side still leaves a full display list rather than
+    // a short one on a chatty tenant.
+    queryFn: () =>
+      apiFetch<AuditLog[]>("/audit-logs?limit=75").then((rows) => buildDisplayRows(rows.filter((r) => !NOISE_TABLES.has(r.table_name)))),
     retry: false,
   });
   // Best-effort name resolution -- a role without users.view still sees
@@ -105,56 +159,105 @@ export function RecentActivity() {
     queryKey: ["users"],
     queryFn: () => apiFetch<TenantUser[]>("/users"),
     retry: false,
+    enabled: expanded,
   });
   const userById = new Map((users ?? []).map((u) => [u.id, u.full_name]));
 
   const forbidden = error instanceof ApiError && error.status === 403;
+  const shown = data?.slice(0, ROWS_SHOWN) ?? [];
+  const hasMore = (data?.length ?? 0) > shown.length;
+  const panelId = "recent-activity-panel";
 
   return (
-    <div className="rounded-lg border border-border p-4">
-      <p className="mb-3 text-sm font-semibold">Recent activity</p>
+    <div className="rounded-lg border border-border">
+      <button
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        aria-expanded={expanded}
+        aria-controls={panelId}
+        className="flex w-full items-center justify-between rounded-lg px-4 py-3 text-left transition-colors hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <span className="text-sm font-semibold">Recent activity</span>
+        <span className="flex items-center gap-2">
+          {data && <span className="text-xs text-muted-foreground">{data.length} event{data.length === 1 ? "" : "s"}</span>}
+          {expanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" aria-hidden="true" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" />}
+        </span>
+      </button>
 
-      {isLoading && (
-        <div className="space-y-2">
-          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-9 w-full" />)}
-        </div>
-      )}
-
-      {error && !forbidden && <ErrorState error={error} onRetry={() => refetch()} />}
-      {forbidden && <p className="text-sm text-muted-foreground">You don&apos;t have permission to view the activity log.</p>}
-
-      {data && data.length === 0 && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <History className="h-4 w-4" />
-          <span>No activity yet.</span>
-        </div>
-      )}
-
-      {data && data.length > 0 && (
-        <div className="space-y-1">
-          {data.map((log) => {
-            const meta = TABLE_META[log.table_name];
-            const href = meta?.toHref?.(log.row_id, log.new_data ?? log.old_data);
-            const userName = log.changed_by_user_id ? userById.get(log.changed_by_user_id) : undefined;
-            const content = (
-              <div className="flex items-center justify-between gap-3 rounded-md px-2 py-1.5 text-sm">
-                <span className="truncate">
-                  {describe(log)}
-                  {userName && <span className="text-muted-foreground"> &middot; {userName}</span>}
-                </span>
-                <span className="shrink-0 text-xs text-muted-foreground">{timeAgo(new Date(log.occurred_at).getTime())}</span>
+      <div
+        id={panelId}
+        className={cn("grid overflow-hidden transition-[grid-template-rows] duration-200 ease-in-out", expanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}
+      >
+        <div className="min-h-0">
+          <div className="border-t border-border px-4 py-3">
+            {isLoading && (
+              <div className="space-y-2">
+                {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-9 w-full" />)}
               </div>
-            );
-            return href ? (
-              <Link key={log.id} to={href} className="block transition-colors hover:bg-accent/40 rounded-md">
-                {content}
-              </Link>
-            ) : (
-              <div key={log.id}>{content}</div>
-            );
-          })}
+            )}
+
+            {error && !forbidden && <ErrorState error={error} onRetry={() => refetch()} />}
+            {forbidden && <p className="text-sm text-muted-foreground">You don&apos;t have permission to view the activity log.</p>}
+
+            {data && data.length === 0 && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <History className="h-4 w-4" />
+                <span>No activity yet.</span>
+              </div>
+            )}
+
+            {data && data.length > 0 && (
+              <div className="space-y-1">
+                {shown.map((row) => {
+                  if (row.kind === "group") {
+                    const meta = SYSTEM_GROUP_TABLES[row.tableName];
+                    const content = (
+                      <div className="flex items-center justify-between gap-3 rounded-md px-2 py-1.5 text-sm">
+                        <span className="truncate text-muted-foreground">
+                          {row.count} {meta.label}{row.count === 1 ? "" : " events"}
+                        </span>
+                        <span className="shrink-0 text-xs text-muted-foreground">{timeAgo(new Date(row.occurredAt).getTime())}</span>
+                      </div>
+                    );
+                    return (
+                      <Link key={row.id} to={meta.href} className="block rounded-md transition-colors hover:bg-accent/40">
+                        {content}
+                      </Link>
+                    );
+                  }
+
+                  const log = row.log;
+                  const meta = TABLE_META[log.table_name];
+                  const href = meta?.toHref?.(log.row_id, log.new_data ?? log.old_data);
+                  const userName = log.changed_by_user_id ? userById.get(log.changed_by_user_id) : undefined;
+                  const content = (
+                    <div className="flex items-center justify-between gap-3 rounded-md px-2 py-1.5 text-sm">
+                      <span className="truncate">
+                        {describe(log)}
+                        {userName && <span className="text-muted-foreground"> &middot; {userName}</span>}
+                      </span>
+                      <span className="shrink-0 text-xs text-muted-foreground">{timeAgo(new Date(log.occurred_at).getTime())}</span>
+                    </div>
+                  );
+                  return href ? (
+                    <Link key={row.id} to={href} className="block rounded-md transition-colors hover:bg-accent/40">
+                      {content}
+                    </Link>
+                  ) : (
+                    <div key={row.id}>{content}</div>
+                  );
+                })}
+
+                {hasMore && (
+                  <Link to="/operations/audit-log" className="block px-2 pt-2 text-xs font-medium text-primary hover:underline">
+                    View all activity &rarr;
+                  </Link>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
