@@ -26,6 +26,7 @@ import {
   GraduationCap,
   History,
   Inbox,
+  IndianRupee,
   KanbanSquare,
   Layers,
   LayoutDashboard,
@@ -200,6 +201,7 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
       { id: "timetable", label: "Timetable", href: "/timetable", icon: CalendarClock, module: "education" },
       { id: "examinations", label: "Examinations", href: "/examinations", icon: FileCheck2, module: "education" },
       { id: "homework", label: "Homework", href: "/homework", icon: FilePenLine, module: "education" },
+      { id: "fees", label: "Fees", href: "/fees", icon: IndianRupee, module: "education" },
       { id: "school-classes", label: "Classes & Sections", href: "/classes", icon: KanbanSquare, module: "education" },
       { id: "academic-years", label: "Academic Years", href: "/academic-years", icon: CalendarDays, module: "education" },
       // Multi-campus (spec's own "School Groups", Phase 7) isn't built

@@ -37,6 +37,7 @@ interface Examination { id: string; academic_year_id: string; name: string; is_l
 interface ReportCardSubject { subject_id: string; subject_name: string; max_marks: string; pass_marks: string; marks_obtained: string | null; is_absent: boolean; is_pass: boolean | null; grade: string | null; }
 interface ReportCard { subjects: ReportCardSubject[]; total_marks_obtained: string; total_max_marks: string; percentage: string | null; overall_grade: string | null; overall_result: string; }
 interface StudentHomeworkEntry { homework: { id: string; title: string; due_date: string }; status: string; }
+interface FeeInvoiceSummary { id: string; invoice_id: string; invoice_number: string; invoice_date: string; customer_id: string; total: string; outstanding: string; }
 
 const STATUS_LABELS: Record<string, string> = { active: "Active", transferred: "Transferred", withdrawn: "Withdrawn", alumni: "Alumni", inactive: "Inactive" };
 
@@ -45,6 +46,8 @@ export function StudentDetailPage() {
   const queryClient = useQueryClient();
   const [guardianForm, setGuardianForm] = useState({ full_name: "", phone: "", relationship_type: "guardian" });
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
+  const [payingInvoiceId, setPayingInvoiceId] = useState<string | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState("");
 
   const { data: student, isLoading, error, refetch } = useQuery({
     queryKey: ["student", studentId],
@@ -76,6 +79,10 @@ export function StudentDetailPage() {
     queryKey: ["student-homework", studentId],
     queryFn: () => apiFetch<StudentHomeworkEntry[]>(`/students/${studentId}/homework`),
   });
+  const { data: feeInvoices } = useQuery({
+    queryKey: ["student-fees", studentId],
+    queryFn: () => apiFetch<FeeInvoiceSummary[]>(`/students/${studentId}/fees`),
+  });
 
   const yearById = new Map((years ?? []).map((y) => [y.id, y.name]));
   const classById = new Map((classes ?? []).map((c) => [c.id, c.name]));
@@ -96,6 +103,19 @@ export function StudentDetailPage() {
       queryClient.invalidateQueries({ queryKey: ["student-guardians", studentId] });
       queryClient.invalidateQueries({ queryKey: ["guardians"] });
       setGuardianForm({ full_name: "", phone: "", relationship_type: "guardian" });
+    },
+  });
+
+  const recordPayment = useMutation({
+    mutationFn: (invoice: FeeInvoiceSummary) =>
+      apiFetch("/receipts", {
+        method: "POST",
+        body: { customer_id: invoice.customer_id, amount: paymentAmount, mode: "cash", reference_note: `Fee payment for ${invoice.invoice_number}`, invoice_id: invoice.invoice_id },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["student-fees", studentId] });
+      setPayingInvoiceId(null);
+      setPaymentAmount("");
     },
   });
 
@@ -272,6 +292,43 @@ export function StudentDetailPage() {
               </table>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">Fees</CardTitle></CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          {(!feeInvoices || feeInvoices.length === 0) && <p className="text-muted-foreground">No fee invoices yet.</p>}
+          {feeInvoices?.map((inv) => (
+            <div key={inv.id} className="space-y-1.5 border-b border-border py-1.5 last:border-0">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">{inv.invoice_number}</p>
+                  <p className="text-xs text-muted-foreground">{inv.invoice_date} · Total ₹{inv.total}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant={Number(inv.outstanding) <= 0 ? "success" : "outline"}>
+                    {Number(inv.outstanding) <= 0 ? "Paid" : `₹${inv.outstanding} due`}
+                  </Badge>
+                  {Number(inv.outstanding) > 0 && (
+                    <Button size="sm" variant="outline" onClick={() => { setPayingInvoiceId(inv.id); setPaymentAmount(inv.outstanding); }}>
+                      Record payment
+                    </Button>
+                  )}
+                </div>
+              </div>
+              {payingInvoiceId === inv.id && (
+                <div className="flex items-center gap-2">
+                  <Input type="number" className="h-8 w-28" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} />
+                  <Button size="sm" className="h-8" onClick={() => recordPayment.mutate(inv)} disabled={!paymentAmount || recordPayment.isPending}>
+                    {recordPayment.isPending ? "Saving..." : "Confirm"}
+                  </Button>
+                  <button type="button" className="text-xs text-muted-foreground hover:text-foreground" onClick={() => setPayingInvoiceId(null)}>Cancel</button>
+                </div>
+              )}
+              {recordPayment.error instanceof ApiError && payingInvoiceId === inv.id && <p className="text-xs text-destructive">{recordPayment.error.message}</p>}
+            </div>
+          ))}
         </CardContent>
       </Card>
 

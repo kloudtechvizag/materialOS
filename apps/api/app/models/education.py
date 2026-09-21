@@ -97,6 +97,13 @@ class Guardian(Base, UUIDPk, TenantMixin, TimestampMixin):
     user_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
+    # Nullable, same lazy-link pattern as user_id above -- a real
+    # Customer row (billing party) created only when fee invoicing
+    # actually happens for this guardian (services/fees.py), not
+    # speculatively for every guardian on creation.
+    customer_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("customers.id", ondelete="SET NULL"), nullable=True
+    )
 
 
 class Student(Base, UUIDPk, TenantMixin, TimestampMixin):

@@ -106,6 +106,7 @@ import { ExaminationsPage } from "@/routes/education/ExaminationsPage";
 import { ExaminationDetailPage } from "@/routes/education/ExaminationDetailPage";
 import { HomeworkPage } from "@/routes/education/HomeworkPage";
 import { HomeworkDetailPage } from "@/routes/education/HomeworkDetailPage";
+import { FeesPage } from "@/routes/education/FeesPage";
 import { AdmissionEnquiriesPage } from "@/routes/admissions/AdmissionEnquiriesPage";
 import { AdmissionApplicationsPage } from "@/routes/admissions/AdmissionApplicationsPage";
 import { AdmissionApplicationDetailPage } from "@/routes/admissions/AdmissionApplicationDetailPage";
@@ -285,6 +286,7 @@ export default function App() {
         <Route path="/examinations/:examinationId" element={<RequireModule module="education"><ExaminationDetailPage /></RequireModule>} />
         <Route path="/homework" element={<RequireModule module="education"><HomeworkPage /></RequireModule>} />
         <Route path="/homework/:homeworkId" element={<RequireModule module="education"><HomeworkDetailPage /></RequireModule>} />
+        <Route path="/fees" element={<RequireModule module="education"><FeesPage /></RequireModule>} />
         <Route path="/academic-years" element={<RequireModule module="education"><AcademicYearsPage /></RequireModule>} />
         <Route path="/admission-enquiries" element={<RequireModule module="education"><AdmissionEnquiriesPage /></RequireModule>} />
         <Route path="/admission-applications" element={<RequireModule module="education"><AdmissionApplicationsPage /></RequireModule>} />
