@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 
 import { DASHBOARD_WIDGETS, DEFAULT_DASHBOARD_WIDGETS, type DashboardSummary } from "@/components/dashboard/widgets";
 import { ReceivablesChart } from "@/components/dashboard/ReceivablesChart";
+import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { SalesTrendChart } from "@/components/dashboard/SalesTrendChart";
 import { WorkQueue } from "@/components/dashboard/WorkQueue";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
+import { timeAgo } from "@/lib/format";
 import { useIndustryProfile, type GoldenWorkflow } from "@/lib/industryProfile";
 
 /** The trade/dealer flow every profile without its own bespoke
@@ -35,16 +37,6 @@ function greeting(): string {
   if (hour < 12) return "Good morning";
   if (hour < 17) return "Good afternoon";
   return "Good evening";
-}
-
-function timeAgo(timestamp: number): string {
-  if (!timestamp) return "never";
-  const seconds = Math.round((Date.now() - timestamp) / 1000);
-  if (seconds < 10) return "just now";
-  if (seconds < 60) return `${seconds}s ago`;
-  const minutes = Math.round(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  return `${Math.round(minutes / 60)}h ago`;
 }
 
 export function DashboardPage() {
@@ -138,6 +130,8 @@ export function DashboardPage() {
       )}
 
       {!isLoading && <WorkQueue enabledModules={enabledModules} />}
+
+      {!isLoading && <RecentActivity />}
 
       <div className="rounded-lg border border-border p-4">
         <p className="mb-3 text-sm font-semibold">Quick actions</p>

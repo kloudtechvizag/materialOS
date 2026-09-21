@@ -107,9 +107,6 @@ every other step renders without a fabricated count.
 
 ## Deliberately not built in this pass
 
-- **Recent activity feed** — `GET /audit` is real but raw (table_name/
-  action/old_data JSON); this slice is mostly a human-readable
-  translation layer, not new data.
 - **Dashboard customization** (reorder/hide widgets, saved layout) —
   no per-user dashboard-preference storage exists; a real, separate
   schema addition.
@@ -274,3 +271,76 @@ the real post-dispatch stock draw-down. Separately confirmed a
 Laboratory tenant's dashboard renders with neither chart present and no
 dead gap left behind, since Laboratory has neither `accounting` nor
 `collections`.
+
+## Addendum: Recent Activity — the last dashboard slice
+
+**What shipped**: `RecentActivity.tsx`, the final section of this
+redesign, needing **zero new backend data**. `audit_trigger_fn` (the
+DB trigger from ADR at Slice 0) has populated `audit_log` for every
+INSERT/UPDATE/DELETE across ~40 tables since before this dashboard
+existed; `GET /audit-logs` (`audit.view`) already read it back raw
+(`table_name`, `action`, `old_data`/`new_data` JSON, `changed_by_user_
+id`). This slice is entirely a translation layer over real, already-
+recorded events — no fabricated activity, ever, by construction:
+a row only appears here because a real write happened.
+
+- **A curated `TABLE_META` map** gives ~12 business-relevant tables
+  (quotations, sales_orders, invoices, customers, suppliers, purchase_
+  orders, receipts, delivery_challans, stock_transfers, items,
+  branches, warehouses, companies, users) a real singular label and a
+  real deep link straight to the record (`/quotations/{id}`,
+  `/invoices/{id}`, ...) — reusing routes this project already built,
+  several in earlier addenda to this same ADR. Every other audited
+  table (there are dozens — `roles`, `financial_years`, `accounts`,
+  ...) still renders, with its plain table name and no link, rather
+  than either crashing on an uncurated table or hiding real activity
+  the curation didn't anticipate.
+- **Smarter-than-raw verbs for UPDATE**: comparing `old_data.status`
+  to `new_data.status` turns a generic "Quotation updated" into
+  "Quotation QT-2026-27-000001 marked approved" — genuinely more
+  informative than the raw action, still derived only from real
+  trigger-captured data, never invented.
+- **User attribution** resolves `changed_by_user_id` against `GET
+  /users` (fetched once, best-effort — a role without `users.view`
+  still sees the feed, just without the "by <name>" clause, same
+  graceful-403 pattern as every other permission-gated dashboard
+  widget in this ADR).
+- **A small, explicit `NOISE_TABLES` filter** (`role_permissions`,
+  `user_roles`, `roles`, `doc_number_counters`) drops pure internal-
+  bookkeeping rows client-side — found live-testing on a freshly
+  signed-up tenant, whose first 15 audit rows were 4 "role permissions
+  created" entries crowding out the real "Customer created"/"Item
+  created" events sitting right below them. Filtering, not hiding: the
+  endpoint is over-fetched (`limit=75`) so a chatty tenant still gets a
+  full 15 real rows after the filter, rather than a short list.
+- Own loading skeleton, error+retry, forbidden state, and empty state
+  — independent of every other widget, same as the rest of this ADR.
+
+**Verification**: `tsc --noEmit`/`vite build` clean; full backend
+suite untouched (219 passed) since no backend code changed. Live-
+verified end to end: drove a real quotation through create -> send ->
+approve on a fresh tenant and watched the feed render "Quotation
+QT-2026-27-000001 marked approved · Neha Verma", "... marked sent",
+"... created", each a distinct real audit row with correct attribution
+and relative time; clicking the "marked approved" row navigated to
+that exact quotation's real detail page (`/quotations/{id}`), not just
+the list. Confirmed the noise filter live: before the filter, 4 of a
+fresh tenant's first 8 visible rows were bookkeeping noise; after, all
+8 were genuine business/setup events (quotation lifecycle, item
+creation, customer creation, branch/company creation). Confirmed no
+horizontal overflow and a correctly single-column chart stack at
+390px alongside the rest of the dashboard.
+
+## What's genuinely done, and what's still open
+
+With this addendum, every section of the original request now has a
+real, live-verified implementation except the two named as out of
+scope from the start: **per-user dashboard customization** (reorder/
+hide widgets, saved layout) and a **working date-range/branch filter
+on the header** (both need real new backend capability — a per-user
+preferences store, and query parameters threaded through every summary
+query — neither of which this project's "reuse real data, no
+nonfunctional controls" rule permits faking). Header, KPI grid, Quick
+Actions, the Needs Attention work queue, the Sales & Revenue and
+Receivables charts, and Recent Activity are all real, live-verified,
+and adapt correctly per industry profile.
