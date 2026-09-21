@@ -17,6 +17,7 @@ import {
   CreditCard,
   Database,
   Factory,
+  FileCheck2,
   FileMinus,
   FlaskConical,
   FileSpreadsheet,
@@ -196,6 +197,7 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
       { id: "student-directory", label: "Student Directory", href: "/students", icon: GraduationCap, module: "education" },
       { id: "student-attendance", label: "Student Attendance", href: "/student-attendance", icon: CalendarCheck, module: "education" },
       { id: "timetable", label: "Timetable", href: "/timetable", icon: CalendarClock, module: "education" },
+      { id: "examinations", label: "Examinations", href: "/examinations", icon: FileCheck2, module: "education" },
       { id: "school-classes", label: "Classes & Sections", href: "/classes", icon: KanbanSquare, module: "education" },
       { id: "academic-years", label: "Academic Years", href: "/academic-years", icon: CalendarDays, module: "education" },
       // Multi-campus (spec's own "School Groups", Phase 7) isn't built

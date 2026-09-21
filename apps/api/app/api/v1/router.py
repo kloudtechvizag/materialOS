@@ -20,6 +20,7 @@ from app.api.v1 import (
     dashboard,
     dispatch,
     education,
+    examinations,
     field_sales,
     fleet,
     gst,
@@ -90,6 +91,7 @@ api_router.include_router(education.router)
 api_router.include_router(admissions.router)
 api_router.include_router(student_attendance.router)
 api_router.include_router(timetable.router)
+api_router.include_router(examinations.router)
 api_router.include_router(accounting.router)
 api_router.include_router(gst.router)
 api_router.include_router(compliance.router)

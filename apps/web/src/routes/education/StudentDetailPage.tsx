@@ -33,6 +33,9 @@ interface StudentEnrolment { id: string; academic_year_id: string; school_class_
 interface Guardian { id: string; full_name: string; phone: string | null; email: string | null; }
 interface StudentGuardianLink { id: string; guardian_id: string; relationship_type: string; is_primary_contact: boolean; }
 interface AttendanceRecord { id: string; attendance_date: string; status: string; }
+interface Examination { id: string; academic_year_id: string; name: string; is_locked: boolean; }
+interface ReportCardSubject { subject_id: string; subject_name: string; max_marks: string; pass_marks: string; marks_obtained: string | null; is_absent: boolean; is_pass: boolean | null; grade: string | null; }
+interface ReportCard { subjects: ReportCardSubject[]; total_marks_obtained: string; total_max_marks: string; percentage: string | null; overall_grade: string | null; overall_result: string; }
 
 const STATUS_LABELS: Record<string, string> = { active: "Active", transferred: "Transferred", withdrawn: "Withdrawn", alumni: "Alumni", inactive: "Inactive" };
 
@@ -40,6 +43,7 @@ export function StudentDetailPage() {
   const { studentId } = useParams<{ studentId: string }>();
   const queryClient = useQueryClient();
   const [guardianForm, setGuardianForm] = useState({ full_name: "", phone: "", relationship_type: "guardian" });
+  const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
 
   const { data: student, isLoading, error, refetch } = useQuery({
     queryKey: ["student", studentId],
@@ -60,6 +64,12 @@ export function StudentDetailPage() {
   const { data: attendance } = useQuery({
     queryKey: ["student-attendance-history", studentId],
     queryFn: () => apiFetch<AttendanceRecord[]>(`/student-attendance?student_id=${studentId}`),
+  });
+  const { data: examinations } = useQuery({ queryKey: ["examinations"], queryFn: () => apiFetch<Examination[]>("/examinations") });
+  const { data: reportCard, isFetching: reportCardLoading } = useQuery({
+    queryKey: ["report-card", selectedExamId, studentId],
+    queryFn: () => apiFetch<ReportCard>(`/examinations/${selectedExamId}/report-card/${studentId}`),
+    enabled: !!selectedExamId,
   });
 
   const yearById = new Map((years ?? []).map((y) => [y.id, y.name]));
@@ -205,6 +215,57 @@ export function StudentDetailPage() {
                 ))}
               </div>
             </>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">Report cards</CardTitle></CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          {(!examinations || examinations.length === 0) && <p className="text-muted-foreground">No examinations yet.</p>}
+          <div className="flex flex-wrap gap-1.5">
+            {examinations?.map((exam) => (
+              <button
+                key={exam.id}
+                type="button"
+                onClick={() => setSelectedExamId(exam.id)}
+                className={`rounded-full border px-2.5 py-1 text-xs font-medium ${selectedExamId === exam.id ? "border-primary bg-accent" : "border-input text-muted-foreground hover:bg-accent"}`}
+              >
+                {exam.name}
+              </button>
+            ))}
+          </div>
+
+          {selectedExamId && reportCardLoading && <p className="text-muted-foreground">Loading...</p>}
+          {selectedExamId && reportCard && (
+            <div className="space-y-2 pt-1">
+              <div className="flex items-center justify-between">
+                <Badge variant={reportCard.overall_result === "pass" ? "success" : reportCard.overall_result === "fail" ? "destructive" : "outline"}>
+                  {reportCard.overall_result === "incomplete" ? "Incomplete" : reportCard.overall_result === "pass" ? "Pass" : "Fail"}
+                </Badge>
+                {reportCard.percentage !== null && (
+                  <span className="text-muted-foreground">{reportCard.percentage}% {reportCard.overall_grade ? `· Grade ${reportCard.overall_grade}` : ""}</span>
+                )}
+              </div>
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-border text-left text-muted-foreground">
+                    <th className="py-1">Subject</th>
+                    <th className="py-1">Marks</th>
+                    <th className="py-1">Grade</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reportCard.subjects.map((s) => (
+                    <tr key={s.subject_id} className="border-b border-border last:border-0">
+                      <td className="py-1">{s.subject_name}</td>
+                      <td className="py-1">{s.is_absent ? "Absent" : s.marks_obtained !== null ? `${s.marks_obtained} / ${s.max_marks}` : "Not marked"}</td>
+                      <td className="py-1">{s.grade ?? "-"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </CardContent>
       </Card>

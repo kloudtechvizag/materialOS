@@ -11,6 +11,7 @@ from app.models.demo_request import DemoRequest
 from app.models.education import AcademicYear, Guardian, SchoolClass, Section, Student, StudentEnrolment, StudentGuardian
 from app.models.student_attendance import StudentAttendanceRecord
 from app.models.timetable import Subject, TimetableEntry, TimetableSlot
+from app.models.examinations import ExamMark, ExamSubjectSchedule, Examination
 from app.models.field_sales import Visit
 from app.models.attendance import AttendanceCorrection, AttendanceRecord
 from app.models.fleet import Driver, ProofOfDelivery, Trip, Vehicle
