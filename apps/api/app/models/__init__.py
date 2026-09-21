@@ -17,6 +17,7 @@ from app.models.fees import FeeHead, FeeInvoice, FeeInvoiceLine, FeeStructureIte
 from app.models.announcements import Announcement, AnnouncementRead
 from app.models.transport import RouteStop, StudentTransportAssignment, TransportRoute
 from app.models.library import Book, BookCopy, BookIssue
+from app.models.hostel import Hostel, HostelRoom, StudentHostelAllocation
 from app.models.field_sales import Visit
 from app.models.attendance import AttendanceCorrection, AttendanceRecord
 from app.models.fleet import Driver, ProofOfDelivery, Trip, Vehicle

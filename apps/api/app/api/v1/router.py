@@ -29,6 +29,7 @@ from app.api.v1 import (
     guardian_portal,
     health,
     homework,
+    hostel,
     hr,
     imports,
     industry,
@@ -104,6 +105,7 @@ api_router.include_router(fees.router)
 api_router.include_router(guardian_portal.router)
 api_router.include_router(transport.router)
 api_router.include_router(library.router)
+api_router.include_router(hostel.router)
 api_router.include_router(accounting.router)
 api_router.include_router(gst.router)
 api_router.include_router(compliance.router)

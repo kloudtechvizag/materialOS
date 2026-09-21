@@ -17,6 +17,7 @@ interface ReportCardSubject { subject_id: string; subject_name: string; max_mark
 interface ReportCard { subjects: ReportCardSubject[]; percentage: string | null; overall_grade: string | null; overall_result: string; }
 interface Transport { route_name: string; vehicle_registration_number: string; driver_name: string; driver_phone: string | null; stop_name: string; pickup_time: string; drop_time: string; }
 interface LibraryIssue { id: string; book_title: string; accession_number: string; issued_date: string; due_date: string; returned_date: string | null; status: string; fine_amount: string; is_overdue: boolean; }
+interface StudentHostel { hostel_name: string; room_number: string; bed_number: number; warden_name: string | null; warden_phone: string | null; }
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -59,6 +60,10 @@ export function GuardianPortalChildPage() {
   const { data: libraryHistory } = useQuery({
     queryKey: ["guardian-portal-library", studentId],
     queryFn: () => apiFetch<LibraryIssue[]>(`/guardian-portal/children/${studentId}/library`),
+  });
+  const { data: hostel } = useQuery({
+    queryKey: ["guardian-portal-hostel", studentId],
+    queryFn: () => apiFetch<StudentHostel | null>(`/guardian-portal/children/${studentId}/hostel`),
   });
 
   if (attendanceLoading) return <Skeleton className="h-96" />;
@@ -186,6 +191,21 @@ export function GuardianPortalChildPage() {
                 </Badge>
               </div>
             ))}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader><CardTitle className="text-base">Hostel</CardTitle></CardHeader>
+          <CardContent className="space-y-1 text-sm">
+            {!hostel && <p className="text-muted-foreground">Not allocated to hostel accommodation.</p>}
+            {hostel && (
+              <>
+                <div className="flex justify-between"><span className="text-muted-foreground">Hostel</span><span>{hostel.hostel_name}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Room</span><span>{hostel.room_number}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Bed</span><span>{hostel.bed_number}</span></div>
+                {hostel.warden_name && <div className="flex justify-between"><span className="text-muted-foreground">Warden</span><span>{hostel.warden_name}{hostel.warden_phone ? ` · ${hostel.warden_phone}` : ""}</span></div>}
+              </>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -40,6 +40,7 @@ interface StudentHomeworkEntry { homework: { id: string; title: string; due_date
 interface FeeInvoiceSummary { id: string; invoice_id: string; invoice_number: string; invoice_date: string; customer_id: string; total: string; outstanding: string; }
 interface StudentTransport { route_name: string; vehicle_registration_number: string; driver_name: string; driver_phone: string | null; stop_name: string; pickup_time: string; drop_time: string; }
 interface LibraryIssue { id: string; book_title: string; accession_number: string; issued_date: string; due_date: string; returned_date: string | null; status: string; fine_amount: string; is_overdue: boolean; }
+interface StudentHostel { hostel_name: string; room_number: string; bed_number: number; warden_name: string | null; warden_phone: string | null; }
 
 const STATUS_LABELS: Record<string, string> = { active: "Active", transferred: "Transferred", withdrawn: "Withdrawn", alumni: "Alumni", inactive: "Inactive" };
 
@@ -95,6 +96,10 @@ export function StudentDetailPage() {
   const { data: libraryHistory } = useQuery({
     queryKey: ["student-library", studentId],
     queryFn: () => apiFetch<LibraryIssue[]>(`/students/${studentId}/library`),
+  });
+  const { data: hostel } = useQuery({
+    queryKey: ["student-hostel", studentId],
+    queryFn: () => apiFetch<StudentHostel | null>(`/students/${studentId}/hostel`),
   });
 
   const yearById = new Map((years ?? []).map((y) => [y.id, y.name]));
@@ -418,6 +423,21 @@ export function StudentDetailPage() {
               </Badge>
             </div>
           ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">Hostel</CardTitle></CardHeader>
+        <CardContent className="space-y-1 text-sm">
+          {!hostel && <p className="text-muted-foreground">Not allocated to hostel accommodation.</p>}
+          {hostel && (
+            <>
+              <div className="flex justify-between"><span className="text-muted-foreground">Hostel</span><span>{hostel.hostel_name}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Room</span><span>{hostel.room_number}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Bed</span><span>{hostel.bed_number}</span></div>
+              {hostel.warden_name && <div className="flex justify-between"><span className="text-muted-foreground">Warden</span><span>{hostel.warden_name}{hostel.warden_phone ? ` · ${hostel.warden_phone}` : ""}</span></div>}
+            </>
+          )}
         </CardContent>
       </Card>
 
