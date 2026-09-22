@@ -102,6 +102,21 @@ in ADR-011, not approximated.
 Slice 5 (the AI assistant) is not started; see the brief's Part F for
 what's next and why the order matters.
 
+**MaterialOS Education** is a 26th industry profile (`school_education`,
+see ADR-025) built out as a full vertical, not a config entry: a
+Student Information System, Admissions, Attendance, Timetable (with a
+real teacher double-booking conflict check), Examinations & computed
+report cards, Homework, Fee Management (reusing the core Invoice/
+Receipt/journal stack, never a parallel ledger), a Guardian (Parent)
+Portal with its own login modeled directly on the existing customer
+portal, a Communication Center (targeted announcements), and Transport/
+Library/Hostel -- each new domain reuses existing core infra wherever
+one genuinely fit (Vehicle/Driver for buses, Employee for wardens/
+teachers, Invoice/Customer for fees) and names what it deliberately
+didn't build (SMS/WhatsApp delivery, a payment gateway, multi-campus,
+an AI Copilot) rather than faking it. See ADR-025 through ADR-036, and
+`seed_school.py` below for a fully populated demo tenant.
+
 A **desktop app** (`apps/desktop`, see ADR-012) wraps this same web app
 in a native Tauri shell for Windows/macOS/Linux -- no second frontend,
 `apps/web`'s existing build output is what ships. A4/local printing
@@ -227,6 +242,18 @@ scripts/
                     a Medicines category with a real parameter_schema,
                     a few medicines with those attributes filled in,
                     and batches (one near-expiry, one not)
+  seed_school.py    School Management (Education, ADR-025 through
+                    ADR-036) demo tenant (Greenwood International
+                    School): real classes/sections/students/guardians
+                    (three with real Guardian Portal logins), a
+                    timetable, marked attendance, homework, an
+                    examination with real marks, a fee invoice with a
+                    partial payment, a transport route, issued library
+                    books, a hostel room allocation, an in-flight
+                    admission application, and announcements -- every
+                    module in the vertical shows real data on first
+                    login, via the same real service calls the live
+                    app uses (no HTTP layer, no backdated history)
 ```
 
 Money is `NUMERIC(18,4)` + Python `Decimal` end to end, never a float.
@@ -264,6 +291,25 @@ Demo login: `owner@sribalaji-demo.example.com` / `demo-password-123`
 `seed_pharmacy.py` (`owner@abcmedicals-demo.example.com`, workspace
 `abcmedicals-demo`) demonstrates the Industry Profile Engine (ADR-010)
 rendering a genuinely different sidebar/dashboard/item form per profile.
+
+**School Management (Education) demo**, seeded by `seed_school.py`:
+
+```bash
+cd apps/api
+DATABASE_URL="postgresql+psycopg://materialos_app:materialos_app_dev_password@localhost:55432/materialos" \
+  python ../../scripts/seed_school.py
+```
+
+- Workspace: `greenwood-demo`
+- Staff login (full access): `owner@greenwood-demo.example.com` / `demo-password-123`
+- Guardian Portal logins (`http://localhost:5173/guardian-portal/login`), password `demo-parent-123` for all three:
+  - `suresh.mehta@example.com` -- father of Aarav Mehta (Grade 3-A; has the richest data -- attendance, homework, exam marks, a fee invoice, transport, and an issued library book)
+  - `neha.kapoor@example.com` -- mother of Diya Kapoor (Grade 3-A; also has homework, exam marks, transport, a library book, and a hostel room allocation)
+  - `amit.joshi@example.com` -- father of Vihaan Joshi (Grade 3-A; has attendance, homework, exam marks, and a fee invoice with a partial payment recorded)
+
+Staff and Guardian Portal logins were both live-verified end to end
+(real browser, real login, real rendered data) before this was
+written up.
 
 API docs: http://localhost:58000/docs
 
@@ -510,5 +556,23 @@ Recorded in `docs/decisions/`:
   on `GET /suppliers` so the management page can reach a deactivated
   supplier again without changing the purchase-order supplier picker's
   active-only default.
+- **ADR-025 through ADR-036**: MaterialOS Education, a 26th industry
+  profile (`school_education`) built as a full vertical rather than a
+  config entry. Each slice's own ADR documents what it reused from
+  existing core infra versus what genuinely needed new tables, and
+  names its own deferred scope rather than faking it -- among the
+  recurring decisions: Fee Management (ADR-031) posts real `Invoice`/
+  `Receipt`/journal rows through the exact same code every other
+  billing path in this app uses, not a parallel fee ledger; the
+  Guardian Portal (ADR-032) reuses the proven customer-portal
+  authentication mechanism (`User.customer_id` -> `User.guardian_id`,
+  same scoped-dependency pattern) instead of inventing a second login
+  system; Transport/Hostel (ADR-034, ADR-036) reuse the core Vehicle/
+  Driver/Employee models for buses, drivers, and wardens; and
+  Timetable (ADR-028) enforces a real teacher double-booking conflict
+  check, not just a UI warning. Deliberately not built: SMS/WhatsApp/
+  push delivery for announcements, a fee-payment gateway, mid-year
+  transport/hostel reassignment history, multi-campus, and an AI
+  School Copilot -- each named in its own ADR, not approximated.
 
 Read these before re-litigating any of them.
