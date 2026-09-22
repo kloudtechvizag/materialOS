@@ -12,6 +12,7 @@ class HomeworkOut(BaseModel):
     description: str | None
     assigned_date: date
     due_date: date
+    attachment_file_name: str | None
 
     class Config:
         from_attributes = True

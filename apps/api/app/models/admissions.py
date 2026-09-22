@@ -5,11 +5,18 @@ calls straight into services/education.py's own create_student/
 enrol_student, not a parallel implementation).
 
 Deliberately NOT built this pass (named, not faked): a public-facing
-enquiry/application web form, document upload (no storage wiring),
-interview *scheduling* (an `interview_date` field is real; a calendar/
-availability system is not), seat-capacity/waitlist-ranking automation
-(SchoolClass has no capacity field yet), and admission-fee collection
-(depends on the not-yet-built Fee Management module, Phase 4).
+enquiry/application web form, interview *scheduling* (an
+`interview_date` field is real; a calendar/availability system is
+not), seat-capacity/waitlist-ranking automation (SchoolClass has no
+capacity field yet), and admission-fee collection (depends on the
+not-yet-built Fee Management module, Phase 4).
+
+**Document upload (ADR-041)** reuses `app.storage`'s `save_file`/
+`read_file` convention -- `AdmissionDocument` is a real one-to-many
+table (a birth certificate, a transfer certificate, and a photo are
+three separate real files for one application), not a single path
+column like `Homework.attachment_path`, since an application
+genuinely needs more than one document at once.
 """
 
 import uuid
@@ -92,3 +99,17 @@ class AdmissionApplication(Base, UUIDPk, TenantMixin, TimestampMixin):
     student_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("students.id", ondelete="SET NULL"), nullable=True, index=True
     )
+
+
+class AdmissionDocument(Base, UUIDPk, TenantMixin, TimestampMixin):
+    __tablename__ = "admission_documents"
+
+    application_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("admission_applications.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    # Free text, not an enum -- "Birth Certificate", "Transfer
+    # Certificate", "Photo", "Previous Report Card"... school-specific
+    # requirements, same reasoning as Student.category (ADR-025).
+    document_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    file_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    file_path: Mapped[str] = mapped_column(String(500), nullable=False)

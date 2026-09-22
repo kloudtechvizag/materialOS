@@ -1,9 +1,13 @@
+import mimetypes
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.deps import get_db_tenant, require_module, require_permission
+from app.errors import AppError, ErrorCode
+from app.models.homework import Homework
 from app.models.user import User
 from app.schemas.homework import (
     HomeworkCreate,
@@ -20,7 +24,9 @@ from app.services.homework import (
     get_student_homework,
     list_homework,
     update_homework,
+    upload_homework_attachment,
 )
+from app.storage import read_file
 
 router = APIRouter(tags=["homework"], dependencies=[Depends(require_module("education"))])
 
@@ -66,3 +72,23 @@ def student_homework_endpoint(
     student_id: uuid.UUID, db: Session = Depends(get_db_tenant), user: User = Depends(require_permission("homework.view"))
 ):
     return get_student_homework(db, tenant_id=user.tenant_id, student_id=student_id)
+
+
+@router.post("/homework/{homework_id}/attachment", response_model=HomeworkOut)
+async def upload_homework_attachment_endpoint(
+    homework_id: uuid.UUID, file: UploadFile = File(...), db: Session = Depends(get_db_tenant), user: User = Depends(require_permission("homework.edit"))
+):
+    content = await file.read()
+    return upload_homework_attachment(db, tenant_id=user.tenant_id, homework_id=homework_id, file_name=file.filename or "attachment", content=content)
+
+
+@router.get("/homework/{homework_id}/attachment")
+def get_homework_attachment_endpoint(
+    homework_id: uuid.UUID, db: Session = Depends(get_db_tenant), user: User = Depends(require_permission("homework.view"))
+) -> Response:
+    homework = db.get(Homework, homework_id)
+    if homework is None or homework.tenant_id != user.tenant_id or homework.attachment_path is None:
+        raise AppError(ErrorCode.NOT_FOUND, "No attachment for this homework.", status_code=404)
+    content = read_file(homework.attachment_path)
+    media_type = mimetypes.guess_type(homework.attachment_file_name or "")[0] or "application/octet-stream"
+    return Response(content=content, media_type=media_type, headers={"Content-Disposition": f'attachment; filename="{homework.attachment_file_name}"'})

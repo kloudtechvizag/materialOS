@@ -1,16 +1,19 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
+import { Printer } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, downloadAuthenticatedFile, ApiError } from "@/lib/api";
 
 interface ChildSummary { student_id: string; first_name: string; last_name: string; admission_number: string; school_class_name: string | null; section_name: string | null; }
 interface AttendanceRecord { id: string; attendance_date: string; status: string; }
-interface HomeworkEntry { homework: { id: string; title: string; due_date: string }; status: string; }
+interface HomeworkEntry { homework: { id: string; title: string; due_date: string; attachment_file_name: string | null }; status: string; }
 interface FeeInvoice { id: string; invoice_number: string; invoice_date: string; total: string; outstanding: string; }
+interface FeeCheckout { payment: { id: string; status: string }; order_id: string; amount: number; currency: string; is_sandbox: boolean; }
 interface TimetableEntry { day_of_week: number; slot_name: string; start_time: string; end_time: string; subject_name: string; room: string | null; }
 interface Examination { id: string; name: string; is_locked: boolean; }
 interface ReportCardSubject { subject_id: string; subject_name: string; max_marks: string; marks_obtained: string | null; is_absent: boolean; grade: string | null; }
@@ -23,7 +26,9 @@ const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export function GuardianPortalChildPage() {
   const { studentId } = useParams<{ studentId: string }>();
+  const queryClient = useQueryClient();
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
+  const [activeCheckout, setActiveCheckout] = useState<FeeCheckout | null>(null);
 
   const { data: children } = useQuery({ queryKey: ["guardian-portal-children"], queryFn: () => apiFetch<ChildSummary[]>("/guardian-portal/children") });
   const child = children?.find((c) => c.student_id === studentId);
@@ -39,6 +44,19 @@ export function GuardianPortalChildPage() {
   const { data: fees } = useQuery({
     queryKey: ["guardian-portal-fees", studentId],
     queryFn: () => apiFetch<FeeInvoice[]>(`/guardian-portal/children/${studentId}/fees`),
+  });
+
+  const checkout = useMutation({
+    mutationFn: (feeInvoiceId: string) => apiFetch<FeeCheckout>(`/guardian-portal/children/${studentId}/fees/${feeInvoiceId}/checkout`, { method: "POST" }),
+    onSuccess: (result) => setActiveCheckout(result),
+  });
+
+  const simulate = useMutation({
+    mutationFn: (succeed: boolean) => apiFetch(`/guardian-portal/fee-payments/${activeCheckout!.payment.id}/simulate`, { method: "POST", body: { succeed } }),
+    onSuccess: () => {
+      setActiveCheckout(null);
+      queryClient.invalidateQueries({ queryKey: ["guardian-portal-fees", studentId] });
+    },
   });
   const { data: timetable } = useQuery({
     queryKey: ["guardian-portal-timetable", studentId],
@@ -112,6 +130,15 @@ export function GuardianPortalChildPage() {
                 <div>
                   <p className="font-medium">{entry.homework.title}</p>
                   <p className="text-xs text-muted-foreground">Due {entry.homework.due_date}</p>
+                  {entry.homework.attachment_file_name && (
+                    <button
+                      type="button"
+                      className="mt-0.5 text-xs text-primary hover:underline"
+                      onClick={() => downloadAuthenticatedFile(`/guardian-portal/children/${studentId}/homework/${entry.homework.id}/attachment`, entry.homework.attachment_file_name!)}
+                    >
+                      Download {entry.homework.attachment_file_name}
+                    </button>
+                  )}
                 </div>
                 <Badge variant={entry.status === "submitted" ? "success" : entry.status === "late" ? "warning" : entry.status === "missing" ? "destructive" : "outline"}>
                   {entry.status}
@@ -131,11 +158,36 @@ export function GuardianPortalChildPage() {
                   <p className="font-medium">{inv.invoice_number}</p>
                   <p className="text-xs text-muted-foreground">{inv.invoice_date} · Total ₹{inv.total}</p>
                 </div>
-                <Badge variant={Number(inv.outstanding) <= 0 ? "success" : "outline"}>
-                  {Number(inv.outstanding) <= 0 ? "Paid" : `₹${inv.outstanding} due`}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant={Number(inv.outstanding) <= 0 ? "success" : "outline"}>
+                    {Number(inv.outstanding) <= 0 ? "Paid" : `₹${inv.outstanding} due`}
+                  </Badge>
+                  {Number(inv.outstanding) > 0 && (
+                    <Button size="sm" className="h-7" onClick={() => checkout.mutate(inv.id)} disabled={checkout.isPending}>
+                      {checkout.isPending ? "..." : "Pay now"}
+                    </Button>
+                  )}
+                </div>
               </div>
             ))}
+            {checkout.error instanceof ApiError && <p className="text-xs text-destructive">{checkout.error.message}</p>}
+            {activeCheckout && (
+              <div className="space-y-2 rounded-md border border-primary/40 bg-accent/40 p-3">
+                <p className="text-xs">
+                  {activeCheckout.is_sandbox ? "Sandbox order created" : "Order created"} for ₹{(activeCheckout.amount / 100).toFixed(2)}.
+                  {activeCheckout.is_sandbox && " No real gateway is configured -- confirm the simulated result below."}
+                </p>
+                {activeCheckout.is_sandbox ? (
+                  <div className="flex gap-2">
+                    <Button size="sm" className="h-7" onClick={() => simulate.mutate(true)} disabled={simulate.isPending}>Simulate success</Button>
+                    <Button size="sm" variant="outline" className="h-7" onClick={() => simulate.mutate(false)} disabled={simulate.isPending}>Simulate failure</Button>
+                    <Button size="sm" variant="ghost" className="h-7" onClick={() => setActiveCheckout(null)}>Cancel</Button>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Order id: {activeCheckout.order_id}</p>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -228,15 +280,28 @@ export function GuardianPortalChildPage() {
           </div>
 
           {selectedExamId && reportCardLoading && <p className="text-muted-foreground">Loading...</p>}
-          {selectedExamId && reportCard && (
-            <div className="space-y-2 pt-1">
+          {selectedExamId && reportCard && child && (
+            <div data-print-area className="space-y-2 pt-1">
+              <div className="hidden print:block print:mb-4 print:text-center">
+                <p className="text-lg font-semibold">Report Card</p>
+                <p className="text-sm">{child.first_name} {child.last_name} ({child.admission_number})</p>
+                <p className="text-xs text-muted-foreground">
+                  {child.school_class_name ? `${child.school_class_name}${child.section_name ? ` - ${child.section_name}` : ""} · ` : ""}
+                  {examinations?.find((e) => e.id === selectedExamId)?.name}
+                </p>
+              </div>
               <div className="flex items-center justify-between">
                 <Badge variant={reportCard.overall_result === "pass" ? "success" : reportCard.overall_result === "fail" ? "destructive" : "outline"}>
                   {reportCard.overall_result === "incomplete" ? "Incomplete" : reportCard.overall_result === "pass" ? "Pass" : "Fail"}
                 </Badge>
-                {reportCard.percentage !== null && (
-                  <span className="text-muted-foreground">{reportCard.percentage}% {reportCard.overall_grade ? `· Grade ${reportCard.overall_grade}` : ""}</span>
-                )}
+                <div className="flex items-center gap-3">
+                  {reportCard.percentage !== null && (
+                    <span className="text-muted-foreground">{reportCard.percentage}% {reportCard.overall_grade ? `· Grade ${reportCard.overall_grade}` : ""}</span>
+                  )}
+                  <Button variant="outline" size="sm" className="no-print h-7" onClick={() => window.print()}>
+                    <Printer className="h-3.5 w-3.5" /> Print
+                  </Button>
+                </div>
               </div>
               <table className="w-full text-xs">
                 <thead>

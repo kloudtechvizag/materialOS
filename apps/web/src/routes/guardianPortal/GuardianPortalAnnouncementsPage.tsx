@@ -1,13 +1,13 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { Megaphone } from "lucide-react";
+import { Megaphone, Paperclip } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, downloadAuthenticatedFile } from "@/lib/api";
 
-interface Announcement { id: string; title: string; body: string; target_type: string; created_at: string; is_read: boolean; }
+interface Announcement { id: string; title: string; body: string; target_type: string; created_at: string; is_read: boolean; attachment_file_name: string | null; }
 
-const TARGET_LABELS: Record<string, string> = { school: "Whole school", class: "Class notice", section: "Section notice" };
+const TARGET_LABELS: Record<string, string> = { school: "Whole school", campus: "Campus notice", class: "Class notice", section: "Section notice" };
 
 export function GuardianPortalAnnouncementsPage() {
   const queryClient = useQueryClient();
@@ -51,6 +51,18 @@ export function GuardianPortalAnnouncementsPage() {
               </div>
             </div>
             <p className="text-sm">{a.body}</p>
+            {a.attachment_file_name && (
+              <button
+                type="button"
+                className="flex items-center gap-1 text-xs text-primary hover:underline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  downloadAuthenticatedFile(`/guardian-portal/announcements/${a.id}/attachment`, a.attachment_file_name!);
+                }}
+              >
+                <Paperclip className="h-3 w-3" /> {a.attachment_file_name}
+              </button>
+            )}
           </div>
         ))}
       </div>

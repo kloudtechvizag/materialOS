@@ -6,7 +6,38 @@ from sqlalchemy.orm import Session
 
 from app.errors import AppError, ErrorCode
 from app.models.announcements import Announcement, AnnouncementRead
-from app.models.education import Section, Student, StudentEnrolment, StudentGuardian
+from app.models.education import Guardian, Section, Student, StudentEnrolment, StudentGuardian
+from app.services.notification_rules import fire_trigger
+from app.storage import save_file
+
+
+def _announcement_audience_emails(
+    db: Session, *, tenant_id: uuid.UUID, target_type: str, target_branch_id: uuid.UUID | None,
+    target_school_class_id: uuid.UUID | None, target_section_id: uuid.UUID | None,
+) -> list[str]:
+    """The inverse of list_visible_announcements_for_guardian's own
+    per-guardian scope check -- given a fresh announcement's targeting,
+    find every guardian actually in scope, for the real email trigger
+    (ADR-043). Same live-resolved-off-StudentEnrolment discipline, not
+    a cached audience list."""
+    student_ids_stmt = select(Student.id).where(Student.tenant_id == tenant_id)
+    if target_type == "campus":
+        student_ids_stmt = student_ids_stmt.where(Student.branch_id == target_branch_id)
+    elif target_type in ("class", "section"):
+        enrolment_stmt = select(StudentEnrolment.student_id).where(StudentEnrolment.tenant_id == tenant_id, StudentEnrolment.school_class_id == target_school_class_id)
+        if target_type == "section":
+            enrolment_stmt = enrolment_stmt.where(StudentEnrolment.section_id == target_section_id)
+        student_ids_stmt = student_ids_stmt.where(Student.id.in_(select(enrolment_stmt.subquery().c.student_id)))
+    student_ids = [row[0] for row in db.execute(student_ids_stmt).all()]
+    if not student_ids:
+        return []
+
+    emails = db.execute(
+        select(Guardian.email).join(StudentGuardian, StudentGuardian.guardian_id == Guardian.id)
+        .where(StudentGuardian.tenant_id == tenant_id, StudentGuardian.student_id.in_(student_ids), Guardian.email.is_not(None))
+        .distinct()
+    ).scalars().all()
+    return [e for e in emails if e]
 
 
 def create_announcement(
@@ -39,6 +70,16 @@ def create_announcement(
     )
     db.add(announcement)
     db.flush()
+
+    emails = _announcement_audience_emails(
+        db, tenant_id=tenant_id, target_type=target_type, target_branch_id=target_branch_id,
+        target_school_class_id=target_school_class_id, target_section_id=target_section_id,
+    )
+    for email in emails:
+        fire_trigger(
+            db, tenant_id=tenant_id, trigger_type="announcement_published", title=title, message=body,
+            entity_type="announcement", entity_id=announcement.id, recipient_email=email,
+        )
     return announcement
 
 
@@ -54,6 +95,16 @@ def delete_announcement(db: Session, *, tenant_id: uuid.UUID, announcement_id: u
         raise AppError(ErrorCode.NOT_FOUND, "Announcement not found.", status_code=404)
     db.delete(announcement)
     db.flush()
+
+
+def upload_announcement_attachment(db: Session, *, tenant_id: uuid.UUID, announcement_id: uuid.UUID, file_name: str, content: bytes) -> Announcement:
+    announcement = db.get(Announcement, announcement_id)
+    if announcement is None or announcement.tenant_id != tenant_id:
+        raise AppError(ErrorCode.NOT_FOUND, "Announcement not found.", status_code=404)
+    announcement.attachment_path = save_file(tenant_id=tenant_id, category="announcement_attachments", file_name=file_name, content=content)
+    announcement.attachment_file_name = file_name
+    db.flush()
+    return announcement
 
 
 def _guardian_scope(db: Session, *, tenant_id: uuid.UUID, guardian_id: uuid.UUID) -> tuple[set[uuid.UUID], set[uuid.UUID], set[uuid.UUID]]:
@@ -116,9 +167,25 @@ def list_visible_announcements_for_guardian(db: Session, *, tenant_id: uuid.UUID
     }
 
     return [
-        {"id": a.id, "title": a.title, "body": a.body, "target_type": a.target_type, "created_at": a.created_at, "is_read": a.id in read_ids}
+        {
+            "id": a.id, "title": a.title, "body": a.body, "target_type": a.target_type, "created_at": a.created_at,
+            "is_read": a.id in read_ids, "attachment_file_name": a.attachment_file_name,
+        }
         for a in visible
     ]
+
+
+def get_guardian_visible_announcement(db: Session, *, tenant_id: uuid.UUID, guardian_id: uuid.UUID, announcement_id: uuid.UUID) -> Announcement:
+    """Re-derives visibility the same way list_visible_announcements_for_guardian
+    does -- a guardian can only fetch an attachment for an announcement
+    actually in their own scope, not any announcement_id in the tenant."""
+    visible_ids = {a["id"] for a in list_visible_announcements_for_guardian(db, tenant_id=tenant_id, guardian_id=guardian_id)}
+    if announcement_id not in visible_ids:
+        raise AppError(ErrorCode.NOT_FOUND, "Announcement not found.", status_code=404)
+    announcement = db.get(Announcement, announcement_id)
+    if announcement is None or announcement.attachment_path is None:
+        raise AppError(ErrorCode.NOT_FOUND, "No attachment for this announcement.", status_code=404)
+    return announcement
 
 
 def mark_announcement_read(db: Session, *, tenant_id: uuid.UUID, guardian_id: uuid.UUID, announcement_id: uuid.UUID) -> None:

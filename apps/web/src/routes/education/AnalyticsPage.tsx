@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { BarChart3 } from "lucide-react";
+import { BarChart3, Printer } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
@@ -119,19 +120,27 @@ export function AnalyticsPage() {
 
   if (isLoading) return <Skeleton className="h-96" />;
 
+  const activeBranchName = branches?.find((b) => b.id === branchId)?.name;
+
   return (
-    <div className="space-y-6">
+    <div data-print-area className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">School Analytics</h1>
-          <p className="text-sm text-muted-foreground">Real numbers, computed live from attendance, fees, exams, homework, library, transport, and hostel records.</p>
+          <p className="text-sm text-muted-foreground print:hidden">Real numbers, computed live from attendance, fees, exams, homework, library, transport, and hostel records.</p>
+          <p className="hidden print:block text-sm text-muted-foreground">{activeBranchName ?? "All campuses"} · {new Date().toLocaleDateString()}</p>
         </div>
-        {branches && branches.length > 1 && (
-          <select className="flex h-9 rounded-md border border-input bg-background px-2 text-sm" value={branchId} onChange={(e) => setBranchId(e.target.value)}>
-            <option value="">All campuses</option>
-            {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-          </select>
-        )}
+        <div className="flex items-center gap-2 no-print">
+          {branches && branches.length > 1 && (
+            <select className="flex h-9 rounded-md border border-input bg-background px-2 text-sm" value={branchId} onChange={(e) => setBranchId(e.target.value)}>
+              <option value="">All campuses</option>
+              {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+            </select>
+          )}
+          <Button variant="outline" size="sm" onClick={() => window.print()}>
+            <Printer className="h-4 w-4" /> Print / Export PDF
+          </Button>
+        </div>
       </div>
 
       {overview && (

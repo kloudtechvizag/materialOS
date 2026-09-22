@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Megaphone } from "lucide-react";
+import { Megaphone, Paperclip } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { apiFetch, ApiError } from "@/lib/api";
+import { apiFetch, downloadAuthenticatedFile, ApiError } from "@/lib/api";
 
 interface AcademicYear { id: string; is_current: boolean; }
 interface SchoolClass { id: string; academic_year_id: string; name: string; }
@@ -14,6 +14,7 @@ interface Branch { id: string; name: string; }
 interface Announcement {
   id: string; title: string; body: string; target_type: string;
   target_branch_id: string | null; target_school_class_id: string | null; target_section_id: string | null; created_at: string;
+  attachment_file_name: string | null;
 }
 
 const TARGET_LABELS: Record<string, string> = { school: "Whole school", campus: "Campus", class: "Class", section: "Section" };
@@ -50,9 +51,11 @@ export function AnnouncementsPage() {
   const classById = new Map((allClasses ?? []).map((c) => [c.id, c.name]));
   const sectionById = new Map((allSections ?? []).map((s) => [s.id, s.name]));
 
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
+
   const create = useMutation({
-    mutationFn: () =>
-      apiFetch("/announcements", {
+    mutationFn: async () => {
+      const announcement = await apiFetch<Announcement>("/announcements", {
         method: "POST",
         body: {
           title: form.title, body: form.body, target_type: form.target_type,
@@ -61,11 +64,19 @@ export function AnnouncementsPage() {
           target_section_id: form.target_type === "section" ? form.target_section_id || null : null,
           expires_at: form.expires_at || null,
         },
-      }),
+      });
+      if (attachmentFile) {
+        const formData = new FormData();
+        formData.append("file", attachmentFile);
+        await apiFetch(`/announcements/${announcement.id}/attachment`, { method: "POST", body: formData, isFormData: true });
+      }
+      return announcement;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["announcements"] });
       setShowCreate(false);
       setForm({ title: "", body: "", target_type: "school", target_branch_id: "", target_school_class_id: "", target_section_id: "", expires_at: "" });
+      setAttachmentFile(null);
     },
   });
 
@@ -139,6 +150,10 @@ export function AnnouncementsPage() {
               Expires (optional)
               <input type="date" className="flex h-9 rounded-md border border-input bg-background px-2 text-sm" value={form.expires_at} onChange={(e) => setForm((f) => ({ ...f, expires_at: e.target.value }))} />
             </label>
+            <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              Attachment (optional)
+              <input type="file" className="text-xs" onChange={(e) => setAttachmentFile(e.target.files?.[0] ?? null)} />
+            </label>
           </div>
           {create.error instanceof ApiError && <p className="text-sm text-destructive">{create.error.message}</p>}
           <Button
@@ -186,6 +201,15 @@ export function AnnouncementsPage() {
               </div>
             </div>
             <p className="text-sm">{a.body}</p>
+            {a.attachment_file_name && (
+              <button
+                type="button"
+                className="flex items-center gap-1 text-xs text-primary hover:underline"
+                onClick={() => downloadAuthenticatedFile(`/announcements/${a.id}/attachment`, a.attachment_file_name!)}
+              >
+                <Paperclip className="h-3 w-3" /> {a.attachment_file_name}
+              </button>
+            )}
           </div>
         ))}
       </div>

@@ -2,12 +2,17 @@
 and Subject masters from ADR-025/ADR-028.
 
 Deliberately NOT built in this pass (named, not faked): student/parent
-self-service submission (no portal exists yet -- Phase 5), file
-attachments, and grading/marks integration with Examinations. Staff
-mark submission status themselves (the same "no portal yet, so the
-staff-facing roster IS the real workflow" reasoning ADR-027's
-attendance and ADR-029's marks entry already established), which is
-real, usable functionality even without a student-facing counterpart.
+self-service submission (no portal exists yet -- Phase 5), and
+grading/marks integration with Examinations. Staff mark submission
+status themselves (the same "no portal yet, so the staff-facing
+roster IS the real workflow" reasoning ADR-027's attendance and
+ADR-029's marks entry already established), which is real, usable
+functionality even without a student-facing counterpart.
+
+**File attachments (ADR-041)** reuse `app.storage` -- the exact same
+`save_file`/`read_file` convention as `Item.image_path`
+(models/masters.py, ADR-019) -- one optional attachment per homework
+(a worksheet, a reading PDF), not per-submission.
 """
 
 import uuid
@@ -38,6 +43,11 @@ class Homework(Base, UUIDPk, TenantMixin, TimestampMixin):
     created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
+    # Storage-relative path (app/storage.py's save_file convention) --
+    # NULL means no attachment uploaded yet, same nullable-optional
+    # pattern as Item.image_path.
+    attachment_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    attachment_file_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
 
 class HomeworkSubmission(Base, UUIDPk, TenantMixin, TimestampMixin):

@@ -3,13 +3,17 @@ channel: staff post an announcement targeted at the whole school, one
 class, or one section, and it appears in the Guardian Portal (ADR-032)
 for exactly the guardians whose linked children are actually in scope.
 
-Deliberately NOT built in this pass (named, not faked): SMS/email/
-WhatsApp/push delivery (models/notifications.py's own docstring
-already documents this gap platform-wide -- in-app is "the one real
-channel"; this ADR doesn't change that), draft/scheduled publishing
-(every announcement is published immediately on creation), staff-to-
-staff messaging, and two-way parent-teacher messaging (this is a
-one-way broadcast, not a conversation).
+Deliberately NOT built in this pass (named, not faked): SMS/WhatsApp/
+push delivery (models/notifications.py's own docstring already
+documents this gap platform-wide -- no real provider credentials
+exist in any environment this runs in; this ADR doesn't change that),
+draft/scheduled publishing (every announcement is published
+immediately on creation), staff-to-staff messaging, and two-way
+parent-teacher messaging (this is a one-way broadcast, not a
+conversation). Real **email** delivery and a real **file attachment**
+per announcement were added in ADR-041/043, reusing the platform's
+existing SMTP channel (`services/notification_channels.py`) and
+`app.storage` convention respectively.
 """
 
 import uuid
@@ -55,6 +59,10 @@ class Announcement(Base, UUIDPk, TenantMixin, TimestampMixin):
     # indefinitely, same "don't force a field nobody needs" reasoning
     # StudentEnrolment.section_id nullability already established.
     expires_at: Mapped[date | None] = mapped_column(Date, nullable=True)
+    # Storage-relative path (app/storage.py's save_file convention),
+    # same optional-attachment pattern as Homework.attachment_path.
+    attachment_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    attachment_file_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
 
 class AnnouncementRead(Base, UUIDPk, TenantMixin, TimestampMixin):

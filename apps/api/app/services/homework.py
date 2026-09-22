@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.errors import AppError, ErrorCode
 from app.models.education import Section, Student, StudentEnrolment
 from app.models.homework import Homework, HomeworkSubmission
+from app.storage import save_file
 
 
 def _section(db: Session, tenant_id: uuid.UUID, section_id: uuid.UUID) -> Section:
@@ -44,6 +45,14 @@ def update_homework(db: Session, *, tenant_id: uuid.UUID, homework_id: uuid.UUID
     for key, value in fields.items():
         if value is not None:
             setattr(homework, key, value)
+    db.flush()
+    return homework
+
+
+def upload_homework_attachment(db: Session, *, tenant_id: uuid.UUID, homework_id: uuid.UUID, file_name: str, content: bytes) -> Homework:
+    homework = _homework(db, tenant_id, homework_id)
+    homework.attachment_path = save_file(tenant_id=tenant_id, category="homework_attachments", file_name=file_name, content=content)
+    homework.attachment_file_name = file_name
     db.flush()
     return homework
 

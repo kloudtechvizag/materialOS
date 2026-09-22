@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
+import { Printer } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -105,6 +106,8 @@ export function StudentDetailPage() {
   const classById = new Map((classes ?? []).map((c) => [c.id, c.name]));
   const sectionById = new Map((sections ?? []).map((s) => [s.id, s.name]));
   const guardianById = new Map((guardians ?? []).map((g) => [g.id, g]));
+  const selectedExam = examinations?.find((e) => e.id === selectedExamId) ?? null;
+  const reportCardEnrolment = enrolments?.find((e) => e.academic_year_id === selectedExam?.academic_year_id) ?? null;
 
   const updateStatus = useMutation({
     mutationFn: (status: string) => apiFetch<Student>(`/students/${studentId}`, { method: "PATCH", body: { status } }),
@@ -318,15 +321,31 @@ export function StudentDetailPage() {
           </div>
 
           {selectedExamId && reportCardLoading && <p className="text-muted-foreground">Loading...</p>}
-          {selectedExamId && reportCard && (
-            <div className="space-y-2 pt-1">
+          {selectedExamId && reportCard && student && (
+            <div data-print-area className="space-y-2 pt-1">
+              {/* Print-only header -- data-print-area hides everything
+                  outside this block (including the page's own <h1>), so
+                  the printed page needs its own identifying header. */}
+              <div className="hidden print:block print:mb-4 print:text-center">
+                <p className="text-lg font-semibold">Report Card</p>
+                <p className="text-sm">{student.first_name} {student.last_name} ({student.admission_number})</p>
+                <p className="text-xs text-muted-foreground">
+                  {reportCardEnrolment ? `${classById.get(reportCardEnrolment.school_class_id) ?? "-"}${reportCardEnrolment.section_id ? ` - ${sectionById.get(reportCardEnrolment.section_id) ?? "-"}` : ""} · ` : ""}
+                  {selectedExam?.name}
+                </p>
+              </div>
               <div className="flex items-center justify-between">
                 <Badge variant={reportCard.overall_result === "pass" ? "success" : reportCard.overall_result === "fail" ? "destructive" : "outline"}>
                   {reportCard.overall_result === "incomplete" ? "Incomplete" : reportCard.overall_result === "pass" ? "Pass" : "Fail"}
                 </Badge>
-                {reportCard.percentage !== null && (
-                  <span className="text-muted-foreground">{reportCard.percentage}% {reportCard.overall_grade ? `· Grade ${reportCard.overall_grade}` : ""}</span>
-                )}
+                <div className="flex items-center gap-3">
+                  {reportCard.percentage !== null && (
+                    <span className="text-muted-foreground">{reportCard.percentage}% {reportCard.overall_grade ? `· Grade ${reportCard.overall_grade}` : ""}</span>
+                  )}
+                  <Button variant="outline" size="sm" className="no-print h-7" onClick={() => window.print()}>
+                    <Printer className="h-3.5 w-3.5" /> Print
+                  </Button>
+                </div>
               </div>
               <table className="w-full text-xs">
                 <thead>

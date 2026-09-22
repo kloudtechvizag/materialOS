@@ -119,6 +119,21 @@ def get_child_homework(db: Session, *, tenant_id: uuid.UUID, guardian_id: uuid.U
     return get_student_homework(db, tenant_id=tenant_id, student_id=student_id)
 
 
+def get_child_homework_attachment(db: Session, *, tenant_id: uuid.UUID, guardian_id: uuid.UUID, student_id: uuid.UUID, homework_id: uuid.UUID):
+    """Re-derives the roster the same way get_child_homework does --
+    a guardian can only download an attachment for homework their own
+    child was actually assigned, not any homework_id in the tenant."""
+    _owned_student(db, tenant_id=tenant_id, guardian_id=guardian_id, student_id=student_id)
+    entries = get_student_homework(db, tenant_id=tenant_id, student_id=student_id)
+    if not any(e["homework"]["id"] == homework_id for e in entries):
+        raise AppError(ErrorCode.NOT_FOUND, "Homework not found for this child.", status_code=404)
+    from app.models.homework import Homework
+    homework = db.get(Homework, homework_id)
+    if homework is None or homework.attachment_path is None:
+        raise AppError(ErrorCode.NOT_FOUND, "No attachment for this homework.", status_code=404)
+    return homework
+
+
 def get_child_fees(db: Session, *, tenant_id: uuid.UUID, guardian_id: uuid.UUID, student_id: uuid.UUID):
     _owned_student(db, tenant_id=tenant_id, guardian_id=guardian_id, student_id=student_id)
     return get_student_fee_summary(db, tenant_id=tenant_id, student_id=student_id)

@@ -77,3 +77,23 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
   if (res.status === 204) return undefined as T;
   return res.json();
 }
+
+/** Downloads an auth-gated file (a homework/announcement attachment,
+ * an admission document) straight to disk -- a plain `<a href>` can't
+ * carry the Authorization header these endpoints require, so this
+ * fetches as a blob and triggers the save via a throwaway anchor,
+ * same "fetch as blob, revoke after" shape as useAuthenticatedImage. */
+export async function downloadAuthenticatedFile(path: string, fileName: string): Promise<void> {
+  const token = useAuthStore.getState().accessToken;
+  const res = await fetch(`${getApiBase()}${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+  if (!res.ok) throw new Error(`Download failed with status ${res.status}`);
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}

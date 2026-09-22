@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
+import { Paperclip } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { apiFetch, ApiError } from "@/lib/api";
+import { apiFetch, downloadAuthenticatedFile, ApiError } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
-interface Homework { id: string; section_id: string; subject_id: string; title: string; description: string | null; assigned_date: string; due_date: string; }
+interface Homework { id: string; section_id: string; subject_id: string; title: string; description: string | null; assigned_date: string; due_date: string; attachment_file_name: string | null; }
 interface Subject { id: string; name: string; }
 interface RosterEntry { student_id: string; first_name: string; last_name: string; roll_number: string | null; status: string; }
 
@@ -28,6 +29,7 @@ export function HomeworkDetailPage() {
   const { homeworkId } = useParams<{ homeworkId: string }>();
   const queryClient = useQueryClient();
   const [marks, setMarks] = useState<Record<string, string>>({});
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: homework } = useQuery({ queryKey: ["homework-list-for-detail"], queryFn: () => apiFetch<Homework[]>("/homework").then((all) => all.find((h) => h.id === homeworkId)!) });
   const { data: subjects } = useQuery({ queryKey: ["subjects"], queryFn: () => apiFetch<Subject[]>("/subjects") });
@@ -52,6 +54,15 @@ export function HomeworkDetailPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["homework-roster", homeworkId] }),
   });
 
+  const uploadAttachment = useMutation({
+    mutationFn: (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      return apiFetch<Homework>(`/homework/${homeworkId}/attachment`, { method: "POST", body: formData, isFormData: true });
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["homework-list-for-detail"] }),
+  });
+
   if (!homework) return null;
 
   return (
@@ -60,6 +71,32 @@ export function HomeworkDetailPage() {
         <h1 className="text-2xl font-semibold">{homework.title}</h1>
         <p className="text-sm text-muted-foreground">{subjectName ?? "-"} · Assigned {homework.assigned_date} · Due {homework.due_date}</p>
         {homework.description && <p className="mt-2 text-sm">{homework.description}</p>}
+        <div className="mt-2 flex items-center gap-2 text-sm">
+          {homework.attachment_file_name ? (
+            <button
+              type="button"
+              className="flex items-center gap-1 text-primary hover:underline"
+              onClick={() => downloadAuthenticatedFile(`/homework/${homeworkId}/attachment`, homework.attachment_file_name!)}
+            >
+              <Paperclip className="h-3.5 w-3.5" /> {homework.attachment_file_name}
+            </button>
+          ) : (
+            <span className="text-muted-foreground">No attachment</span>
+          )}
+          <Button variant="outline" size="sm" className="h-7" onClick={() => fileInputRef.current?.click()} disabled={uploadAttachment.isPending}>
+            {uploadAttachment.isPending ? "Uploading..." : homework.attachment_file_name ? "Replace" : "Attach file"}
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) uploadAttachment.mutate(file);
+              e.target.value = "";
+            }}
+          />
+        </div>
       </div>
 
       {isLoading && <p className="text-sm text-muted-foreground">Loading...</p>}

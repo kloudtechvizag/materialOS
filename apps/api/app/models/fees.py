@@ -9,11 +9,19 @@ sales/accounting modules already provide for free once a FeeHead has a
 real backing Item and a guardian has a real backing Customer.
 
 Deliberately NOT built in this pass (named, not faked): scholarships/
-fee concessions as a first-class discount, late-fee penalty
-calculation, online payment gateway integration (Receipt.mode already
-supports "upi"/"card" for a staff-entered payment, but no gateway
-webhook exists), and a parent-facing "pay my fees" flow (Phase 5
-portal dependency, same as every other education ADR).
+fee concessions as a first-class discount, and late-fee penalty
+calculation.
+
+**Online payment gateway (ADR-042)**: `FeePayment` mirrors
+`SubscriptionPayment` (models/subscriptions.py, ADR-014) field-for-
+field -- the exact same checkout -> gateway -> webhook -> real Receipt
+pipeline, reusing `app.billing.gateway`'s `PaymentProvider` abstraction
+(a real, deterministic sandbox and a live Razorpay-shaped provider
+that raises until real credentials are configured) rather than
+inventing a second payment pattern. A guardian-initiated "pay my fees"
+checkout (services/fee_payment.py) is the real, parent-facing flow;
+`handle_webhook` is the only place a payment is ever marked succeeded,
+same discipline as billing/service.py's own docstring.
 """
 
 import uuid
@@ -21,7 +29,7 @@ from datetime import date
 from decimal import Decimal
 
 from sqlalchemy import Date, ForeignKey, Numeric, String, UniqueConstraint
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, TenantMixin, TimestampMixin, UUIDPk
@@ -112,4 +120,30 @@ class FeeInvoiceLine(Base, UUIDPk, TenantMixin, TimestampMixin):
     )
     fee_structure_item_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("fee_structure_items.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+
+
+class FeePayment(Base, UUIDPk, TenantMixin, TimestampMixin):
+    """Field-for-field mirror of SubscriptionPayment (models/subscriptions.py,
+    ADR-014) -- see this module's own docstring."""
+
+    __tablename__ = "fee_payments"
+
+    fee_invoice_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("fee_invoices.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    provider: Mapped[str] = mapped_column(String(20), nullable=False)  # "sandbox" | "razorpay"
+    provider_order_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    provider_payment_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    currency: Mapped[str] = mapped_column(String(3), nullable=False, default="INR")
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")  # pending|succeeded|failed
+    method: Mapped[str | None] = mapped_column(String(20), nullable=True)  # upi|card|netbanking|wallet|other
+    failure_reason: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    raw_event: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    # Set once the webhook actually records the real Receipt -- the
+    # payment row and the Receipt are two real, separate facts (a
+    # gateway event and an accounting entry), linked but not merged.
+    receipt_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("receipts.id", ondelete="SET NULL"), nullable=True
     )

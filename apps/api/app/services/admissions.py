@@ -1,13 +1,15 @@
 import uuid
 from datetime import date, datetime, timezone
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.errors import AppError, ErrorCode
-from app.models.admissions import AdmissionApplication, AdmissionEnquiry
+from app.models.admissions import AdmissionApplication, AdmissionDocument, AdmissionEnquiry
 from app.models.education import AcademicYear
 from app.services.education import create_student, enrol_student
 from app.services.webhooks import emit_event
+from app.storage import save_file
 
 TERMINAL_STATUSES = {"admitted", "rejected", "withdrawn"}
 # "admitted" is deliberately excluded -- it's only ever reached through
@@ -122,3 +124,44 @@ def convert_application_to_student(
     application.decided_by_user_id = decided_by_user_id
     db.flush()
     return student
+
+
+def _application(db: Session, tenant_id: uuid.UUID, application_id: uuid.UUID) -> AdmissionApplication:
+    application = db.get(AdmissionApplication, application_id)
+    if application is None or application.tenant_id != tenant_id:
+        raise AppError(ErrorCode.NOT_FOUND, "Application not found.", status_code=404)
+    return application
+
+
+def upload_admission_document(
+    db: Session, *, tenant_id: uuid.UUID, application_id: uuid.UUID, document_type: str, file_name: str, content: bytes
+) -> AdmissionDocument:
+    _application(db, tenant_id, application_id)
+    document = AdmissionDocument(
+        tenant_id=tenant_id, application_id=application_id, document_type=document_type, file_name=file_name,
+        file_path=save_file(tenant_id=tenant_id, category="admission_documents", file_name=file_name, content=content),
+    )
+    db.add(document)
+    db.flush()
+    return document
+
+
+def list_admission_documents(db: Session, *, tenant_id: uuid.UUID, application_id: uuid.UUID) -> list[AdmissionDocument]:
+    _application(db, tenant_id, application_id)
+    return db.execute(
+        select(AdmissionDocument).where(AdmissionDocument.tenant_id == tenant_id, AdmissionDocument.application_id == application_id)
+        .order_by(AdmissionDocument.created_at)
+    ).scalars().all()
+
+
+def get_admission_document(db: Session, *, tenant_id: uuid.UUID, document_id: uuid.UUID) -> AdmissionDocument:
+    document = db.get(AdmissionDocument, document_id)
+    if document is None or document.tenant_id != tenant_id:
+        raise AppError(ErrorCode.NOT_FOUND, "Document not found.", status_code=404)
+    return document
+
+
+def delete_admission_document(db: Session, *, tenant_id: uuid.UUID, document_id: uuid.UUID) -> None:
+    document = get_admission_document(db, tenant_id=tenant_id, document_id=document_id)
+    db.delete(document)
+    db.flush()

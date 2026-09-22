@@ -23,6 +23,7 @@ from app.api.v1 import (
     dispatch,
     education,
     examinations,
+    fee_payment,
     fees,
     field_sales,
     fleet,
@@ -104,6 +105,7 @@ api_router.include_router(timetable.router)
 api_router.include_router(examinations.router)
 api_router.include_router(homework.router)
 api_router.include_router(fees.router)
+api_router.include_router(fee_payment.router)
 api_router.include_router(guardian_portal.router)
 api_router.include_router(transport.router)
 api_router.include_router(library.router)

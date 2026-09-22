@@ -14,6 +14,7 @@ class AnnouncementOut(BaseModel):
     target_section_id: uuid.UUID | None
     published_by_user_id: uuid.UUID | None
     expires_at: date | None
+    attachment_file_name: str | None
     created_at: datetime
 
     class Config:
@@ -37,3 +38,4 @@ class GuardianAnnouncementOut(BaseModel):
     target_type: str
     created_at: datetime
     is_read: bool
+    attachment_file_name: str | None

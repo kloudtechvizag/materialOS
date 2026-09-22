@@ -41,6 +41,14 @@ DEFAULT_RULES: list[tuple[str, str, Decimal | None, str, list[str]]] = [
     ("Advance approved", "advance_approved", None, "info", ["in_app"]),
     ("Payroll generated", "payroll_generated", None, "info", ["in_app"]),
     ("Payslip available", "payslip_available", None, "info", ["in_app"]),
+    # ADR-043: education reuses this same rule engine rather than a
+    # parallel guardian-notification mechanism. "in_app" only by
+    # default, same conservative default every other rule here already
+    # uses -- a tenant opts email in from this same admin page once
+    # SMTP is actually configured, not forced on by default into a
+    # channel that would just fail every time until then.
+    ("Fee invoice generated", "fee_invoice_generated", None, "info", ["in_app"]),
+    ("Announcement published", "announcement_published", None, "info", ["in_app"]),
 ]
 
 

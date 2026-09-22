@@ -85,6 +85,17 @@ class AdmissionApplicationUpdate(BaseModel):
     decision_reason: str | None = None
 
 
+class AdmissionDocumentOut(BaseModel):
+    id: uuid.UUID
+    application_id: uuid.UUID
+    document_type: str
+    file_name: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 class AdmissionConvertRequest(BaseModel):
     school_class_id: uuid.UUID
     section_id: uuid.UUID | None = None

@@ -1,6 +1,8 @@
+import mimetypes
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, Form, UploadFile
+from fastapi.responses import Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -14,12 +16,24 @@ from app.schemas.admissions import (
     AdmissionApplicationOut,
     AdmissionApplicationUpdate,
     AdmissionConvertRequest,
+    AdmissionDocumentOut,
     AdmissionEnquiryCreate,
     AdmissionEnquiryOut,
     AdmissionEnquiryUpdate,
 )
 from app.schemas.education import StudentOut
-from app.services.admissions import convert_application_to_student, create_application, create_enquiry, transition_application, update_enquiry
+from app.services.admissions import (
+    convert_application_to_student,
+    create_application,
+    create_enquiry,
+    delete_admission_document,
+    get_admission_document,
+    list_admission_documents,
+    transition_application,
+    update_enquiry,
+    upload_admission_document,
+)
+from app.storage import read_file
 
 router = APIRouter(tags=["admissions"], dependencies=[Depends(require_module("education"))])
 
@@ -109,3 +123,46 @@ def convert_application(
     return convert_application_to_student(
         db, tenant_id=user.tenant_id, company_id=company.id, application_id=application_id, decided_by_user_id=user.id, **payload.model_dump()
     )
+
+
+# -------------------------------------------------------------------- Documents
+
+@router.get("/admission-applications/{application_id}/documents", response_model=list[AdmissionDocumentOut])
+def list_documents_endpoint(
+    application_id: uuid.UUID, db: Session = Depends(get_db_tenant), user: User = Depends(require_permission("admissions.view"))
+):
+    return list_admission_documents(db, tenant_id=user.tenant_id, application_id=application_id)
+
+
+@router.post("/admission-applications/{application_id}/documents", response_model=AdmissionDocumentOut, status_code=201)
+async def upload_document_endpoint(
+    application_id: uuid.UUID, document_type: str = Form(...), file: UploadFile = File(...),
+    db: Session = Depends(get_db_tenant), user: User = Depends(require_permission("admissions.edit")),
+):
+    content = await file.read()
+    return upload_admission_document(
+        db, tenant_id=user.tenant_id, application_id=application_id, document_type=document_type,
+        file_name=file.filename or "document", content=content,
+    )
+
+
+@router.get("/admission-applications/{application_id}/documents/{document_id}")
+def download_document_endpoint(
+    application_id: uuid.UUID, document_id: uuid.UUID, db: Session = Depends(get_db_tenant), user: User = Depends(require_permission("admissions.view"))
+) -> Response:
+    document = get_admission_document(db, tenant_id=user.tenant_id, document_id=document_id)
+    if document.application_id != application_id:
+        raise AppError(ErrorCode.NOT_FOUND, "Document not found.", status_code=404)
+    content = read_file(document.file_path)
+    media_type = mimetypes.guess_type(document.file_name)[0] or "application/octet-stream"
+    return Response(content=content, media_type=media_type, headers={"Content-Disposition": f'attachment; filename="{document.file_name}"'})
+
+
+@router.delete("/admission-applications/{application_id}/documents/{document_id}", status_code=204)
+def delete_document_endpoint(
+    application_id: uuid.UUID, document_id: uuid.UUID, db: Session = Depends(get_db_tenant), user: User = Depends(require_permission("admissions.edit"))
+) -> None:
+    document = get_admission_document(db, tenant_id=user.tenant_id, document_id=document_id)
+    if document.application_id != application_id:
+        raise AppError(ErrorCode.NOT_FOUND, "Document not found.", status_code=404)
+    delete_admission_document(db, tenant_id=user.tenant_id, document_id=document_id)

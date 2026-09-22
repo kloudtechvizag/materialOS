@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
+import { Paperclip, Trash2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,9 @@ import { ErrorState } from "@/components/ui/error-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { apiFetch, ApiError } from "@/lib/api";
+import { apiFetch, downloadAuthenticatedFile, ApiError } from "@/lib/api";
+
+interface AdmissionDocument { id: string; document_type: string; file_name: string; created_at: string; }
 
 interface Application {
   id: string;
@@ -44,10 +47,16 @@ export function AdmissionApplicationDetailPage() {
   const [interviewDate, setInterviewDate] = useState("");
   const [decisionReason, setDecisionReason] = useState("");
   const [convertForm, setConvertForm] = useState({ school_class_id: "", section_id: "", roll_number: "" });
+  const [documentType, setDocumentType] = useState("");
+  const [documentFile, setDocumentFile] = useState<File | null>(null);
 
   const { data: application, isLoading, error, refetch } = useQuery({
     queryKey: ["admission-application", applicationId],
     queryFn: () => apiFetch<Application>(`/admission-applications/${applicationId}`),
+  });
+  const { data: documents, refetch: refetchDocuments } = useQuery({
+    queryKey: ["admission-documents", applicationId],
+    queryFn: () => apiFetch<AdmissionDocument[]>(`/admission-applications/${applicationId}/documents`),
   });
   const { data: classes } = useQuery({
     queryKey: ["school-classes", application?.academic_year_id, application?.branch_id],
@@ -82,6 +91,25 @@ export function AdmissionApplicationDetailPage() {
     onSuccess: (student) => navigate(`/students/${student.id}`),
   });
 
+  const uploadDocument = useMutation({
+    mutationFn: () => {
+      const formData = new FormData();
+      formData.append("document_type", documentType);
+      formData.append("file", documentFile!);
+      return apiFetch(`/admission-applications/${applicationId}/documents`, { method: "POST", body: formData, isFormData: true });
+    },
+    onSuccess: () => {
+      refetchDocuments();
+      setDocumentType("");
+      setDocumentFile(null);
+    },
+  });
+
+  const deleteDocument = useMutation({
+    mutationFn: (documentId: string) => apiFetch(`/admission-applications/${applicationId}/documents/${documentId}`, { method: "DELETE" }),
+    onSuccess: () => refetchDocuments(),
+  });
+
   if (isLoading) return <Skeleton className="h-96" />;
   if (error) return <ErrorState error={error} onRetry={() => refetch()} />;
   if (!application) return null;
@@ -107,6 +135,32 @@ export function AdmissionApplicationDetailPage() {
             <div className="flex justify-between"><span className="text-muted-foreground">Email</span><span>{application.guardian_email ?? "-"}</span></div>
             <div className="flex justify-between"><span className="text-muted-foreground">Interview date</span><span>{application.interview_date ?? "-"}</span></div>
             {application.decision_reason && <div className="flex justify-between"><span className="text-muted-foreground">Decision reason</span><span>{application.decision_reason}</span></div>}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader><CardTitle className="text-base">Documents</CardTitle></CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            {(!documents || documents.length === 0) && <p className="text-muted-foreground">No documents uploaded yet.</p>}
+            {documents?.map((d) => (
+              <div key={d.id} className="flex items-center justify-between border-b border-border py-1.5 last:border-0">
+                <button type="button" className="flex items-center gap-1.5 text-left text-primary hover:underline" onClick={() => downloadAuthenticatedFile(`/admission-applications/${applicationId}/documents/${d.id}`, d.file_name)}>
+                  <Paperclip className="h-3.5 w-3.5 shrink-0" />
+                  <span>{d.document_type} <span className="text-xs text-muted-foreground">({d.file_name})</span></span>
+                </button>
+                <button type="button" className="text-muted-foreground hover:text-destructive" onClick={() => deleteDocument.mutate(d.id)}>
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+            <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
+              <Input placeholder="Document type (Birth Certificate...)" value={documentType} onChange={(e) => setDocumentType(e.target.value)} className="h-8 w-56 text-xs" />
+              <input type="file" className="text-xs" onChange={(e) => setDocumentFile(e.target.files?.[0] ?? null)} />
+              <Button size="sm" className="h-8" onClick={() => uploadDocument.mutate()} disabled={!documentType || !documentFile || uploadDocument.isPending}>
+                {uploadDocument.isPending ? "Uploading..." : "Upload"}
+              </Button>
+            </div>
+            {uploadDocument.error instanceof ApiError && <p className="text-xs text-destructive">{uploadDocument.error.message}</p>}
           </CardContent>
         </Card>
 

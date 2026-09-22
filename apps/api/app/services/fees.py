@@ -15,6 +15,7 @@ from app.services.invoicing import _post_invoice_journal
 from app.services.money import round_invoice_total
 from app.services.numbering import get_current_financial_year, next_document_number
 from app.services.sales_common import resolve_place_of_supply
+from app.services.notification_rules import fire_trigger
 from app.services.webhooks import emit_event
 from app.tax.resolve import resolve_tax
 
@@ -203,6 +204,11 @@ def generate_fee_invoices(
         emit_event(
             db, tenant_id=tenant_id, event_type="fee_invoice.generated",
             payload={"id": str(fee_invoice.id), "student_id": str(student.id), "invoice_number": invoice.number, "total": str(invoice.total)},
+        )
+        fire_trigger(
+            db, tenant_id=tenant_id, trigger_type="fee_invoice_generated",
+            title="Fee invoice generated", message=f"Invoice {invoice.number} (₹{invoice.total}) generated for {student.first_name} {student.last_name}.",
+            entity_type="fee_invoice", entity_id=fee_invoice.id, recipient_email=guardian.email,
         )
         created.append(fee_invoice)
 

@@ -113,18 +113,30 @@ portal, a Communication Center (targeted announcements), and Transport/
 Library/Hostel -- each new domain reuses existing core infra wherever
 one genuinely fit (Vehicle/Driver for buses, Employee for wardens/
 teachers, Invoice/Customer for fees) and names what it deliberately
-didn't build (SMS/WhatsApp delivery, a payment gateway, an AI Copilot)
-rather than faking it. Phase 7 added School Analytics (ADR-037, every
-number computed on read from tables the vertical already writes, no
-cached rollups), education webhook events (ADR-038, four new entries
-in the platform's existing `WebhookSubscription` catalog -- push-based,
-so it needs no external credentials on our side), and multi-campus
-(ADR-039, reusing the platform's existing `Branch` model as "campus"
-rather than a new entity -- `SchoolClass`/`Student`/`AdmissionEnquiry`/
+didn't build (an AI Copilot; SMS/WhatsApp, still genuinely blocked on
+no provider credentials existing anywhere this runs) rather than
+faking it. Phase 7 added School Analytics (ADR-037, every number
+computed on read from tables the vertical already writes, no cached
+rollups), education webhook events (ADR-038, four new entries in the
+platform's existing `WebhookSubscription` catalog -- push-based, so it
+needs no external credentials on our side), and multi-campus (ADR-039,
+reusing the platform's existing `Branch` model as "campus" rather than
+a new entity -- `SchoolClass`/`Student`/`AdmissionEnquiry`/
 `AdmissionApplication`/`Hostel`/`BookCopy` each carry a real
 `branch_id`, with cross-campus enrolment/issuing/allocation rejected
-server-side, not just hidden in the UI). See ADR-025 through ADR-039,
-and `seed_school.py` below for a fully populated demo tenant.
+server-side, not just hidden in the UI). A follow-up pass then closed
+out four items those same ADRs had named as deferred: report card/
+Analytics PDF export (ADR-040, reusing the platform's existing
+browser print-to-PDF mechanism), file attachments for admissions
+documents/homework/announcements (ADR-041, reusing the existing
+`app.storage` adapter already used for item photos), a real fee
+payment gateway (ADR-042, reusing the platform's own sandbox/live
+`PaymentProvider` abstraction built for MaterialOS's subscription
+billing -- a guardian can pay a real fee invoice, and a real Receipt
+posts on success), and education email notifications (ADR-043, reusing
+the platform's existing notification-rule engine and SMTP channel).
+See ADR-025 through ADR-043, and `seed_school.py` below for a fully
+populated demo tenant.
 
 A **desktop app** (`apps/desktop`, see ADR-012) wraps this same web app
 in a native Tauri shell for Windows/macOS/Linux -- no second frontend,
@@ -565,7 +577,7 @@ Recorded in `docs/decisions/`:
   on `GET /suppliers` so the management page can reach a deactivated
   supplier again without changing the purchase-order supplier picker's
   active-only default.
-- **ADR-025 through ADR-039**: MaterialOS Education, a 26th industry
+- **ADR-025 through ADR-043**: MaterialOS Education, a 26th industry
   profile (`school_education`) built as a full vertical rather than a
   config entry. Each slice's own ADR documents what it reused from
   existing core infra versus what genuinely needed new tables, and
@@ -584,15 +596,26 @@ Recorded in `docs/decisions/`:
   education webhook events (ADR-038) extend the platform's existing
   `WebhookSubscription`/`WebhookDelivery` system (student enrollment,
   fee invoice generation, exam results locked, admission enquiries)
-  rather than building a parallel integration mechanism; and
-  multi-campus (ADR-039) reuses the platform's existing `Branch` model
-  as "campus" instead of a new `Campus` entity, with real server-side
-  rejection of cross-campus enrolment/book-issuing/hostel-allocation,
-  not just a UI-level filter. Deliberately not built: SMS/WhatsApp/push
-  delivery for announcements, a fee-payment gateway, mid-year transport/
-  hostel reassignment history, per-campus staff/role scoping, outbound
-  integrations that would need MaterialOS to hold third-party
-  credentials (biometric devices, payment gateways), and an AI School
-  Copilot -- each named in its own ADR, not approximated.
+  rather than building a parallel integration mechanism; multi-campus
+  (ADR-039) reuses the platform's existing `Branch` model as "campus"
+  instead of a new `Campus` entity, with real server-side rejection of
+  cross-campus enrolment/book-issuing/hostel-allocation, not just a
+  UI-level filter; report card/Analytics PDF export (ADR-040) reuses
+  the platform's existing browser print-to-PDF mechanism, not a new
+  PDF library; file attachments (ADR-041) reuse the existing
+  `app.storage` adapter already used for item photos; the fee payment
+  gateway (ADR-042) reuses the platform's own sandbox/live
+  `PaymentProvider` abstraction built for its subscription billing,
+  down to a real Receipt posting on a successful payment; and
+  education email notifications (ADR-043) reuse the platform's
+  existing notification-rule engine and real SMTP channel. Deliberately
+  not built: SMS/WhatsApp/push delivery (no provider credentials exist
+  in any environment this runs in, and unlike a payment gateway there's
+  no honest way to sandbox actually delivering a message), mid-year
+  transport/hostel reassignment history, per-campus staff/role scoping,
+  a live Razorpay Checkout.js widget (unreachable/unverifiable without
+  a real gateway account -- the backend already switches to it the
+  moment real credentials are configured), and an AI School Copilot --
+  each named in its own ADR, not approximated.
 
 Read these before re-litigating any of them.
