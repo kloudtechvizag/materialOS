@@ -1,60 +1,60 @@
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
-import { Printer } from "lucide-react";
+import {
+  BookOpen, Bus, CalendarCheck, ClipboardList, GraduationCap, History, IndianRupee, LayoutGrid, UsersRound, Building2, FilePenLine,
+} from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ErrorState } from "@/components/ui/error-state";
-import { Input } from "@/components/ui/input";
+import { KpiCard } from "@/components/ui/kpi-card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { apiFetch, ApiError } from "@/lib/api";
+import { apiFetch } from "@/lib/api";
 
-interface Student {
-  id: string;
-  admission_number: string;
-  first_name: string;
-  last_name: string;
-  date_of_birth: string | null;
-  gender: string | null;
-  blood_group: string | null;
-  phone: string | null;
-  email: string | null;
-  previous_school: string | null;
-  admission_date: string;
-  category: string | null;
-  status: string;
-}
-interface AcademicYear { id: string; name: string; is_current: boolean; }
-interface SchoolClass { id: string; name: string; academic_year_id: string; }
-interface Section { id: string; name: string; school_class_id: string; }
-interface StudentEnrolment { id: string; academic_year_id: string; school_class_id: string; section_id: string | null; roll_number: string | null; status: string; enrolment_date: string; }
-interface Guardian { id: string; full_name: string; phone: string | null; email: string | null; }
-interface StudentGuardianLink { id: string; guardian_id: string; relationship_type: string; is_primary_contact: boolean; }
-interface AttendanceRecord { id: string; attendance_date: string; status: string; }
-interface Examination { id: string; academic_year_id: string; name: string; is_locked: boolean; }
-interface ReportCardSubject { subject_id: string; subject_name: string; max_marks: string; pass_marks: string; marks_obtained: string | null; is_absent: boolean; is_pass: boolean | null; grade: string | null; }
-interface ReportCard { subjects: ReportCardSubject[]; total_marks_obtained: string; total_max_marks: string; percentage: string | null; overall_grade: string | null; overall_result: string; }
-interface StudentHomeworkEntry { homework: { id: string; title: string; due_date: string }; status: string; }
-interface FeeInvoiceSummary { id: string; invoice_id: string; invoice_number: string; invoice_date: string; customer_id: string; total: string; outstanding: string; }
-interface StudentTransport { route_name: string; vehicle_registration_number: string; driver_name: string; driver_phone: string | null; stop_name: string; pickup_time: string; drop_time: string; }
-interface LibraryIssue { id: string; book_title: string; accession_number: string; issued_date: string; due_date: string; returned_date: string | null; status: string; fine_amount: string; is_overdue: boolean; }
-interface StudentHostel { hostel_name: string; room_number: string; bed_number: number; warden_name: string | null; warden_phone: string | null; }
+import { StudentHeader } from "./student360/StudentHeader";
+import { NeedsAttention } from "./student360/NeedsAttention";
+import { OverviewTab } from "./student360/OverviewTab";
+import { AcademicsTab } from "./student360/AcademicsTab";
+import { AttendanceTab } from "./student360/AttendanceTab";
+import { FeesTab } from "./student360/FeesTab";
+import { GuardiansTab } from "./student360/GuardiansTab";
+import { HomeworkTab } from "./student360/HomeworkTab";
+import { ExaminationsTab } from "./student360/ExaminationsTab";
+import { TransportTab } from "./student360/TransportTab";
+import { LibraryTab } from "./student360/LibraryTab";
+import { HostelTab } from "./student360/HostelTab";
+import { EnrolmentTab } from "./student360/EnrolmentTab";
+import { TimelineTab } from "./student360/TimelineTab";
+import type {
+  AcademicYear, AttendanceRecord, Branch, Employee, Examination, FeeInvoiceSummary, Guardian, SchoolClass, Section,
+  Student, StudentEnrolment, StudentGuardianLink, StudentHomeworkEntry, StudentTransport,
+} from "./student360/types";
 
-const STATUS_LABELS: Record<string, string> = { active: "Active", transferred: "Transferred", withdrawn: "Withdrawn", alumni: "Alumni", inactive: "Inactive" };
+const TABS = [
+  { id: "overview", label: "Overview", icon: LayoutGrid },
+  { id: "academics", label: "Academics", icon: BookOpen },
+  { id: "attendance", label: "Attendance", icon: CalendarCheck },
+  { id: "fees", label: "Fees", icon: IndianRupee },
+  { id: "guardians", label: "Guardians", icon: UsersRound },
+  { id: "homework", label: "Homework", icon: FilePenLine },
+  { id: "examinations", label: "Examinations", icon: GraduationCap },
+  { id: "transport", label: "Transport", icon: Bus },
+  { id: "library", label: "Library", icon: BookOpen },
+  { id: "hostel", label: "Hostel", icon: Building2 },
+  { id: "enrolment", label: "Enrolment History", icon: ClipboardList },
+  { id: "timeline", label: "Timeline", icon: History },
+] as const;
+type TabId = (typeof TABS)[number]["id"];
 
 export function StudentDetailPage() {
   const { studentId } = useParams<{ studentId: string }>();
-  const queryClient = useQueryClient();
-  const [guardianForm, setGuardianForm] = useState({ full_name: "", phone: "", relationship_type: "guardian" });
-  const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
-  const [payingInvoiceId, setPayingInvoiceId] = useState<string | null>(null);
-  const [paymentAmount, setPaymentAmount] = useState("");
-  const [portalAccessGuardianId, setPortalAccessGuardianId] = useState<string | null>(null);
-  const [portalAccessForm, setPortalAccessForm] = useState({ email: "", password: "" });
-  const [portalAccessCreatedFor, setPortalAccessCreatedFor] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<TabId>("overview");
 
+  // Essential summary -- everything the header, KPI strip, and Needs
+  // Attention panel need, eagerly fetched once. Each individual tab
+  // fetches its own deeper data only when it's actually opened (see
+  // each Tab component's own useQuery) -- the ADR covers why this
+  // split, not "fetch everything up front," matches the real
+  // performance requirement.
   const { data: student, isLoading, error, refetch } = useQuery({
     queryKey: ["student", studentId],
     queryFn: () => apiFetch<Student>(`/students/${studentId}`),
@@ -67,417 +67,166 @@ export function StudentDetailPage() {
     queryKey: ["student-guardians", studentId],
     queryFn: () => apiFetch<StudentGuardianLink[]>(`/students/${studentId}/guardians`),
   });
-  const { data: years } = useQuery({ queryKey: ["academic-years"], queryFn: () => apiFetch<AcademicYear[]>("/academic-years") });
-  const { data: classes } = useQuery({ queryKey: ["all-school-classes"], queryFn: async () => (await Promise.all((await apiFetch<AcademicYear[]>("/academic-years")).map((y) => apiFetch<SchoolClass[]>(`/school-classes?academic_year_id=${y.id}`)))).flat() });
-  const { data: sections } = useQuery({ queryKey: ["all-sections"], queryFn: () => apiFetch<Section[]>("/sections") });
   const { data: guardians } = useQuery({ queryKey: ["guardians"], queryFn: () => apiFetch<Guardian[]>("/guardians") });
+  const { data: years } = useQuery({ queryKey: ["academic-years"], queryFn: () => apiFetch<AcademicYear[]>("/academic-years") });
+  const { data: classes } = useQuery({
+    queryKey: ["all-school-classes"],
+    queryFn: async () => (await Promise.all((await apiFetch<AcademicYear[]>("/academic-years")).map((y) => apiFetch<SchoolClass[]>(`/school-classes?academic_year_id=${y.id}`)))).flat(),
+  });
+  const { data: sections } = useQuery({ queryKey: ["all-sections"], queryFn: () => apiFetch<Section[]>("/sections") });
+  const { data: employees } = useQuery({ queryKey: ["employees"], queryFn: () => apiFetch<Employee[]>("/employees") });
+  const { data: branches } = useQuery({ queryKey: ["branches"], queryFn: () => apiFetch<Branch[]>("/branches") });
   const { data: attendance } = useQuery({
     queryKey: ["student-attendance-history", studentId],
     queryFn: () => apiFetch<AttendanceRecord[]>(`/student-attendance?student_id=${studentId}`),
-  });
-  const { data: examinations } = useQuery({ queryKey: ["examinations"], queryFn: () => apiFetch<Examination[]>("/examinations") });
-  const { data: reportCard, isFetching: reportCardLoading } = useQuery({
-    queryKey: ["report-card", selectedExamId, studentId],
-    queryFn: () => apiFetch<ReportCard>(`/examinations/${selectedExamId}/report-card/${studentId}`),
-    enabled: !!selectedExamId,
-  });
-  const { data: homeworkEntries } = useQuery({
-    queryKey: ["student-homework", studentId],
-    queryFn: () => apiFetch<StudentHomeworkEntry[]>(`/students/${studentId}/homework`),
   });
   const { data: feeInvoices } = useQuery({
     queryKey: ["student-fees", studentId],
     queryFn: () => apiFetch<FeeInvoiceSummary[]>(`/students/${studentId}/fees`),
   });
+  const { data: homeworkEntries } = useQuery({
+    queryKey: ["student-homework", studentId],
+    queryFn: () => apiFetch<StudentHomeworkEntry[]>(`/students/${studentId}/homework`),
+  });
+  const { data: examinations } = useQuery({ queryKey: ["examinations"], queryFn: () => apiFetch<Examination[]>("/examinations") });
   const { data: transport } = useQuery({
     queryKey: ["student-transport", studentId],
     queryFn: () => apiFetch<StudentTransport | null>(`/students/${studentId}/transport`),
   });
-  const { data: libraryHistory } = useQuery({
-    queryKey: ["student-library", studentId],
-    queryFn: () => apiFetch<LibraryIssue[]>(`/students/${studentId}/library`),
-  });
-  const { data: hostel } = useQuery({
-    queryKey: ["student-hostel", studentId],
-    queryFn: () => apiFetch<StudentHostel | null>(`/students/${studentId}/hostel`),
-  });
 
-  const yearById = new Map((years ?? []).map((y) => [y.id, y.name]));
-  const classById = new Map((classes ?? []).map((c) => [c.id, c.name]));
-  const sectionById = new Map((sections ?? []).map((s) => [s.id, s.name]));
+  const yearById = new Map((years ?? []).map((y) => [y.id, y]));
+  const classById = new Map((classes ?? []).map((c) => [c.id, c]));
+  const sectionById = new Map((sections ?? []).map((s) => [s.id, s]));
   const guardianById = new Map((guardians ?? []).map((g) => [g.id, g]));
-  const selectedExam = examinations?.find((e) => e.id === selectedExamId) ?? null;
-  const reportCardEnrolment = enrolments?.find((e) => e.academic_year_id === selectedExam?.academic_year_id) ?? null;
+  const employeeById = new Map((employees ?? []).map((e) => [e.id, e]));
+  const branchById = new Map((branches ?? []).map((b) => [b.id, b]));
 
-  const updateStatus = useMutation({
-    mutationFn: (status: string) => apiFetch<Student>(`/students/${studentId}`, { method: "PATCH", body: { status } }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["student", studentId] }),
-  });
-
-  const addGuardian = useMutation({
-    mutationFn: async () => {
-      const guardian = await apiFetch<Guardian>("/guardians", { method: "POST", body: { full_name: guardianForm.full_name, phone: guardianForm.phone || null } });
-      return apiFetch(`/students/${studentId}/guardians`, { method: "POST", body: { guardian_id: guardian.id, relationship_type: guardianForm.relationship_type, is_primary_contact: (links?.length ?? 0) === 0 } });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["student-guardians", studentId] });
-      queryClient.invalidateQueries({ queryKey: ["guardians"] });
-      setGuardianForm({ full_name: "", phone: "", relationship_type: "guardian" });
-    },
-  });
-
-  const createPortalAccess = useMutation({
-    mutationFn: (guardianId: string) =>
-      apiFetch(`/guardians/${guardianId}/portal-access`, {
-        method: "POST",
-        body: { email: portalAccessForm.email, password: portalAccessForm.password, full_name: guardianById.get(guardianId)?.full_name ?? "" },
-      }),
-    onSuccess: (_data, guardianId) => {
-      setPortalAccessCreatedFor(guardianById.get(guardianId)?.full_name ?? null);
-      setPortalAccessGuardianId(null);
-      setPortalAccessForm({ email: "", password: "" });
-    },
-  });
-
-  const recordPayment = useMutation({
-    mutationFn: (invoice: FeeInvoiceSummary) =>
-      apiFetch("/receipts", {
-        method: "POST",
-        body: { customer_id: invoice.customer_id, amount: paymentAmount, mode: "cash", reference_note: `Fee payment for ${invoice.invoice_number}`, invoice_id: invoice.invoice_id },
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["student-fees", studentId] });
-      setPayingInvoiceId(null);
-      setPaymentAmount("");
-    },
-  });
+  const currentYear = years?.find((y) => y.is_current) ?? null;
+  const currentEnrolment = enrolments?.find((e) => e.academic_year_id === currentYear?.id) ?? null;
+  const currentClass = currentEnrolment ? classById.get(currentEnrolment.school_class_id) ?? null : null;
+  const currentSection = currentEnrolment?.section_id ? sectionById.get(currentEnrolment.section_id) ?? null : null;
+  const currentTeacher = currentSection?.class_teacher_id ? employeeById.get(currentSection.class_teacher_id) ?? null : null;
+  const branch = student ? branchById.get(student.branch_id) ?? null : null;
 
   if (isLoading) return <Skeleton className="h-96" />;
   if (error) return <ErrorState error={error} onRetry={() => refetch()} />;
   if (!student) return null;
 
+  const attendancePct = attendance && attendance.length > 0 ? Math.round((attendance.filter((a) => a.status === "present").length / attendance.length) * 100) : null;
+  const totalOutstanding = (feeInvoices ?? []).reduce((sum, inv) => sum + Number(inv.outstanding), 0);
+  const pendingHomeworkCount = (homeworkEntries ?? []).filter((e) => e.status === "pending").length;
+  const nextExam = examinations && examinations.length > 0
+    ? [...examinations].filter((e) => !e.is_locked).sort((a, b) => a.start_date.localeCompare(b.start_date))[0]
+    : null;
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">{student.first_name} {student.last_name}</h1>
-          <p className="text-sm text-muted-foreground">{student.admission_number}</p>
+    <div className="space-y-4">
+      {/* "Print profile" (header) prints this dedicated summary, not
+          whichever tab happens to be open -- a tab's own content (a
+          long table, an empty state) isn't what "print this student's
+          profile" means. Only one data-print-area may be live at a
+          time (see index.css's own comment on this), so the
+          Examinations tab's report card print button is the only
+          other data-print-area in this page, and never open at the
+          same time as this one is what gets printed. */}
+      {/* Only rendered outside the Examinations tab -- that tab owns
+          its own data-print-area (the report card itself), and two
+          simultaneous data-print-area elements would both claim the
+          printed page (see index.css's own warning on this). */}
+      {activeTab !== "examinations" && (
+        <div data-print-area className="hidden print:block print:space-y-2">
+          <p className="text-lg font-semibold">{student.first_name} {student.last_name} ({student.admission_number})</p>
+          <p className="text-sm">
+            {currentClass ? `${currentClass.name}${currentSection ? `-${currentSection.name}` : ""}` : "Not enrolled this year"}
+            {currentEnrolment?.roll_number ? ` · Roll No. ${currentEnrolment.roll_number}` : ""} · {currentYear?.name ?? "-"}{branch ? ` · ${branch.name}` : ""}
+          </p>
+          <p className="text-sm">Status: {student.status} · Admitted {student.admission_date} · Class teacher: {currentTeacher ? `${currentTeacher.first_name} ${currentTeacher.last_name}` : "Not assigned"}</p>
+          <p className="text-sm">Attendance: {attendancePct !== null ? `${attendancePct}%` : "No records"} · Fee outstanding: ₹{totalOutstanding.toLocaleString("en-IN")} · Homework pending: {pendingHomeworkCount}</p>
+          <p className="text-sm">Guardians: {(links ?? []).map((l) => guardianById.get(l.guardian_id)?.full_name).filter(Boolean).join(", ") || "None linked"}</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge>{STATUS_LABELS[student.status] ?? student.status}</Badge>
-          <select
-            className="flex h-9 rounded-md border border-input bg-background px-2 text-sm"
-            value=""
-            onChange={(e) => e.target.value && updateStatus.mutate(e.target.value)}
+      )}
+
+      <div className="no-print space-y-4">
+      <StudentHeader
+        student={student}
+        currentEnrolment={currentEnrolment}
+        currentClass={currentClass}
+        currentSection={currentSection}
+        currentTeacher={currentTeacher}
+        currentYear={currentYear}
+        branch={branch}
+        onEditClick={() => setActiveTab("overview")}
+        onGoToGuardians={() => setActiveTab("guardians")}
+      />
+
+      <NeedsAttention
+        feeInvoices={feeInvoices}
+        attendance={attendance}
+        homeworkEntries={homeworkEntries}
+        guardianLinks={links}
+        guardianById={guardianById}
+        onGoToTab={(tab) => setActiveTab(tab as TabId)}
+      />
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <button type="button" className="text-left" onClick={() => setActiveTab("attendance")}>
+          <KpiCard icon={CalendarCheck} color="violet" label="Attendance" value={attendancePct !== null ? `${attendancePct}%` : "No data"} />
+        </button>
+        <button type="button" className="text-left" onClick={() => setActiveTab("fees")}>
+          <KpiCard icon={IndianRupee} color="orange" label="Fee balance" value={feeInvoices && feeInvoices.length > 0 ? `₹${totalOutstanding.toLocaleString("en-IN")}` : "No invoices"} />
+        </button>
+        <button type="button" className="text-left" onClick={() => setActiveTab("homework")}>
+          <KpiCard icon={FilePenLine} color="sky" label="Homework" value={homeworkEntries && homeworkEntries.length > 0 ? `${pendingHomeworkCount} pending` : "No homework"} />
+        </button>
+        <button type="button" className="text-left" onClick={() => setActiveTab("examinations")}>
+          <KpiCard icon={GraduationCap} color="emerald" label="Next exam" value={nextExam ? nextExam.name : "None scheduled"} />
+        </button>
+        <button type="button" className="text-left" onClick={() => setActiveTab("transport")}>
+          <KpiCard icon={Bus} color="amber" label="Transport" value={transport ? transport.route_name : "Not assigned"} />
+        </button>
+        <button type="button" className="text-left" onClick={() => setActiveTab("guardians")}>
+          <KpiCard icon={UsersRound} color="violet" label="Guardians" value={links ? `${links.length} linked` : "-"} />
+        </button>
+      </div>
+
+      <div className="flex gap-1 overflow-x-auto border-b border-border pb-px">
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium ${activeTab === tab.id ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
           >
-            <option value="">Change status...</option>
-            {Object.entries(STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-          </select>
-        </div>
+            <tab.icon className="h-3.5 w-3.5" /> {tab.label}
+          </button>
+        ))}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader><CardTitle className="text-base">Overview</CardTitle></CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">Admitted</span><span>{student.admission_date}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Date of birth</span><span>{student.date_of_birth ?? "-"}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Gender</span><span>{student.gender ?? "-"}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Blood group</span><span>{student.blood_group ?? "-"}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Phone</span><span>{student.phone ?? "-"}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Email</span><span>{student.email ?? "-"}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Previous school</span><span>{student.previous_school ?? "-"}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Category</span><span>{student.category ?? "-"}</span></div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader><CardTitle className="text-base">Enrolment history</CardTitle></CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            {(!enrolments || enrolments.length === 0) && <p className="text-muted-foreground">Not enrolled in any academic year yet.</p>}
-            {enrolments?.map((e) => (
-              <div key={e.id} className="flex items-center justify-between border-b border-border py-1.5 last:border-0">
-                <div>
-                  <p className="font-medium">{yearById.get(e.academic_year_id) ?? "-"}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {classById.get(e.school_class_id) ?? "-"}{e.section_id ? ` - ${sectionById.get(e.section_id) ?? "-"}` : ""}
-                    {e.roll_number ? ` · Roll ${e.roll_number}` : ""}
-                  </p>
-                </div>
-                <Badge variant="outline">{e.status}</Badge>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+      <div>
+        {activeTab === "overview" && (
+          <OverviewTab student={student} enrolments={enrolments} attendance={attendance} feeInvoices={feeInvoices} homeworkEntries={homeworkEntries} guardianLinks={links} guardianById={guardianById} />
+        )}
+        {activeTab === "academics" && (
+          <AcademicsTab studentId={student.id} currentEnrolment={currentEnrolment} currentSection={currentSection} currentTeacher={currentTeacher} />
+        )}
+        {activeTab === "attendance" && <AttendanceTab studentId={student.id} />}
+        {activeTab === "fees" && <FeesTab studentId={student.id} />}
+        {activeTab === "guardians" && <GuardiansTab studentId={student.id} />}
+        {activeTab === "homework" && <HomeworkTab studentId={student.id} />}
+        {activeTab === "examinations" && (
+          <ExaminationsTab studentId={student.id} student={student} enrolments={enrolments} classById={classById} sectionById={sectionById} />
+        )}
+        {activeTab === "transport" && <TransportTab studentId={student.id} />}
+        {activeTab === "library" && <LibraryTab studentId={student.id} />}
+        {activeTab === "hostel" && <HostelTab studentId={student.id} />}
+        {activeTab === "enrolment" && (
+          <EnrolmentTab enrolments={enrolments} yearById={yearById} classById={classById} sectionById={sectionById} branchById={branchById} employeeById={employeeById} />
+        )}
+        {activeTab === "timeline" && (
+          <TimelineTab studentId={student.id} enrolments={enrolments} feeInvoices={feeInvoices} homeworkEntries={homeworkEntries} guardianLinks={links} guardianById={guardianById} />
+        )}
       </div>
-
-      <Card>
-        <CardHeader><CardTitle className="text-base">Guardians</CardTitle></CardHeader>
-        <CardContent className="space-y-3">
-          {(!links || links.length === 0) && <p className="text-sm text-muted-foreground">No guardians linked yet.</p>}
-          {portalAccessCreatedFor && (
-            <p className="rounded-md border border-success/30 bg-success/10 p-2 text-xs text-success">
-              Parent portal login created for {portalAccessCreatedFor}. Share the workspace name, email, and password with them.
-            </p>
-          )}
-          <div className="space-y-2">
-            {links?.map((l) => {
-              const g = guardianById.get(l.guardian_id);
-              return (
-                <div key={l.id} className="space-y-1.5 text-sm">
-                  <div className="flex items-center justify-between">
-                    <span>{g?.full_name ?? "-"} <span className="text-muted-foreground">({l.relationship_type})</span></span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">{g?.phone ?? "-"}{l.is_primary_contact && " · Primary"}</span>
-                      <button
-                        type="button"
-                        className="text-xs text-primary hover:underline"
-                        onClick={() => setPortalAccessGuardianId(portalAccessGuardianId === l.guardian_id ? null : l.guardian_id)}
-                      >
-                        Grant portal access
-                      </button>
-                    </div>
-                  </div>
-                  {portalAccessGuardianId === l.guardian_id && (
-                    <div className="flex flex-wrap items-center gap-2 rounded-md border border-border p-2">
-                      <Input placeholder="Email" type="email" className="h-8 w-48" value={portalAccessForm.email} onChange={(e) => setPortalAccessForm((f) => ({ ...f, email: e.target.value }))} />
-                      <Input placeholder="Password" type="password" className="h-8 w-40" value={portalAccessForm.password} onChange={(e) => setPortalAccessForm((f) => ({ ...f, password: e.target.value }))} />
-                      <Button size="sm" className="h-8" onClick={() => createPortalAccess.mutate(l.guardian_id)} disabled={!portalAccessForm.email || !portalAccessForm.password || createPortalAccess.isPending}>
-                        {createPortalAccess.isPending ? "Creating..." : "Create login"}
-                      </Button>
-                      {createPortalAccess.error instanceof ApiError && <p className="w-full text-xs text-destructive">{createPortalAccess.error.message}</p>}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-          <details className="pt-1">
-            <summary className="cursor-pointer text-xs text-primary">Add guardian</summary>
-            <div className="mt-2 grid grid-cols-3 gap-2">
-              <Input placeholder="Full name" value={guardianForm.full_name} onChange={(e) => setGuardianForm((f) => ({ ...f, full_name: e.target.value }))} />
-              <Input placeholder="Phone" value={guardianForm.phone} onChange={(e) => setGuardianForm((f) => ({ ...f, phone: e.target.value }))} />
-              <select
-                className="flex h-9 rounded-md border border-input bg-background px-2 text-sm"
-                value={guardianForm.relationship_type}
-                onChange={(e) => setGuardianForm((f) => ({ ...f, relationship_type: e.target.value }))}
-              >
-                <option value="father">Father</option>
-                <option value="mother">Mother</option>
-                <option value="guardian">Guardian</option>
-                <option value="other">Other</option>
-              </select>
-              {addGuardian.error instanceof ApiError && <p className="col-span-3 text-xs text-destructive">{addGuardian.error.message}</p>}
-              <Button size="sm" className="col-span-3" onClick={() => addGuardian.mutate()} disabled={!guardianForm.full_name || addGuardian.isPending}>
-                {addGuardian.isPending ? "Saving..." : "Save guardian"}
-              </Button>
-            </div>
-          </details>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader><CardTitle className="text-base">Attendance</CardTitle></CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          {(!attendance || attendance.length === 0) && <p className="text-muted-foreground">No attendance recorded yet.</p>}
-          {attendance && attendance.length > 0 && (
-            <>
-              <p className="text-muted-foreground">
-                {Math.round((attendance.filter((a) => a.status === "present").length / attendance.length) * 100)}% present
-                over {attendance.length} recorded day{attendance.length === 1 ? "" : "s"}.
-              </p>
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {attendance.slice(0, 20).map((a) => (
-                  <span
-                    key={a.id}
-                    title={`${a.attendance_date}: ${a.status}`}
-                    className={
-                      "h-2.5 w-2.5 rounded-full " +
-                      (a.status === "present" ? "bg-emerald-500" : a.status === "absent" ? "bg-destructive" : "bg-amber-500")
-                    }
-                  />
-                ))}
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader><CardTitle className="text-base">Report cards</CardTitle></CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          {(!examinations || examinations.length === 0) && <p className="text-muted-foreground">No examinations yet.</p>}
-          <div className="flex flex-wrap gap-1.5">
-            {examinations?.map((exam) => (
-              <button
-                key={exam.id}
-                type="button"
-                onClick={() => setSelectedExamId(exam.id)}
-                className={`rounded-full border px-2.5 py-1 text-xs font-medium ${selectedExamId === exam.id ? "border-primary bg-accent" : "border-input text-muted-foreground hover:bg-accent"}`}
-              >
-                {exam.name}
-              </button>
-            ))}
-          </div>
-
-          {selectedExamId && reportCardLoading && <p className="text-muted-foreground">Loading...</p>}
-          {selectedExamId && reportCard && student && (
-            <div data-print-area className="space-y-2 pt-1">
-              {/* Print-only header -- data-print-area hides everything
-                  outside this block (including the page's own <h1>), so
-                  the printed page needs its own identifying header. */}
-              <div className="hidden print:block print:mb-4 print:text-center">
-                <p className="text-lg font-semibold">Report Card</p>
-                <p className="text-sm">{student.first_name} {student.last_name} ({student.admission_number})</p>
-                <p className="text-xs text-muted-foreground">
-                  {reportCardEnrolment ? `${classById.get(reportCardEnrolment.school_class_id) ?? "-"}${reportCardEnrolment.section_id ? ` - ${sectionById.get(reportCardEnrolment.section_id) ?? "-"}` : ""} · ` : ""}
-                  {selectedExam?.name}
-                </p>
-              </div>
-              <div className="flex items-center justify-between">
-                <Badge variant={reportCard.overall_result === "pass" ? "success" : reportCard.overall_result === "fail" ? "destructive" : "outline"}>
-                  {reportCard.overall_result === "incomplete" ? "Incomplete" : reportCard.overall_result === "pass" ? "Pass" : "Fail"}
-                </Badge>
-                <div className="flex items-center gap-3">
-                  {reportCard.percentage !== null && (
-                    <span className="text-muted-foreground">{reportCard.percentage}% {reportCard.overall_grade ? `· Grade ${reportCard.overall_grade}` : ""}</span>
-                  )}
-                  <Button variant="outline" size="sm" className="no-print h-7" onClick={() => window.print()}>
-                    <Printer className="h-3.5 w-3.5" /> Print
-                  </Button>
-                </div>
-              </div>
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-border text-left text-muted-foreground">
-                    <th className="py-1">Subject</th>
-                    <th className="py-1">Marks</th>
-                    <th className="py-1">Grade</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {reportCard.subjects.map((s) => (
-                    <tr key={s.subject_id} className="border-b border-border last:border-0">
-                      <td className="py-1">{s.subject_name}</td>
-                      <td className="py-1">{s.is_absent ? "Absent" : s.marks_obtained !== null ? `${s.marks_obtained} / ${s.max_marks}` : "Not marked"}</td>
-                      <td className="py-1">{s.grade ?? "-"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader><CardTitle className="text-base">Fees</CardTitle></CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          {(!feeInvoices || feeInvoices.length === 0) && <p className="text-muted-foreground">No fee invoices yet.</p>}
-          {feeInvoices?.map((inv) => (
-            <div key={inv.id} className="space-y-1.5 border-b border-border py-1.5 last:border-0">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">{inv.invoice_number}</p>
-                  <p className="text-xs text-muted-foreground">{inv.invoice_date} · Total ₹{inv.total}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant={Number(inv.outstanding) <= 0 ? "success" : "outline"}>
-                    {Number(inv.outstanding) <= 0 ? "Paid" : `₹${inv.outstanding} due`}
-                  </Badge>
-                  {Number(inv.outstanding) > 0 && (
-                    <Button size="sm" variant="outline" onClick={() => { setPayingInvoiceId(inv.id); setPaymentAmount(inv.outstanding); }}>
-                      Record payment
-                    </Button>
-                  )}
-                </div>
-              </div>
-              {payingInvoiceId === inv.id && (
-                <div className="flex items-center gap-2">
-                  <Input type="number" className="h-8 w-28" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} />
-                  <Button size="sm" className="h-8" onClick={() => recordPayment.mutate(inv)} disabled={!paymentAmount || recordPayment.isPending}>
-                    {recordPayment.isPending ? "Saving..." : "Confirm"}
-                  </Button>
-                  <button type="button" className="text-xs text-muted-foreground hover:text-foreground" onClick={() => setPayingInvoiceId(null)}>Cancel</button>
-                </div>
-              )}
-              {recordPayment.error instanceof ApiError && payingInvoiceId === inv.id && <p className="text-xs text-destructive">{recordPayment.error.message}</p>}
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader><CardTitle className="text-base">Transport</CardTitle></CardHeader>
-        <CardContent className="space-y-1 text-sm">
-          {!transport && <p className="text-muted-foreground">Not assigned to a route yet.</p>}
-          {transport && (
-            <>
-              <div className="flex justify-between"><span className="text-muted-foreground">Route</span><span>{transport.route_name}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Stop</span><span>{transport.stop_name}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Pickup / Drop</span><span>{transport.pickup_time.slice(0, 5)} / {transport.drop_time.slice(0, 5)}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Vehicle</span><span>{transport.vehicle_registration_number}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Driver</span><span>{transport.driver_name}{transport.driver_phone ? ` · ${transport.driver_phone}` : ""}</span></div>
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader><CardTitle className="text-base">Library</CardTitle></CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          {(!libraryHistory || libraryHistory.length === 0) && <p className="text-muted-foreground">No books issued yet.</p>}
-          {libraryHistory?.map((i) => (
-            <div key={i.id} className="flex items-center justify-between border-b border-border py-1.5 last:border-0">
-              <div>
-                <p className="font-medium">{i.book_title} <span className="text-xs text-muted-foreground">({i.accession_number})</span></p>
-                <p className="text-xs text-muted-foreground">
-                  Issued {i.issued_date} · Due {i.due_date}{i.returned_date ? ` · Returned ${i.returned_date}` : ""}
-                  {Number(i.fine_amount) > 0 ? ` · Fine ₹${i.fine_amount}` : ""}
-                </p>
-              </div>
-              <Badge variant={i.status === "returned" ? "success" : i.status === "lost" ? "destructive" : i.is_overdue ? "warning" : "outline"}>
-                {i.status === "issued" && i.is_overdue ? "Overdue" : i.status}
-              </Badge>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader><CardTitle className="text-base">Hostel</CardTitle></CardHeader>
-        <CardContent className="space-y-1 text-sm">
-          {!hostel && <p className="text-muted-foreground">Not allocated to hostel accommodation.</p>}
-          {hostel && (
-            <>
-              <div className="flex justify-between"><span className="text-muted-foreground">Hostel</span><span>{hostel.hostel_name}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Room</span><span>{hostel.room_number}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Bed</span><span>{hostel.bed_number}</span></div>
-              {hostel.warden_name && <div className="flex justify-between"><span className="text-muted-foreground">Warden</span><span>{hostel.warden_name}{hostel.warden_phone ? ` · ${hostel.warden_phone}` : ""}</span></div>}
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader><CardTitle className="text-base">Homework</CardTitle></CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          {(!homeworkEntries || homeworkEntries.length === 0) && <p className="text-muted-foreground">No homework assigned yet.</p>}
-          {homeworkEntries?.map((entry) => (
-            <div key={entry.homework.id} className="flex items-center justify-between border-b border-border py-1.5 last:border-0">
-              <div>
-                <p className="font-medium">{entry.homework.title}</p>
-                <p className="text-xs text-muted-foreground">Due {entry.homework.due_date}</p>
-              </div>
-              <Badge
-                variant={entry.status === "submitted" ? "success" : entry.status === "late" ? "warning" : entry.status === "missing" ? "destructive" : "outline"}
-              >
-                {entry.status}
-              </Badge>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
+      </div>
     </div>
   );
 }

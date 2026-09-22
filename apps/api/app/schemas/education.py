@@ -70,6 +70,7 @@ class GuardianOut(BaseModel):
     city: str | None
     state: str | None
     pincode: str | None
+    user_id: uuid.UUID | None
 
     class Config:
         from_attributes = True

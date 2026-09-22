@@ -55,6 +55,7 @@ class FeeInvoiceOut(BaseModel):
     customer_id: uuid.UUID
     total: Decimal
     outstanding: Decimal
+    due_date: date | None
 
 
 class GenerateFeeInvoicesResult(BaseModel):

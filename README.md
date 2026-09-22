@@ -135,7 +135,16 @@ payment gateway (ADR-042, reusing the platform's own sandbox/live
 billing -- a guardian can pay a real fee invoice, and a real Receipt
 posts on success), and education email notifications (ADR-043, reusing
 the platform's existing notification-rule engine and SMTP channel).
-See ADR-025 through ADR-043, and `seed_school.py` below for a fully
+The Student Profile was then rebuilt as **Student 360** (ADR-044): a
+tabbed command-center -- header, KPI strip, a real Needs Attention
+panel, and twelve tabs -- built entirely on data the vertical already
+produces, with SPA tab navigation (each tab fetches its own data only
+when opened) rather than one long scrolling page. Along the way this
+surfaced and fixed a real, pre-existing bug: guardian portal logins
+worked but never set `Guardian.user_id`, so every guardian with real,
+working portal access read as "inactive" everywhere that field was
+checked (fixed at the source, backfilled for every existing tenant).
+See ADR-025 through ADR-044, and `seed_school.py` below for a fully
 populated demo tenant.
 
 A **desktop app** (`apps/desktop`, see ADR-012) wraps this same web app
@@ -577,7 +586,7 @@ Recorded in `docs/decisions/`:
   on `GET /suppliers` so the management page can reach a deactivated
   supplier again without changing the purchase-order supplier picker's
   active-only default.
-- **ADR-025 through ADR-043**: MaterialOS Education, a 26th industry
+- **ADR-025 through ADR-044**: MaterialOS Education, a 26th industry
   profile (`school_education`) built as a full vertical rather than a
   config entry. Each slice's own ADR documents what it reused from
   existing core infra versus what genuinely needed new tables, and
@@ -608,14 +617,21 @@ Recorded in `docs/decisions/`:
   `PaymentProvider` abstraction built for its subscription billing,
   down to a real Receipt posting on a successful payment; and
   education email notifications (ADR-043) reuse the platform's
-  existing notification-rule engine and real SMTP channel. Deliberately
-  not built: SMS/WhatsApp/push delivery (no provider credentials exist
-  in any environment this runs in, and unlike a payment gateway there's
-  no honest way to sandbox actually delivering a message), mid-year
+  existing notification-rule engine and real SMTP channel; and Student
+  360 (ADR-044) redesigns the Student Profile into a tabbed command
+  center built entirely on data the vertical already produces (SPA tab
+  navigation, each tab fetching its own data only when opened), which
+  in the process found and fixed a real pre-existing bug -- guardian
+  portal logins worked but never set `Guardian.user_id`, backfilled for
+  every existing tenant once fixed. Deliberately not built: SMS/
+  WhatsApp/push delivery (no provider credentials exist in any
+  environment this runs in, and unlike a payment gateway there's no
+  honest way to sandbox actually delivering a message), mid-year
   transport/hostel reassignment history, per-campus staff/role scoping,
   a live Razorpay Checkout.js widget (unreachable/unverifiable without
   a real gateway account -- the backend already switches to it the
-  moment real credentials are configured), and an AI School Copilot --
-  each named in its own ADR, not approximated.
+  moment real credentials are configured), student photos/Notes/
+  Achievements/Requests/a report-card approval workflow, and an AI
+  School Copilot -- each named in its own ADR, not approximated.
 
 Read these before re-litigating any of them.

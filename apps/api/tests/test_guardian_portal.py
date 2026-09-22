@@ -83,6 +83,19 @@ def test_a_staff_login_is_rejected_from_the_guardian_portal():
     assert "guardian-portal" in resp.json()["error"]["message"]
 
 
+def test_granting_portal_access_sets_the_real_guardian_user_id_link():
+    """Regression test for a real bug (Student 360 pass, ADR-044):
+    create_guardian_portal_login created a real, working User linked
+    via User.guardian_id, but never set the back-reference
+    Guardian.user_id -- so every guardian with real portal access read
+    as "inactive" everywhere that checked it."""
+    slug, staff_headers, _student, guardian, portal_access = _setup_tenant_with_child_and_portal_login()
+
+    guardians = client.get("/api/v1/guardians", headers=staff_headers).json()
+    refetched = next(g for g in guardians if g["id"] == guardian["id"])
+    assert refetched["user_id"] == portal_access["user_id"]
+
+
 def test_guardian_portal_login_lists_their_real_linked_child():
     slug, _staff_headers, student, _guardian, portal_access = _setup_tenant_with_child_and_portal_login()
     token = _login(slug, f"guardian-{slug}@example.com", "guardian-pass-123")

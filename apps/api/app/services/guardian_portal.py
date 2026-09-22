@@ -64,6 +64,12 @@ def create_guardian_portal_login(
     db.add(user)
     db.flush()
     db.add(UserRole(tenant_id=tenant_id, user_id=user.id, role_id=role.id, branch_id=None))
+    # Guardian.user_id's own docstring: "link it when self-service
+    # actually activates" -- this is that moment. Real bug fix (ADR-044
+    # Student 360): this was never set before, so every guardian read
+    # as "portal inactive" even with a real, working login, since
+    # nothing ever populated the back-reference the field exists for.
+    guardian.user_id = user.id
     db.flush()
     return user
 

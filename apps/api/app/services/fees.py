@@ -215,12 +215,27 @@ def generate_fee_invoices(
     return {"created": [_fee_invoice_out(db, fi) for fi in created], "skipped_student_ids": skipped_student_ids}
 
 
+def _fee_invoice_due_date(db: Session, fee_invoice_id: uuid.UUID) -> date | None:
+    """The earliest due_date among this invoice's own FeeStructureItem
+    lines -- real, stored data (set at fee-structure-item creation),
+    not a fabricated default. An invoice with multiple lines due on
+    different dates is honestly reported as due on the earliest one
+    (the one that would make it overdue first)."""
+    return db.execute(
+        select(func.min(FeeStructureItem.due_date))
+        .select_from(FeeInvoiceLine)
+        .join(FeeStructureItem, FeeStructureItem.id == FeeInvoiceLine.fee_structure_item_id)
+        .where(FeeInvoiceLine.fee_invoice_id == fee_invoice_id)
+    ).scalar_one_or_none()
+
+
 def _fee_invoice_out(db: Session, fee_invoice: FeeInvoice) -> dict:
     invoice = db.get(Invoice, fee_invoice.invoice_id)
     return {
         "id": fee_invoice.id, "student_id": fee_invoice.student_id, "academic_year_id": fee_invoice.academic_year_id,
         "invoice_id": invoice.id, "invoice_number": invoice.number, "invoice_date": invoice.invoice_date,
         "customer_id": invoice.customer_id, "total": invoice.total, "outstanding": _invoice_outstanding(db, invoice.id),
+        "due_date": _fee_invoice_due_date(db, fee_invoice.id),
     }
 
 
