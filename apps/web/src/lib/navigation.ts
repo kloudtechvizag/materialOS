@@ -204,6 +204,13 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
     ],
   },
   {
+    id: "analytics",
+    label: "Analytics",
+    items: [
+      { id: "school-analytics", label: "School Analytics", href: "/analytics", icon: BarChart3, module: "education" },
+    ],
+  },
+  {
     id: "students",
     label: "Students",
     items: [

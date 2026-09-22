@@ -116,6 +116,7 @@ import { AnnouncementsPage } from "@/routes/education/AnnouncementsPage";
 import { TransportPage } from "@/routes/education/TransportPage";
 import { LibraryPage } from "@/routes/education/LibraryPage";
 import { HostelPage } from "@/routes/education/HostelPage";
+import { AnalyticsPage } from "@/routes/education/AnalyticsPage";
 import { AdmissionEnquiriesPage } from "@/routes/admissions/AdmissionEnquiriesPage";
 import { AdmissionApplicationsPage } from "@/routes/admissions/AdmissionApplicationsPage";
 import { AdmissionApplicationDetailPage } from "@/routes/admissions/AdmissionApplicationDetailPage";
@@ -320,6 +321,7 @@ export default function App() {
         <Route path="/transport" element={<RequireModule module="education"><TransportPage /></RequireModule>} />
         <Route path="/library" element={<RequireModule module="education"><LibraryPage /></RequireModule>} />
         <Route path="/hostel" element={<RequireModule module="education"><HostelPage /></RequireModule>} />
+        <Route path="/analytics" element={<RequireModule module="education"><AnalyticsPage /></RequireModule>} />
         <Route path="/academic-years" element={<RequireModule module="education"><AcademicYearsPage /></RequireModule>} />
         <Route path="/admission-enquiries" element={<RequireModule module="education"><AdmissionEnquiriesPage /></RequireModule>} />
         <Route path="/admission-applications" element={<RequireModule module="education"><AdmissionApplicationsPage /></RequireModule>} />
