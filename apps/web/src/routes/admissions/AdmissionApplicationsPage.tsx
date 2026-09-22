@@ -15,6 +15,7 @@ import { apiFetch } from "@/lib/api";
 
 interface Application {
   id: string;
+  branch_id: string;
   first_name: string;
   last_name: string;
   desired_grade: string | null;
@@ -23,6 +24,7 @@ interface Application {
   application_date: string;
 }
 interface AcademicYear { id: string; name: string; is_current: boolean; }
+interface Branch { id: string; name: string; }
 
 const STATUS_VARIANT: Record<string, "outline" | "secondary" | "success" | "destructive"> = {
   submitted: "outline", under_review: "secondary", interview_scheduled: "secondary", interviewed: "secondary",
@@ -33,7 +35,7 @@ const STATUS_LABEL: Record<string, string> = {
   offered: "Offered", waitlisted: "Waitlisted", rejected: "Rejected", withdrawn: "Withdrawn", admitted: "Admitted",
 };
 
-const EMPTY_FORM = { first_name: "", last_name: "", desired_grade: "", academic_year_id: "", guardian_name: "", guardian_phone: "" };
+const EMPTY_FORM = { branch_id: "", first_name: "", last_name: "", desired_grade: "", academic_year_id: "", guardian_name: "", guardian_phone: "" };
 
 export function AdmissionApplicationsPage() {
   const queryClient = useQueryClient();
@@ -46,6 +48,7 @@ export function AdmissionApplicationsPage() {
     queryFn: () => apiFetch<Application[]>(`/admission-applications${statusFilter ? `?status=${statusFilter}` : ""}`),
   });
   const { data: years } = useQuery({ queryKey: ["academic-years"], queryFn: () => apiFetch<AcademicYear[]>("/academic-years") });
+  const { data: branches } = useQuery({ queryKey: ["branches"], queryFn: () => apiFetch<Branch[]>("/branches") });
   const yearById = new Map((years ?? []).map((y) => [y.id, y.name]));
 
   const createApplication = useMutation({
@@ -80,6 +83,13 @@ export function AdmissionApplicationsPage() {
           <CardHeader><CardTitle className="text-base">New application</CardTitle></CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
+              <Label>Campus</Label>
+              <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={form.branch_id} onChange={(e) => setForm((f) => ({ ...f, branch_id: e.target.value }))}>
+                <option value="">Select campus...</option>
+                {branches?.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+              </select>
+            </div>
+            <div className="space-y-1.5">
               <Label>First name</Label>
               <Input value={form.first_name} onChange={(e) => setForm((f) => ({ ...f, first_name: e.target.value }))} />
             </div>
@@ -110,7 +120,7 @@ export function AdmissionApplicationsPage() {
             <div className="sm:col-span-2">
               <Button
                 onClick={() => createApplication.mutate()}
-                disabled={!form.first_name || !form.last_name || !form.academic_year_id || !form.guardian_name || createApplication.isPending}
+                disabled={!form.branch_id || !form.first_name || !form.last_name || !form.academic_year_id || !form.guardian_name || createApplication.isPending}
               >
                 {createApplication.isPending ? "Saving..." : "Save application"}
               </Button>

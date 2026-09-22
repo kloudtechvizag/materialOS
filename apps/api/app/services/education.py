@@ -40,12 +40,16 @@ def create_academic_year(
     return year
 
 
-def create_school_class(db: Session, *, tenant_id: uuid.UUID, company_id: uuid.UUID, academic_year_id: uuid.UUID, name: str, sequence: int) -> SchoolClass:
+def create_school_class(
+    db: Session, *, tenant_id: uuid.UUID, company_id: uuid.UUID, branch_id: uuid.UUID, academic_year_id: uuid.UUID, name: str, sequence: int
+) -> SchoolClass:
     year = db.get(AcademicYear, academic_year_id)
     if year is None or year.tenant_id != tenant_id:
         raise AppError(ErrorCode.VALIDATION_ERROR, "Academic year not found.")
 
-    school_class = SchoolClass(tenant_id=tenant_id, company_id=company_id, academic_year_id=academic_year_id, name=name, sequence=sequence)
+    school_class = SchoolClass(
+        tenant_id=tenant_id, company_id=company_id, branch_id=branch_id, academic_year_id=academic_year_id, name=name, sequence=sequence,
+    )
     db.add(school_class)
     db.flush()
     return school_class
@@ -103,6 +107,11 @@ def enrol_student(
     school_class = db.get(SchoolClass, school_class_id)
     if school_class is None or school_class.tenant_id != tenant_id or school_class.academic_year_id != academic_year_id:
         raise AppError(ErrorCode.VALIDATION_ERROR, "Class does not belong to this academic year.")
+    student = db.get(Student, student_id)
+    if student is None or student.tenant_id != tenant_id:
+        raise AppError(ErrorCode.NOT_FOUND, "Student not found.", status_code=404)
+    if student.branch_id != school_class.branch_id:
+        raise AppError(ErrorCode.VALIDATION_ERROR, "This class belongs to a different campus than the student's branch.")
     if section_id is not None:
         section = db.get(Section, section_id)
         if section is None or section.tenant_id != tenant_id or section.school_class_id != school_class_id:
@@ -125,14 +134,21 @@ def enrol_student(
     return enrolment
 
 
-def create_student(db: Session, *, tenant_id: uuid.UUID, company_id: uuid.UUID, **fields) -> Student:
+def create_student(db: Session, *, tenant_id: uuid.UUID, company_id: uuid.UUID, branch_id: uuid.UUID, **fields) -> Student:
     academic_year_id = fields.pop("academic_year_id", None)
     school_class_id = fields.pop("school_class_id", None)
     section_id = fields.pop("section_id", None)
     roll_number = fields.pop("roll_number", None)
 
+    if school_class_id:
+        school_class = db.get(SchoolClass, school_class_id)
+        if school_class is None or school_class.tenant_id != tenant_id:
+            raise AppError(ErrorCode.VALIDATION_ERROR, "Class not found.")
+        if school_class.branch_id != branch_id:
+            raise AppError(ErrorCode.VALIDATION_ERROR, "This class belongs to a different campus than the student's branch.")
+
     student = Student(
-        tenant_id=tenant_id, company_id=company_id,
+        tenant_id=tenant_id, company_id=company_id, branch_id=branch_id,
         admission_number=fields.pop("admission_number", None) or _next_admission_number(db, tenant_id),
         **fields,
     )

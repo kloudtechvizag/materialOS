@@ -50,6 +50,8 @@ def create_application(db: Session, *, tenant_id: uuid.UUID, company_id: uuid.UU
         enquiry = db.get(AdmissionEnquiry, enquiry_id)
         if enquiry is None or enquiry.tenant_id != tenant_id:
             raise AppError(ErrorCode.VALIDATION_ERROR, "Enquiry not found.")
+        if enquiry.branch_id != fields["branch_id"]:
+            raise AppError(ErrorCode.VALIDATION_ERROR, "This application's campus must match the enquiry's own campus.")
         enquiry.status = "converted"
 
     application = AdmissionApplication(
@@ -105,7 +107,7 @@ def convert_application_to_student(
         raise AppError(ErrorCode.VALIDATION_ERROR, f"This application is already {application.status}.")
 
     student = create_student(
-        db, tenant_id=tenant_id, company_id=company_id,
+        db, tenant_id=tenant_id, company_id=company_id, branch_id=application.branch_id,
         first_name=application.first_name, last_name=application.last_name, date_of_birth=application.date_of_birth,
         admission_date=date.today(),
     )

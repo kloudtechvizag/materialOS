@@ -25,6 +25,7 @@ class AcademicYearCreate(BaseModel):
 class SchoolClassOut(BaseModel):
     id: uuid.UUID
     academic_year_id: uuid.UUID
+    branch_id: uuid.UUID
     name: str
     sequence: int
     is_active: bool
@@ -35,6 +36,7 @@ class SchoolClassOut(BaseModel):
 
 class SchoolClassCreate(BaseModel):
     academic_year_id: uuid.UUID
+    branch_id: uuid.UUID
     name: str
     sequence: int = 0
 
@@ -154,12 +156,14 @@ class StudentOut(BaseModel):
     category: str | None
     status: str
     company_id: uuid.UUID
+    branch_id: uuid.UUID
 
     class Config:
         from_attributes = True
 
 
 class StudentCreate(BaseModel):
+    branch_id: uuid.UUID
     first_name: str
     last_name: str
     date_of_birth: date | None = None

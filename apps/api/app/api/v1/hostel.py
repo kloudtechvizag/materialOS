@@ -23,8 +23,10 @@ def _company(db: Session, tenant_id: uuid.UUID) -> Company:
 
 
 @router.get("/hostels", response_model=list[HostelOut])
-def list_hostels_endpoint(db: Session = Depends(get_db_tenant), user: User = Depends(require_permission("hostel.view"))) -> list[Hostel]:
-    return list_hostels(db, tenant_id=user.tenant_id)
+def list_hostels_endpoint(
+    branch_id: uuid.UUID | None = None, db: Session = Depends(get_db_tenant), user: User = Depends(require_permission("hostel.view"))
+) -> list[Hostel]:
+    return list_hostels(db, tenant_id=user.tenant_id, branch_id=branch_id)
 
 
 @router.post("/hostels", response_model=HostelOut, status_code=201)

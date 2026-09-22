@@ -21,7 +21,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, TenantMixin, TimestampMixin, UUIDPk
 
-ANNOUNCEMENT_TARGET_TYPES = ["school", "class", "section"]
+ANNOUNCEMENT_TARGET_TYPES = ["school", "campus", "class", "section"]
 
 
 class Announcement(Base, UUIDPk, TenantMixin, TimestampMixin):
@@ -32,11 +32,16 @@ class Announcement(Base, UUIDPk, TenantMixin, TimestampMixin):
     )
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     body: Mapped[str] = mapped_column(String(4000), nullable=False)
-    # school -- every guardian sees it; class/section -- only guardians
-    # with a child currently enrolled there (services/announcements.py
-    # resolves this live off StudentEnrolment, never a cached
-    # audience list).
+    # school -- every guardian at every campus sees it; campus -- only
+    # guardians with a child whose Student.branch_id matches
+    # target_branch_id (ADR-038); class/section -- only guardians with
+    # a child currently enrolled there (services/announcements.py
+    # resolves all of this live off StudentEnrolment/Student, never a
+    # cached audience list).
     target_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    target_branch_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("branches.id", ondelete="CASCADE"), nullable=True, index=True
+    )
     target_school_class_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("school_classes.id", ondelete="CASCADE"), nullable=True, index=True
     )

@@ -40,18 +40,19 @@ def _setup_tenant_with_book_and_student():
     token = _signed_up_token(slug)
     headers = {"Authorization": f"Bearer {token}"}
 
+    branch_id = client.get("/api/v1/branches", headers=headers).json()[0]["id"]
     book = client.post("/api/v1/library/books", headers=headers, json={"title": "Wings of Fire", "author": "A.P.J. Abdul Kalam", "isbn": "9788173711466"}).json()
-    copy = client.post(f"/api/v1/library/books/{book['id']}/copies", headers=headers, json={"accession_number": "ACC-0001"}).json()
+    copy = client.post(f"/api/v1/library/books/{book['id']}/copies", headers=headers, json={"branch_id": branch_id, "accession_number": "ACC-0001"}).json()
 
     year = client.post(
         "/api/v1/academic-years", headers=headers,
         json={"name": "2026-27", "start_date": "2026-06-01", "end_date": "2027-04-30", "is_current": True},
     ).json()
-    school_class = client.post("/api/v1/school-classes", headers=headers, json={"academic_year_id": year["id"], "name": "Grade 7", "sequence": 7}).json()
+    school_class = client.post("/api/v1/school-classes", headers=headers, json={"academic_year_id": year["id"], "branch_id": branch_id, "name": "Grade 7", "sequence": 7}).json()
     section = client.post("/api/v1/sections", headers=headers, json={"school_class_id": school_class["id"], "name": "A"}).json()
     student = client.post(
         "/api/v1/students", headers=headers,
-        json={"first_name": "Ananya", "last_name": "Bose", "admission_date": "2026-06-01", "academic_year_id": year["id"], "school_class_id": school_class["id"], "section_id": section["id"], "roll_number": "1"},
+        json={"branch_id": branch_id, "first_name": "Ananya", "last_name": "Bose", "admission_date": "2026-06-01", "academic_year_id": year["id"], "school_class_id": school_class["id"], "section_id": section["id"], "roll_number": "1"},
     ).json()
 
     return slug, headers, book, copy, student
@@ -90,7 +91,7 @@ def test_issuing_an_already_issued_copy_is_rejected():
     client.post("/api/v1/library/issues", headers=headers, json={"book_copy_id": copy["id"], "student_id": student["id"], "due_date": due})
 
     other_student = client.post(
-        "/api/v1/students", headers=headers, json={"first_name": "Other", "last_name": "Kid", "admission_date": "2026-06-01"},
+        "/api/v1/students", headers=headers, json={"branch_id": student["branch_id"], "first_name": "Other", "last_name": "Kid", "admission_date": "2026-06-01"},
     ).json()
     resp = client.post("/api/v1/library/issues", headers=headers, json={"book_copy_id": copy["id"], "student_id": other_student["id"], "due_date": due})
     assert resp.status_code == 409, resp.text
@@ -137,7 +138,7 @@ def test_marking_a_book_lost_keeps_the_copy_unavailable():
     assert copies[0]["status"] == "lost"
 
     # Even a fresh copy of the same title can still be issued -- only this one copy is unavailable.
-    new_copy = client.post(f"/api/v1/library/books/{copy['book_id']}/copies", headers=headers, json={"accession_number": "ACC-0002"}).json()
+    new_copy = client.post(f"/api/v1/library/books/{copy['book_id']}/copies", headers=headers, json={"branch_id": copy["branch_id"], "accession_number": "ACC-0002"}).json()
     reissue = client.post("/api/v1/library/issues", headers=headers, json={"book_copy_id": new_copy["id"], "student_id": student["id"], "due_date": due})
     assert reissue.status_code == 201, reissue.text
 

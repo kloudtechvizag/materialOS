@@ -47,12 +47,12 @@ def _setup_tenant_with_route():
         "/api/v1/academic-years", headers=headers,
         json={"name": "2026-27", "start_date": "2026-06-01", "end_date": "2027-04-30", "is_current": True},
     ).json()
-    school_class = client.post("/api/v1/school-classes", headers=headers, json={"academic_year_id": year["id"], "name": "Grade 6", "sequence": 6}).json()
+    school_class = client.post("/api/v1/school-classes", headers=headers, json={"academic_year_id": year["id"], "branch_id": branch_id, "name": "Grade 6", "sequence": 6}).json()
     section = client.post("/api/v1/sections", headers=headers, json={"school_class_id": school_class["id"], "name": "A"}).json()
     student = client.post(
         "/api/v1/students", headers=headers,
         json={
-            "first_name": "Kiran", "last_name": "Rao", "admission_date": "2026-06-01",
+            "branch_id": branch_id, "first_name": "Kiran", "last_name": "Rao", "admission_date": "2026-06-01",
             "academic_year_id": year["id"], "school_class_id": school_class["id"], "section_id": section["id"], "roll_number": "1",
         },
     ).json()

@@ -9,6 +9,7 @@ class AnnouncementOut(BaseModel):
     title: str
     body: str
     target_type: str
+    target_branch_id: uuid.UUID | None
     target_school_class_id: uuid.UUID | None
     target_section_id: uuid.UUID | None
     published_by_user_id: uuid.UUID | None
@@ -23,6 +24,7 @@ class AnnouncementCreate(BaseModel):
     title: str
     body: str
     target_type: str
+    target_branch_id: uuid.UUID | None = None
     target_school_class_id: uuid.UUID | None = None
     target_section_id: uuid.UUID | None = None
     expires_at: date | None = None

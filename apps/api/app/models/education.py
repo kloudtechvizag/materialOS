@@ -3,10 +3,20 @@ Information System everything else in the education vertical depends
 on (admissions convert into a Student, attendance/fees/exams are all
 marked against one). Deliberately NOT built in this pass (named, not
 faked): AcademicTerm, admissions CRM, attendance, fees, examinations,
-timetables, the parent/student portal, and multi-campus School/Campus
-entities -- a single-school tenant's existing Company already plays
-the role of "the school" (see ADR docstring), so no separate School
-model was introduced.
+timetables, and the parent/student portal.
+
+**Multi-campus (ADR-038)** reuses the existing core `Branch` model as
+"campus" rather than inventing a parallel `Campus` entity -- a
+single-school tenant's existing Company already plays the role of
+"the school" (one legal entity), and Branch already plays the role of
+"one physical location" for every other vertical (a retail Branch is
+a store; here it's a campus). `SchoolClass` and `Student` store
+`branch_id` directly (the same precedent as `company_id`); everything
+else in this file (`Section`, `StudentEnrolment`, `AcademicYear`,
+`Guardian`) either derives its campus through a parent FK or is
+deliberately shared across every campus of the company (an academic
+year's calendar, a guardian who may have children at more than one
+campus) rather than duplicated per-campus.
 
 **Enrolment, not a current-class column on Student.** The spec itself
 is explicit: "do not overwrite a student's previous academic history
@@ -55,6 +65,13 @@ class SchoolClass(Base, UUIDPk, TenantMixin, TimestampMixin):
     )
     academic_year_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("academic_years.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    # A class is a physical room/roster at one campus (ADR-038's
+    # multi-campus retrofit) -- AcademicYear stays company-wide (a
+    # shared calendar), but a "Grade 5" at Campus A and Campus B are
+    # two real, separate classes, not the same row.
+    branch_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("branches.id", ondelete="RESTRICT"), nullable=False, index=True
     )
     name: Mapped[str] = mapped_column(String(50), nullable=False)  # "Grade 5", "Class X"
     sequence: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
@@ -112,6 +129,13 @@ class Student(Base, UUIDPk, TenantMixin, TimestampMixin):
 
     company_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("companies.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    # The student's home campus (ADR-038) -- stored directly, same
+    # precedent as company_id above, not only derivable through
+    # whichever StudentEnrolment/SchoolClass happens to be current
+    # (a student can exist with no enrolment yet, see create_student).
+    branch_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("branches.id", ondelete="RESTRICT"), nullable=False, index=True
     )
     admission_number: Mapped[str] = mapped_column(String(30), nullable=False)
     first_name: Mapped[str] = mapped_column(String(100), nullable=False)

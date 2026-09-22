@@ -60,15 +60,15 @@ def test_analytics_reflect_real_hand_picked_data_exactly():
         "/api/v1/academic-years", headers=headers,
         json={"name": "2026-27", "start_date": "2026-06-01", "end_date": "2027-04-30", "is_current": True},
     ).json()
-    class_a = client.post("/api/v1/school-classes", headers=headers, json={"academic_year_id": year["id"], "name": "Class A", "sequence": 1}).json()
-    class_b = client.post("/api/v1/school-classes", headers=headers, json={"academic_year_id": year["id"], "name": "Class B", "sequence": 2}).json()
+    class_a = client.post("/api/v1/school-classes", headers=headers, json={"academic_year_id": year["id"], "branch_id": branch_id, "name": "Class A", "sequence": 1}).json()
+    class_b = client.post("/api/v1/school-classes", headers=headers, json={"academic_year_id": year["id"], "branch_id": branch_id, "name": "Class B", "sequence": 2}).json()
     section_a = client.post("/api/v1/sections", headers=headers, json={"school_class_id": class_a["id"], "name": "A"}).json()
     section_b = client.post("/api/v1/sections", headers=headers, json={"school_class_id": class_b["id"], "name": "A"}).json()
 
     def make_student(cls, section, first):
         return client.post(
             "/api/v1/students", headers=headers,
-            json={"first_name": first, "last_name": "Test", "admission_date": "2026-06-01", "academic_year_id": year["id"], "school_class_id": cls["id"], "section_id": section["id"], "roll_number": "1"},
+            json={"branch_id": branch_id, "first_name": first, "last_name": "Test", "admission_date": "2026-06-01", "academic_year_id": year["id"], "school_class_id": cls["id"], "section_id": section["id"], "roll_number": "1"},
         ).json()
 
     a1 = make_student(class_a, section_a, "A1")
@@ -132,14 +132,14 @@ def test_analytics_reflect_real_hand_picked_data_exactly():
 
     # Library: one issued book -> count 1
     book = client.post("/api/v1/library/books", headers=headers, json={"title": "Test Book"}).json()
-    copy = client.post(f"/api/v1/library/books/{book['id']}/copies", headers=headers, json={"accession_number": "ACC-1"}).json()
+    copy = client.post(f"/api/v1/library/books/{book['id']}/copies", headers=headers, json={"branch_id": branch_id, "accession_number": "ACC-1"}).json()
     client.post("/api/v1/library/issues", headers=headers, json={"book_copy_id": copy["id"], "student_id": a1["id"], "due_date": str(date.today() + timedelta(days=14))})
 
     overview = client.get("/api/v1/analytics/overview", headers=headers).json()
     assert overview["library_books_issued"] == 1
 
     # Hostel: 1 room capacity 2, 1 bed allocated -> 50% occupancy
-    hostel = client.post("/api/v1/hostels", headers=headers, json={"name": "Hostel 1"}).json()
+    hostel = client.post("/api/v1/hostels", headers=headers, json={"branch_id": branch_id, "name": "Hostel 1"}).json()
     room = client.post(f"/api/v1/hostels/{hostel['id']}/rooms", headers=headers, json={"room_number": "101", "capacity": 2}).json()
     client.post(f"/api/v1/students/{a1['id']}/hostel-allocation", headers=headers, json={"academic_year_id": year["id"], "room_id": room["id"], "bed_number": 1})
 

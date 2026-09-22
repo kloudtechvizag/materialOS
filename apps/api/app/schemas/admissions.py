@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 class AdmissionEnquiryOut(BaseModel):
     id: uuid.UUID
+    branch_id: uuid.UUID
     student_name: str
     date_of_birth: date | None
     desired_grade: str | None
@@ -23,6 +24,7 @@ class AdmissionEnquiryOut(BaseModel):
 
 
 class AdmissionEnquiryCreate(BaseModel):
+    branch_id: uuid.UUID
     student_name: str
     date_of_birth: date | None = None
     desired_grade: str | None = None
@@ -42,6 +44,7 @@ class AdmissionEnquiryUpdate(BaseModel):
 
 class AdmissionApplicationOut(BaseModel):
     id: uuid.UUID
+    branch_id: uuid.UUID
     enquiry_id: uuid.UUID | None
     first_name: str
     last_name: str
@@ -63,6 +66,7 @@ class AdmissionApplicationOut(BaseModel):
 
 
 class AdmissionApplicationCreate(BaseModel):
+    branch_id: uuid.UUID
     enquiry_id: uuid.UUID | None = None
     first_name: str
     last_name: str

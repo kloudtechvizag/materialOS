@@ -9,20 +9,25 @@ from app.models.hostel import Hostel, HostelRoom, StudentHostelAllocation
 from app.models.hr import Employee
 
 
-def create_hostel(db: Session, *, tenant_id: uuid.UUID, company_id: uuid.UUID, name: str, hostel_type: str, warden_id: uuid.UUID | None) -> Hostel:
+def create_hostel(
+    db: Session, *, tenant_id: uuid.UUID, company_id: uuid.UUID, branch_id: uuid.UUID, name: str, hostel_type: str, warden_id: uuid.UUID | None
+) -> Hostel:
     if warden_id is not None:
         warden = db.get(Employee, warden_id)
         if warden is None or warden.tenant_id != tenant_id:
             raise AppError(ErrorCode.VALIDATION_ERROR, "Warden not found.")
 
-    hostel = Hostel(tenant_id=tenant_id, company_id=company_id, name=name, hostel_type=hostel_type, warden_id=warden_id)
+    hostel = Hostel(tenant_id=tenant_id, company_id=company_id, branch_id=branch_id, name=name, hostel_type=hostel_type, warden_id=warden_id)
     db.add(hostel)
     db.flush()
     return hostel
 
 
-def list_hostels(db: Session, *, tenant_id: uuid.UUID) -> list[Hostel]:
-    return db.execute(select(Hostel).where(Hostel.tenant_id == tenant_id, Hostel.is_active.is_(True)).order_by(Hostel.name)).scalars().all()
+def list_hostels(db: Session, *, tenant_id: uuid.UUID, branch_id: uuid.UUID | None = None) -> list[Hostel]:
+    stmt = select(Hostel).where(Hostel.tenant_id == tenant_id, Hostel.is_active.is_(True)).order_by(Hostel.name)
+    if branch_id:
+        stmt = stmt.where(Hostel.branch_id == branch_id)
+    return db.execute(stmt).scalars().all()
 
 
 def _hostel(db: Session, tenant_id: uuid.UUID, hostel_id: uuid.UUID) -> Hostel:
@@ -77,6 +82,9 @@ def allocate_student(db: Session, *, tenant_id: uuid.UUID, student_id: uuid.UUID
     if student is None or student.tenant_id != tenant_id:
         raise AppError(ErrorCode.VALIDATION_ERROR, "Student not found.")
     room = _room(db, tenant_id, room_id)
+    hostel = db.get(Hostel, room.hostel_id)
+    if student.branch_id != hostel.branch_id:
+        raise AppError(ErrorCode.VALIDATION_ERROR, "This hostel belongs to a different campus than the student's own campus.")
     if bed_number < 1 or bed_number > room.capacity:
         raise AppError(ErrorCode.VALIDATION_ERROR, f"Bed number must be between 1 and this room's capacity ({room.capacity}).")
 

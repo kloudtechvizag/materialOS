@@ -10,9 +10,13 @@ import { apiFetch, ApiError } from "@/lib/api";
 interface AcademicYear { id: string; is_current: boolean; }
 interface SchoolClass { id: string; academic_year_id: string; name: string; }
 interface Section { id: string; school_class_id: string; name: string; }
-interface Announcement { id: string; title: string; body: string; target_type: string; target_school_class_id: string | null; target_section_id: string | null; created_at: string; }
+interface Branch { id: string; name: string; }
+interface Announcement {
+  id: string; title: string; body: string; target_type: string;
+  target_branch_id: string | null; target_school_class_id: string | null; target_section_id: string | null; created_at: string;
+}
 
-const TARGET_LABELS: Record<string, string> = { school: "Whole school", class: "Class", section: "Section" };
+const TARGET_LABELS: Record<string, string> = { school: "Whole school", campus: "Campus", class: "Class", section: "Section" };
 
 /** Communication Center (spec sec20): staff post an announcement
  * targeted at the whole school, a class, or a section; it appears in
@@ -20,8 +24,10 @@ const TARGET_LABELS: Record<string, string> = { school: "Whole school", class: "
 export function AnnouncementsPage() {
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState({ title: "", body: "", target_type: "school", target_school_class_id: "", target_section_id: "", expires_at: "" });
+  const [form, setForm] = useState({ title: "", body: "", target_type: "school", target_branch_id: "", target_school_class_id: "", target_section_id: "", expires_at: "" });
 
+  const { data: branches } = useQuery({ queryKey: ["branches"], queryFn: () => apiFetch<Branch[]>("/branches") });
+  const branchById = new Map((branches ?? []).map((b) => [b.id, b.name]));
   const { data: years } = useQuery({ queryKey: ["academic-years"], queryFn: () => apiFetch<AcademicYear[]>("/academic-years") });
   const activeYearId = years?.find((y) => y.is_current)?.id ?? years?.[0]?.id ?? null;
   const { data: classes } = useQuery({
@@ -50,7 +56,8 @@ export function AnnouncementsPage() {
         method: "POST",
         body: {
           title: form.title, body: form.body, target_type: form.target_type,
-          target_school_class_id: form.target_type === "school" ? null : form.target_school_class_id || null,
+          target_branch_id: form.target_type === "campus" ? form.target_branch_id || null : null,
+          target_school_class_id: form.target_type === "school" || form.target_type === "campus" ? null : form.target_school_class_id || null,
           target_section_id: form.target_type === "section" ? form.target_section_id || null : null,
           expires_at: form.expires_at || null,
         },
@@ -58,7 +65,7 @@ export function AnnouncementsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["announcements"] });
       setShowCreate(false);
-      setForm({ title: "", body: "", target_type: "school", target_school_class_id: "", target_section_id: "", expires_at: "" });
+      setForm({ title: "", body: "", target_type: "school", target_branch_id: "", target_school_class_id: "", target_section_id: "", expires_at: "" });
     },
   });
 
@@ -90,12 +97,23 @@ export function AnnouncementsPage() {
             <select
               className="flex h-9 rounded-md border border-input bg-background px-2 text-sm"
               value={form.target_type}
-              onChange={(e) => setForm((f) => ({ ...f, target_type: e.target.value, target_school_class_id: "", target_section_id: "" }))}
+              onChange={(e) => setForm((f) => ({ ...f, target_type: e.target.value, target_branch_id: "", target_school_class_id: "", target_section_id: "" }))}
             >
               <option value="school">Whole school</option>
+              {branches && branches.length > 1 && <option value="campus">One campus</option>}
               <option value="class">One class</option>
               <option value="section">One section</option>
             </select>
+            {form.target_type === "campus" && (
+              <select
+                className="flex h-9 rounded-md border border-input bg-background px-2 text-sm"
+                value={form.target_branch_id}
+                onChange={(e) => setForm((f) => ({ ...f, target_branch_id: e.target.value }))}
+              >
+                <option value="">Campus...</option>
+                {branches?.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+              </select>
+            )}
             {(form.target_type === "class" || form.target_type === "section") && (
               <select
                 className="flex h-9 rounded-md border border-input bg-background px-2 text-sm"
@@ -128,6 +146,7 @@ export function AnnouncementsPage() {
             onClick={() => create.mutate()}
             disabled={
               !form.title || !form.body || create.isPending ||
+              (form.target_type === "campus" && !form.target_branch_id) ||
               (form.target_type === "class" && !form.target_school_class_id) ||
               (form.target_type === "section" && (!form.target_school_class_id || !form.target_section_id))
             }
@@ -152,7 +171,13 @@ export function AnnouncementsPage() {
                 <p className="font-medium">{a.title}</p>
                 <p className="text-xs text-muted-foreground">
                   {new Date(a.created_at).toLocaleDateString()} ·{" "}
-                  {a.target_type === "school" ? TARGET_LABELS.school : a.target_type === "class" ? `${classById.get(a.target_school_class_id ?? "") ?? "Class"}` : `${classById.get(a.target_school_class_id ?? "") ?? "Class"} - ${sectionById.get(a.target_section_id ?? "") ?? "Section"}`}
+                  {a.target_type === "school"
+                    ? TARGET_LABELS.school
+                    : a.target_type === "campus"
+                    ? branchById.get(a.target_branch_id ?? "") ?? "Campus"
+                    : a.target_type === "class"
+                    ? `${classById.get(a.target_school_class_id ?? "") ?? "Class"}`
+                    : `${classById.get(a.target_school_class_id ?? "") ?? "Class"} - ${sectionById.get(a.target_section_id ?? "") ?? "Section"}`}
                 </p>
               </div>
               <div className="flex items-center gap-2">

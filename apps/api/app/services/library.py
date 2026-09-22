@@ -30,19 +30,20 @@ def _book(db: Session, tenant_id: uuid.UUID, book_id: uuid.UUID) -> Book:
     return book
 
 
-def create_copy(db: Session, *, tenant_id: uuid.UUID, book_id: uuid.UUID, accession_number: str) -> BookCopy:
+def create_copy(db: Session, *, tenant_id: uuid.UUID, book_id: uuid.UUID, branch_id: uuid.UUID, accession_number: str) -> BookCopy:
     _book(db, tenant_id, book_id)
-    copy = BookCopy(tenant_id=tenant_id, book_id=book_id, accession_number=accession_number)
+    copy = BookCopy(tenant_id=tenant_id, book_id=book_id, branch_id=branch_id, accession_number=accession_number)
     db.add(copy)
     db.flush()
     return copy
 
 
-def list_copies(db: Session, *, tenant_id: uuid.UUID, book_id: uuid.UUID) -> list[BookCopy]:
+def list_copies(db: Session, *, tenant_id: uuid.UUID, book_id: uuid.UUID, branch_id: uuid.UUID | None = None) -> list[BookCopy]:
     _book(db, tenant_id, book_id)
-    return db.execute(
-        select(BookCopy).where(BookCopy.tenant_id == tenant_id, BookCopy.book_id == book_id).order_by(BookCopy.accession_number)
-    ).scalars().all()
+    stmt = select(BookCopy).where(BookCopy.tenant_id == tenant_id, BookCopy.book_id == book_id).order_by(BookCopy.accession_number)
+    if branch_id:
+        stmt = stmt.where(BookCopy.branch_id == branch_id)
+    return db.execute(stmt).scalars().all()
 
 
 def _issue_out(db: Session, issue: BookIssue) -> dict:
@@ -67,6 +68,8 @@ def issue_book(db: Session, *, tenant_id: uuid.UUID, book_copy_id: uuid.UUID, st
     student = db.get(Student, student_id)
     if student is None or student.tenant_id != tenant_id:
         raise AppError(ErrorCode.VALIDATION_ERROR, "Student not found.")
+    if student.branch_id != copy.branch_id:
+        raise AppError(ErrorCode.VALIDATION_ERROR, "This copy belongs to a different campus's library than the student's own campus.")
 
     if due_date < date.today():
         raise AppError(ErrorCode.VALIDATION_ERROR, "Due date cannot be in the past.")

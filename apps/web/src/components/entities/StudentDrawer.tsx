@@ -8,12 +8,13 @@ import { Label } from "@/components/ui/label";
 import { apiFetch, ApiError } from "@/lib/api";
 
 interface AcademicYear { id: string; name: string; is_current: boolean; }
-interface SchoolClass { id: string; academic_year_id: string; name: string; }
+interface SchoolClass { id: string; academic_year_id: string; branch_id: string; name: string; }
 interface Section { id: string; school_class_id: string; name: string; }
 interface Student { id: string; admission_number: string; first_name: string; last_name: string; }
+interface Branch { id: string; name: string; }
 
 const EMPTY_PERSONAL = {
-  first_name: "", last_name: "", date_of_birth: "", gender: "", blood_group: "", phone: "", email: "",
+  branch_id: "", first_name: "", last_name: "", date_of_birth: "", gender: "", blood_group: "", phone: "", email: "",
   admission_date: new Date().toISOString().slice(0, 10), previous_school: "", category: "",
 };
 
@@ -30,10 +31,11 @@ export function StudentDrawer({ open, onOpenChange }: { open: boolean; onOpenCha
   const [enrolment, setEnrolment] = useState({ academic_year_id: "", school_class_id: "", section_id: "", roll_number: "" });
   const [createdStudent, setCreatedStudent] = useState<Student | null>(null);
 
+  const { data: branches } = useQuery({ queryKey: ["branches"], queryFn: () => apiFetch<Branch[]>("/branches") });
   const { data: years } = useQuery({ queryKey: ["academic-years"], queryFn: () => apiFetch<AcademicYear[]>("/academic-years") });
   const { data: classes } = useQuery({
-    queryKey: ["school-classes", enrolment.academic_year_id],
-    queryFn: () => apiFetch<SchoolClass[]>(`/school-classes?academic_year_id=${enrolment.academic_year_id}`),
+    queryKey: ["school-classes", enrolment.academic_year_id, personal.branch_id],
+    queryFn: () => apiFetch<SchoolClass[]>(`/school-classes?academic_year_id=${enrolment.academic_year_id}&branch_id=${personal.branch_id}`),
     enabled: !!enrolment.academic_year_id,
   });
   const { data: sections } = useQuery({
@@ -87,7 +89,7 @@ export function StudentDrawer({ open, onOpenChange }: { open: boolean; onOpenCha
     },
   });
 
-  const personalValid = personal.first_name.trim() && personal.last_name.trim() && personal.admission_date;
+  const personalValid = personal.branch_id && personal.first_name.trim() && personal.last_name.trim() && personal.admission_date;
 
   return (
     <Drawer open={open} onOpenChange={(next) => !next && close()}>
@@ -99,6 +101,17 @@ export function StudentDrawer({ open, onOpenChange }: { open: boolean; onOpenCha
         <DrawerBody className="space-y-4">
           {step === 0 && (
             <div className="space-y-3">
+              <div className="space-y-1">
+                <Label>Campus *</Label>
+                <select
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                  value={personal.branch_id}
+                  onChange={(e) => setPersonal((f) => ({ ...f, branch_id: e.target.value }))}
+                >
+                  <option value="">Select campus...</option>
+                  {branches?.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+                </select>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label>First name *</Label>

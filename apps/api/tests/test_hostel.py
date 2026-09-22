@@ -42,18 +42,18 @@ def _setup_tenant_with_room_and_student():
     branch_id = client.get("/api/v1/branches", headers=headers).json()[0]["id"]
     warden = client.post("/api/v1/employees", headers=headers, json={"branch_id": branch_id, "first_name": "Geeta", "last_name": "Menon", "joining_date": "2026-01-01", "employment_type": "full_time"}).json()
 
-    hostel = client.post("/api/v1/hostels", headers=headers, json={"name": "Sunrise Girls Hostel", "hostel_type": "girls", "warden_id": warden["id"]}).json()
+    hostel = client.post("/api/v1/hostels", headers=headers, json={"branch_id": branch_id, "name": "Sunrise Girls Hostel", "hostel_type": "girls", "warden_id": warden["id"]}).json()
     room = client.post(f"/api/v1/hostels/{hostel['id']}/rooms", headers=headers, json={"room_number": "G-101", "floor": "1", "capacity": 2}).json()
 
     year = client.post(
         "/api/v1/academic-years", headers=headers,
         json={"name": "2026-27", "start_date": "2026-06-01", "end_date": "2027-04-30", "is_current": True},
     ).json()
-    school_class = client.post("/api/v1/school-classes", headers=headers, json={"academic_year_id": year["id"], "name": "Grade 8", "sequence": 8}).json()
+    school_class = client.post("/api/v1/school-classes", headers=headers, json={"academic_year_id": year["id"], "branch_id": branch_id, "name": "Grade 8", "sequence": 8}).json()
     section = client.post("/api/v1/sections", headers=headers, json={"school_class_id": school_class["id"], "name": "A"}).json()
     student = client.post(
         "/api/v1/students", headers=headers,
-        json={"first_name": "Priya", "last_name": "Nambiar", "admission_date": "2026-06-01", "academic_year_id": year["id"], "school_class_id": school_class["id"], "section_id": section["id"], "roll_number": "1"},
+        json={"branch_id": branch_id, "first_name": "Priya", "last_name": "Nambiar", "admission_date": "2026-06-01", "academic_year_id": year["id"], "school_class_id": school_class["id"], "section_id": section["id"], "roll_number": "1"},
     ).json()
 
     return slug, headers, year, hostel, room, warden, student
@@ -71,7 +71,8 @@ def test_creating_a_room_validates_capacity():
     slug = f"host-bad-{uuid.uuid4().hex[:8]}"
     token = _signed_up_token(slug)
     headers = {"Authorization": f"Bearer {token}"}
-    hostel = client.post("/api/v1/hostels", headers=headers, json={"name": "X"}).json()
+    branch_id = client.get("/api/v1/branches", headers=headers).json()[0]["id"]
+    hostel = client.post("/api/v1/hostels", headers=headers, json={"branch_id": branch_id, "name": "X"}).json()
     resp = client.post(f"/api/v1/hostels/{hostel['id']}/rooms", headers=headers, json={"room_number": "1", "capacity": 0})
     assert resp.status_code == 400, resp.text
 
@@ -105,7 +106,7 @@ def test_allocating_an_occupied_bed_to_a_different_student_is_rejected():
     client.post(f"/api/v1/students/{student['id']}/hostel-allocation", headers=headers, json={"academic_year_id": year["id"], "room_id": room["id"], "bed_number": 1})
 
     other_student = client.post(
-        "/api/v1/students", headers=headers, json={"first_name": "Other", "last_name": "Kid", "admission_date": "2026-06-01"},
+        "/api/v1/students", headers=headers, json={"branch_id": student["branch_id"], "first_name": "Other", "last_name": "Kid", "admission_date": "2026-06-01"},
     ).json()
     resp = client.post(f"/api/v1/students/{other_student['id']}/hostel-allocation", headers=headers, json={"academic_year_id": year["id"], "room_id": room["id"], "bed_number": 1})
     assert resp.status_code == 409, resp.text

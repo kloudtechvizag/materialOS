@@ -25,10 +25,6 @@ const DAYS = [
   { value: 3, label: "Thu" }, { value: 4, label: "Fri" }, { value: 5, label: "Sat" },
 ];
 
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
-
 function cellKey(day: number, slotId: string) {
   return `${day}:${slotId}`;
 }

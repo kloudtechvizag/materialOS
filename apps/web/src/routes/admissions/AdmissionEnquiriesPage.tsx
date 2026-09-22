@@ -15,6 +15,7 @@ import { apiFetch } from "@/lib/api";
 
 interface Enquiry {
   id: string;
+  branch_id: string;
   student_name: string;
   desired_grade: string | null;
   guardian_name: string;
@@ -24,12 +25,13 @@ interface Enquiry {
   follow_up_date: string | null;
 }
 interface AcademicYear { id: string; is_current: boolean; }
+interface Branch { id: string; name: string; }
 
 const STATUS_VARIANT: Record<string, "outline" | "secondary" | "success" | "destructive"> = {
   open: "outline", contacted: "secondary", converted: "success", closed: "destructive",
 };
 
-const EMPTY_FORM = { student_name: "", desired_grade: "", guardian_name: "", guardian_phone: "", source: "", follow_up_date: "" };
+const EMPTY_FORM = { branch_id: "", student_name: "", desired_grade: "", guardian_name: "", guardian_phone: "", source: "", follow_up_date: "" };
 
 export function AdmissionEnquiriesPage() {
   const queryClient = useQueryClient();
@@ -42,6 +44,7 @@ export function AdmissionEnquiriesPage() {
     queryFn: () => apiFetch<Enquiry[]>("/admission-enquiries"),
   });
   const { data: years } = useQuery({ queryKey: ["academic-years"], queryFn: () => apiFetch<AcademicYear[]>("/academic-years") });
+  const { data: branches } = useQuery({ queryKey: ["branches"], queryFn: () => apiFetch<Branch[]>("/branches") });
 
   const createEnquiry = useMutation({
     mutationFn: () =>
@@ -64,7 +67,7 @@ export function AdmissionEnquiriesPage() {
       return apiFetch(`/admission-applications`, {
         method: "POST",
         body: {
-          enquiry_id: enquiry.id, first_name, last_name: rest.join(" ") || "-", desired_grade: enquiry.desired_grade,
+          branch_id: enquiry.branch_id, enquiry_id: enquiry.id, first_name, last_name: rest.join(" ") || "-", desired_grade: enquiry.desired_grade,
           academic_year_id: currentYear.id, guardian_name: enquiry.guardian_name, guardian_phone: enquiry.guardian_phone,
         },
       });
@@ -89,6 +92,17 @@ export function AdmissionEnquiriesPage() {
         <Card>
           <CardHeader><CardTitle className="text-base">New enquiry</CardTitle></CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>Campus</Label>
+              <select
+                className="flex h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                value={form.branch_id}
+                onChange={(e) => setForm((f) => ({ ...f, branch_id: e.target.value }))}
+              >
+                <option value="">Select campus...</option>
+                {branches?.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+              </select>
+            </div>
             <div className="space-y-1.5">
               <Label>Student name</Label>
               <Input value={form.student_name} onChange={(e) => setForm((f) => ({ ...f, student_name: e.target.value }))} />
@@ -115,7 +129,7 @@ export function AdmissionEnquiriesPage() {
             </div>
             {createEnquiry.isError && <ErrorState error={createEnquiry.error} />}
             <div className="sm:col-span-2">
-              <Button onClick={() => createEnquiry.mutate()} disabled={!form.student_name || !form.guardian_name || createEnquiry.isPending}>
+              <Button onClick={() => createEnquiry.mutate()} disabled={!form.branch_id || !form.student_name || !form.guardian_name || createEnquiry.isPending}>
                 {createEnquiry.isPending ? "Saving..." : "Save enquiry"}
               </Button>
             </div>

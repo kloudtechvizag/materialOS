@@ -52,15 +52,15 @@ def test_education_actions_emit_real_webhook_deliveries():
     ).json()
 
     # admission.enquiry.created
-    client.post("/api/v1/admission-enquiries", headers=headers, json={"student_name": "Lead Kid", "guardian_name": "Lead Parent", "source": "Website"})
+    client.post("/api/v1/admission-enquiries", headers=headers, json={"branch_id": branch_id, "student_name": "Lead Kid", "guardian_name": "Lead Parent", "source": "Website"})
 
     # student.enrolled (+ everything fee_invoice.generated needs)
     year = client.post("/api/v1/academic-years", headers=headers, json={"name": "2026-27", "start_date": "2026-06-01", "end_date": "2027-04-30", "is_current": True}).json()
-    school_class = client.post("/api/v1/school-classes", headers=headers, json={"academic_year_id": year["id"], "name": "Class A", "sequence": 1}).json()
+    school_class = client.post("/api/v1/school-classes", headers=headers, json={"academic_year_id": year["id"], "branch_id": branch_id, "name": "Class A", "sequence": 1}).json()
     section = client.post("/api/v1/sections", headers=headers, json={"school_class_id": school_class["id"], "name": "A"}).json()
     student = client.post(
         "/api/v1/students", headers=headers,
-        json={"first_name": "Web", "last_name": "Hook", "admission_date": "2026-06-01", "academic_year_id": year["id"], "school_class_id": school_class["id"], "section_id": section["id"], "roll_number": "1"},
+        json={"branch_id": branch_id, "first_name": "Web", "last_name": "Hook", "admission_date": "2026-06-01", "academic_year_id": year["id"], "school_class_id": school_class["id"], "section_id": section["id"], "roll_number": "1"},
     ).json()
 
     # fee_invoice.generated

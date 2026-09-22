@@ -43,8 +43,9 @@ def _setup_school():
     assert year_resp.status_code == 201, year_resp.text
     year = year_resp.json()
 
+    branch_id = client.get("/api/v1/branches", headers=headers).json()[0]["id"]
     class_resp = client.post(
-        "/api/v1/school-classes", headers=headers, json={"academic_year_id": year["id"], "name": "Grade 5", "sequence": 5},
+        "/api/v1/school-classes", headers=headers, json={"academic_year_id": year["id"], "branch_id": branch_id, "name": "Grade 5", "sequence": 5},
     )
     assert class_resp.status_code == 201, class_resp.text
     school_class = class_resp.json()
@@ -93,10 +94,10 @@ def test_creating_a_second_current_academic_year_unflags_the_first():
 
 
 def test_admission_numbers_are_server_generated_and_sequential():
-    headers, _year, _school_class, _section = _setup_school()
+    headers, _year, school_class, _section = _setup_school()
 
-    first = client.post("/api/v1/students", headers=headers, json={"first_name": "Asha", "last_name": "Rao", "admission_date": "2026-06-01"})
-    second = client.post("/api/v1/students", headers=headers, json={"first_name": "Ravi", "last_name": "Kumar", "admission_date": "2026-06-01"})
+    first = client.post("/api/v1/students", headers=headers, json={"branch_id": school_class["branch_id"], "first_name": "Asha", "last_name": "Rao", "admission_date": "2026-06-01"})
+    second = client.post("/api/v1/students", headers=headers, json={"branch_id": school_class["branch_id"], "first_name": "Ravi", "last_name": "Kumar", "admission_date": "2026-06-01"})
     assert first.status_code == 201, first.text
     assert second.status_code == 201, second.text
     assert first.json()["admission_number"] == "STU-0001"
@@ -112,6 +113,7 @@ def test_connected_student_lifecycle_admission_to_enrolment_to_guardian():
     student_resp = client.post(
         "/api/v1/students", headers=headers,
         json={
+            "branch_id": school_class["branch_id"],
             "first_name": "Priya", "last_name": "Sharma", "date_of_birth": "2015-04-12", "gender": "female",
             "admission_date": "2026-06-01", "category": "general",
             "academic_year_id": year["id"], "school_class_id": school_class["id"], "section_id": section["id"], "roll_number": "5",
@@ -162,9 +164,9 @@ def test_a_student_can_be_created_without_an_immediate_enrolment():
     """Spec's own "do not require every module to be configured before
     the school can start using the system" -- a bare admission record
     is a real, valid state, not an error."""
-    headers, _year, _school_class, _section = _setup_school()
+    headers, _year, school_class, _section = _setup_school()
 
-    resp = client.post("/api/v1/students", headers=headers, json={"first_name": "Kabir", "last_name": "Singh", "admission_date": "2026-06-01"})
+    resp = client.post("/api/v1/students", headers=headers, json={"branch_id": school_class["branch_id"], "first_name": "Kabir", "last_name": "Singh", "admission_date": "2026-06-01"})
     assert resp.status_code == 201, resp.text
     enrolments = client.get(f"/api/v1/students/{resp.json()['id']}/enrolments", headers=headers).json()
     assert enrolments == []
@@ -172,7 +174,7 @@ def test_a_student_can_be_created_without_an_immediate_enrolment():
 
 def test_duplicate_enrolment_for_the_same_academic_year_is_rejected():
     headers, year, school_class, section = _setup_school()
-    student = client.post("/api/v1/students", headers=headers, json={"first_name": "Meera", "last_name": "Iyer", "admission_date": "2026-06-01"}).json()
+    student = client.post("/api/v1/students", headers=headers, json={"branch_id": school_class["branch_id"], "first_name": "Meera", "last_name": "Iyer", "admission_date": "2026-06-01"}).json()
 
     first = client.post(
         f"/api/v1/students/{student['id']}/enrolments", headers=headers,
@@ -193,11 +195,11 @@ def test_students_can_be_filtered_by_section():
 
     in_section = client.post(
         "/api/v1/students", headers=headers,
-        json={"first_name": "InSection", "last_name": "Kid", "admission_date": "2026-06-01", "academic_year_id": year["id"], "school_class_id": school_class["id"], "section_id": section["id"]},
+        json={"branch_id": school_class["branch_id"], "first_name": "InSection", "last_name": "Kid", "admission_date": "2026-06-01", "academic_year_id": year["id"], "school_class_id": school_class["id"], "section_id": section["id"]},
     ).json()
     client.post(
         "/api/v1/students", headers=headers,
-        json={"first_name": "OtherSection", "last_name": "Kid", "admission_date": "2026-06-01", "academic_year_id": year["id"], "school_class_id": school_class["id"], "section_id": other_section["id"]},
+        json={"branch_id": school_class["branch_id"], "first_name": "OtherSection", "last_name": "Kid", "admission_date": "2026-06-01", "academic_year_id": year["id"], "school_class_id": school_class["id"], "section_id": other_section["id"]},
     )
 
     filtered = client.get("/api/v1/students", headers=headers, params={"section_id": section["id"]}).json()

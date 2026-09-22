@@ -59,11 +59,14 @@ def create_academic_year_endpoint(
 
 @router.get("/school-classes", response_model=list[SchoolClassOut])
 def list_school_classes(
-    academic_year_id: uuid.UUID | None = None, db: Session = Depends(get_db_tenant), _user=Depends(require_permission("school_classes.view"))
+    academic_year_id: uuid.UUID | None = None, branch_id: uuid.UUID | None = None,
+    db: Session = Depends(get_db_tenant), _user=Depends(require_permission("school_classes.view"))
 ) -> list[SchoolClass]:
     stmt = select(SchoolClass).order_by(SchoolClass.sequence, SchoolClass.name)
     if academic_year_id:
         stmt = stmt.where(SchoolClass.academic_year_id == academic_year_id)
+    if branch_id:
+        stmt = stmt.where(SchoolClass.branch_id == branch_id)
     return db.execute(stmt).scalars().all()
 
 
@@ -126,11 +129,14 @@ def create_guardian_portal_access_endpoint(
 
 @router.get("/students", response_model=list[StudentOut])
 def list_students(
-    section_id: uuid.UUID | None = None, db: Session = Depends(get_db_tenant), _user=Depends(require_permission("students.view"))
+    section_id: uuid.UUID | None = None, branch_id: uuid.UUID | None = None,
+    db: Session = Depends(get_db_tenant), _user=Depends(require_permission("students.view"))
 ) -> list[Student]:
     stmt = select(Student).order_by(Student.admission_number)
     if section_id:
         stmt = stmt.join(StudentEnrolment, StudentEnrolment.student_id == Student.id).where(StudentEnrolment.section_id == section_id)
+    if branch_id:
+        stmt = stmt.where(Student.branch_id == branch_id)
     return db.execute(stmt).scalars().all()
 
 

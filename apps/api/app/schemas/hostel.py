@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 class HostelOut(BaseModel):
     id: uuid.UUID
+    branch_id: uuid.UUID
     name: str
     hostel_type: str
     warden_id: uuid.UUID | None
@@ -15,6 +16,7 @@ class HostelOut(BaseModel):
 
 
 class HostelCreate(BaseModel):
+    branch_id: uuid.UUID
     name: str
     hostel_type: str = "co_ed"
     warden_id: uuid.UUID | None = None

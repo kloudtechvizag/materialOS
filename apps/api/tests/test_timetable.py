@@ -36,7 +36,8 @@ def _setup_tenant():
         "/api/v1/academic-years", headers=headers,
         json={"name": "2026-27", "start_date": "2026-06-01", "end_date": "2027-04-30", "is_current": True},
     ).json()
-    school_class = client.post("/api/v1/school-classes", headers=headers, json={"academic_year_id": year["id"], "name": "Grade 4", "sequence": 4}).json()
+    branch_id = client.get("/api/v1/branches", headers=headers).json()[0]["id"]
+    school_class = client.post("/api/v1/school-classes", headers=headers, json={"academic_year_id": year["id"], "branch_id": branch_id, "name": "Grade 4", "sequence": 4}).json()
     section_a = client.post("/api/v1/sections", headers=headers, json={"school_class_id": school_class["id"], "name": "A"}).json()
     section_b = client.post("/api/v1/sections", headers=headers, json={"school_class_id": school_class["id"], "name": "B"}).json()
 
@@ -47,7 +48,6 @@ def _setup_tenant():
         json={"name": "Period 1", "sequence": 1, "start_time": "09:00:00", "end_time": "09:45:00"},
     ).json()
 
-    branch_id = client.get("/api/v1/branches", headers=headers).json()[0]["id"]
     teacher = client.post(
         "/api/v1/employees", headers=headers,
         json={"branch_id": branch_id, "first_name": "Anita", "last_name": "Rao", "joining_date": "2026-01-01", "employment_type": "full_time"},

@@ -28,6 +28,7 @@ class BookCreate(BaseModel):
 class BookCopyOut(BaseModel):
     id: uuid.UUID
     book_id: uuid.UUID
+    branch_id: uuid.UUID
     accession_number: str
     status: str
 
@@ -36,6 +37,7 @@ class BookCopyOut(BaseModel):
 
 
 class BookCopyCreate(BaseModel):
+    branch_id: uuid.UUID
     accession_number: str
 
 

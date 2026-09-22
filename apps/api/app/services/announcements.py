@@ -6,16 +6,20 @@ from sqlalchemy.orm import Session
 
 from app.errors import AppError, ErrorCode
 from app.models.announcements import Announcement, AnnouncementRead
-from app.models.education import Section, StudentEnrolment, StudentGuardian
+from app.models.education import Section, Student, StudentEnrolment, StudentGuardian
 
 
 def create_announcement(
     db: Session, *, tenant_id: uuid.UUID, company_id: uuid.UUID, published_by_user_id: uuid.UUID, title: str, body: str,
-    target_type: str, target_school_class_id: uuid.UUID | None, target_section_id: uuid.UUID | None, expires_at: date | None,
+    target_type: str, target_branch_id: uuid.UUID | None, target_school_class_id: uuid.UUID | None, target_section_id: uuid.UUID | None,
+    expires_at: date | None,
 ) -> Announcement:
     if target_type == "school":
-        if target_school_class_id or target_section_id:
-            raise AppError(ErrorCode.VALIDATION_ERROR, "A school-wide announcement cannot target a class or section.")
+        if target_branch_id or target_school_class_id or target_section_id:
+            raise AppError(ErrorCode.VALIDATION_ERROR, "A school-wide announcement cannot target a campus, class, or section.")
+    elif target_type == "campus":
+        if not target_branch_id or target_school_class_id or target_section_id:
+            raise AppError(ErrorCode.VALIDATION_ERROR, "A campus announcement needs a campus and no class or section.")
     elif target_type == "class":
         if not target_school_class_id or target_section_id:
             raise AppError(ErrorCode.VALIDATION_ERROR, "A class announcement needs a class and no section.")
@@ -30,7 +34,7 @@ def create_announcement(
 
     announcement = Announcement(
         tenant_id=tenant_id, company_id=company_id, title=title, body=body, target_type=target_type,
-        target_school_class_id=target_school_class_id, target_section_id=target_section_id,
+        target_branch_id=target_branch_id, target_school_class_id=target_school_class_id, target_section_id=target_section_id,
         published_by_user_id=published_by_user_id, expires_at=expires_at,
     )
     db.add(announcement)
@@ -52,15 +56,24 @@ def delete_announcement(db: Session, *, tenant_id: uuid.UUID, announcement_id: u
     db.flush()
 
 
-def _guardian_class_and_section_ids(db: Session, *, tenant_id: uuid.UUID, guardian_id: uuid.UUID) -> tuple[set[uuid.UUID], set[uuid.UUID]]:
+def _guardian_scope(db: Session, *, tenant_id: uuid.UUID, guardian_id: uuid.UUID) -> tuple[set[uuid.UUID], set[uuid.UUID], set[uuid.UUID]]:
+    """A guardian's real audience scope: every campus, class, and
+    section any linked child is (or has ever been) placed in --
+    a guardian with children at two campuses legitimately sees
+    campus-targeted announcements for both (ADR-038)."""
     student_ids = [
         row[0] for row in db.execute(
             select(StudentGuardian.student_id).where(StudentGuardian.tenant_id == tenant_id, StudentGuardian.guardian_id == guardian_id)
         ).all()
     ]
     if not student_ids:
-        return set(), set()
+        return set(), set(), set()
 
+    branch_ids = {
+        row[0] for row in db.execute(
+            select(Student.branch_id).where(Student.tenant_id == tenant_id, Student.id.in_(student_ids))
+        ).all()
+    }
     enrolments = db.execute(
         select(StudentEnrolment.school_class_id, StudentEnrolment.section_id).where(
             StudentEnrolment.tenant_id == tenant_id, StudentEnrolment.student_id.in_(student_ids)
@@ -68,7 +81,7 @@ def _guardian_class_and_section_ids(db: Session, *, tenant_id: uuid.UUID, guardi
     ).all()
     class_ids = {row[0] for row in enrolments}
     section_ids = {row[1] for row in enrolments if row[1] is not None}
-    return class_ids, section_ids
+    return branch_ids, class_ids, section_ids
 
 
 def list_visible_announcements_for_guardian(db: Session, *, tenant_id: uuid.UUID, guardian_id: uuid.UUID) -> list[dict]:
@@ -78,7 +91,7 @@ def list_visible_announcements_for_guardian(db: Session, *, tenant_id: uuid.UUID
     enrolled right now, including across every academic year they've
     ever been enrolled in (a class-targeted announcement from last
     year should not vanish just because the child was promoted)."""
-    class_ids, section_ids = _guardian_class_and_section_ids(db, tenant_id=tenant_id, guardian_id=guardian_id)
+    branch_ids, class_ids, section_ids = _guardian_scope(db, tenant_id=tenant_id, guardian_id=guardian_id)
     today = date.today()
 
     all_announcements = db.execute(
@@ -90,6 +103,7 @@ def list_visible_announcements_for_guardian(db: Session, *, tenant_id: uuid.UUID
         if (a.expires_at is None or a.expires_at >= today)
         and (
             a.target_type == "school"
+            or (a.target_type == "campus" and a.target_branch_id in branch_ids)
             or (a.target_type == "class" and a.target_school_class_id in class_ids)
             or (a.target_type == "section" and a.target_section_id in section_ids)
         )

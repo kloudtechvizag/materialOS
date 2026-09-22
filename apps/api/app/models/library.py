@@ -50,6 +50,13 @@ class BookCopy(Base, UUIDPk, TenantMixin, TimestampMixin):
     book_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("books.id", ondelete="CASCADE"), nullable=False, index=True
     )
+    # The physical copy's home campus (ADR-038) -- deliberately NOT on
+    # Book itself: a title's catalog entry is shared across campuses,
+    # but each individual copy sits on one campus's shelves and can't
+    # be issued to a student at a different campus.
+    branch_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("branches.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
     accession_number: Mapped[str] = mapped_column(String(30), nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="available")
 

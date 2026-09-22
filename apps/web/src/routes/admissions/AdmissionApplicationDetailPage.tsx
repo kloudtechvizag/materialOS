@@ -13,6 +13,7 @@ import { apiFetch, ApiError } from "@/lib/api";
 
 interface Application {
   id: string;
+  branch_id: string;
   first_name: string;
   last_name: string;
   desired_grade: string | null;
@@ -49,8 +50,8 @@ export function AdmissionApplicationDetailPage() {
     queryFn: () => apiFetch<Application>(`/admission-applications/${applicationId}`),
   });
   const { data: classes } = useQuery({
-    queryKey: ["school-classes", application?.academic_year_id],
-    queryFn: () => apiFetch<SchoolClass[]>(`/school-classes?academic_year_id=${application!.academic_year_id}`),
+    queryKey: ["school-classes", application?.academic_year_id, application?.branch_id],
+    queryFn: () => apiFetch<SchoolClass[]>(`/school-classes?academic_year_id=${application!.academic_year_id}&branch_id=${application!.branch_id}`),
     enabled: !!application?.academic_year_id,
   });
   const { data: sections } = useQuery({

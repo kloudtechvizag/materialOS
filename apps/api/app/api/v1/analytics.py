@@ -25,30 +25,40 @@ router = APIRouter(prefix="/analytics", tags=["analytics"], dependencies=[Depend
 
 
 @router.get("/overview", response_model=AnalyticsOverviewOut)
-def overview_endpoint(db: Session = Depends(get_db_tenant), user=Depends(require_permission("analytics.view"))):
-    return get_overview(db, tenant_id=user.tenant_id)
+def overview_endpoint(branch_id: uuid.UUID | None = None, db: Session = Depends(get_db_tenant), user=Depends(require_permission("analytics.view"))):
+    return get_overview(db, tenant_id=user.tenant_id, branch_id=branch_id)
 
 
 @router.get("/attendance-trend", response_model=list[AttendanceTrendPointOut])
-def attendance_trend_endpoint(days: int = 30, db: Session = Depends(get_db_tenant), user=Depends(require_permission("analytics.view"))):
-    return get_attendance_trend(db, tenant_id=user.tenant_id, days=days)
+def attendance_trend_endpoint(
+    days: int = 30, branch_id: uuid.UUID | None = None, db: Session = Depends(get_db_tenant), user=Depends(require_permission("analytics.view"))
+):
+    return get_attendance_trend(db, tenant_id=user.tenant_id, days=days, branch_id=branch_id)
 
 
 @router.get("/attendance-by-class", response_model=list[AttendanceByClassOut])
-def attendance_by_class_endpoint(days: int = 30, db: Session = Depends(get_db_tenant), user=Depends(require_permission("analytics.view"))):
-    return get_attendance_by_class(db, tenant_id=user.tenant_id, days=days)
+def attendance_by_class_endpoint(
+    days: int = 30, branch_id: uuid.UUID | None = None, db: Session = Depends(get_db_tenant), user=Depends(require_permission("analytics.view"))
+):
+    return get_attendance_by_class(db, tenant_id=user.tenant_id, days=days, branch_id=branch_id)
 
 
 @router.get("/fee-collection-by-class", response_model=list[FeeCollectionByClassOut])
-def fee_collection_by_class_endpoint(db: Session = Depends(get_db_tenant), user=Depends(require_permission("analytics.view"))):
-    return get_fee_collection_by_class(db, tenant_id=user.tenant_id)
+def fee_collection_by_class_endpoint(
+    branch_id: uuid.UUID | None = None, db: Session = Depends(get_db_tenant), user=Depends(require_permission("analytics.view"))
+):
+    return get_fee_collection_by_class(db, tenant_id=user.tenant_id, branch_id=branch_id)
 
 
 @router.get("/exam-performance", response_model=list[ExamPerformanceOut])
-def exam_performance_endpoint(examination_id: uuid.UUID, db: Session = Depends(get_db_tenant), user=Depends(require_permission("analytics.view"))):
-    return get_exam_performance(db, tenant_id=user.tenant_id, examination_id=examination_id)
+def exam_performance_endpoint(
+    examination_id: uuid.UUID, branch_id: uuid.UUID | None = None, db: Session = Depends(get_db_tenant), user=Depends(require_permission("analytics.view"))
+):
+    return get_exam_performance(db, tenant_id=user.tenant_id, examination_id=examination_id, branch_id=branch_id)
 
 
 @router.get("/homework-completion", response_model=list[HomeworkCompletionOut])
-def homework_completion_endpoint(db: Session = Depends(get_db_tenant), user=Depends(require_permission("analytics.view"))):
-    return get_homework_completion_by_section(db, tenant_id=user.tenant_id)
+def homework_completion_endpoint(
+    branch_id: uuid.UUID | None = None, db: Session = Depends(get_db_tenant), user=Depends(require_permission("analytics.view"))
+):
+    return get_homework_completion_by_section(db, tenant_id=user.tenant_id, branch_id=branch_id)

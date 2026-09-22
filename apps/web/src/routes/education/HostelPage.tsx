@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { apiFetch, ApiError } from "@/lib/api";
 
 interface Employee { id: string; first_name: string; last_name: string; }
-interface Hostel { id: string; name: string; hostel_type: string; warden_id: string | null; }
+interface Hostel { id: string; branch_id: string; name: string; hostel_type: string; warden_id: string | null; }
+interface Branch { id: string; name: string; }
 interface Room { id: string; hostel_id: string; room_number: string; floor: string | null; capacity: number; }
 interface Occupant { student_id: string; first_name: string; last_name: string; bed_number: number; }
 interface AcademicYear { id: string; is_current: boolean; }
@@ -23,7 +24,7 @@ const HOSTEL_TYPE_LABELS: Record<string, string> = { boys: "Boys", girls: "Girls
 export function HostelPage() {
   const queryClient = useQueryClient();
   const [showAddHostel, setShowAddHostel] = useState(false);
-  const [hostelForm, setHostelForm] = useState({ name: "", hostel_type: "co_ed", warden_id: "" });
+  const [hostelForm, setHostelForm] = useState({ branch_id: "", name: "", hostel_type: "co_ed", warden_id: "" });
   const [activeHostelId, setActiveHostelId] = useState<string | null>(null);
   const [roomForm, setRoomForm] = useState({ room_number: "", floor: "", capacity: "2" });
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
@@ -31,6 +32,7 @@ export function HostelPage() {
 
   const { data: hostels } = useQuery({ queryKey: ["hostels"], queryFn: () => apiFetch<Hostel[]>("/hostels") });
   const { data: employees } = useQuery({ queryKey: ["employees-for-hostel"], queryFn: () => apiFetch<Employee[]>("/employees") });
+  const { data: branches } = useQuery({ queryKey: ["branches"], queryFn: () => apiFetch<Branch[]>("/branches") });
   const { data: rooms, refetch: refetchRooms } = useQuery({
     queryKey: ["hostel-rooms", activeHostelId],
     queryFn: () => apiFetch<Room[]>(`/hostels/${activeHostelId}/rooms`),
@@ -43,10 +45,11 @@ export function HostelPage() {
   });
   const { data: years } = useQuery({ queryKey: ["academic-years"], queryFn: () => apiFetch<AcademicYear[]>("/academic-years") });
   const activeYearId = years?.find((y) => y.is_current)?.id ?? years?.[0]?.id ?? null;
+  const activeHostel = hostels?.find((h) => h.id === activeHostelId) ?? null;
   const { data: classes } = useQuery({
-    queryKey: ["school-classes", activeYearId],
-    queryFn: () => apiFetch<SchoolClass[]>(`/school-classes?academic_year_id=${activeYearId}`),
-    enabled: !!activeYearId,
+    queryKey: ["school-classes", activeYearId, activeHostel?.branch_id],
+    queryFn: () => apiFetch<SchoolClass[]>(`/school-classes?academic_year_id=${activeYearId}&branch_id=${activeHostel!.branch_id}`),
+    enabled: !!activeYearId && !!activeHostel,
   });
   const { data: sections } = useQuery({
     queryKey: ["sections", allocateForm.school_class_id],
@@ -64,7 +67,7 @@ export function HostelPage() {
 
   const addHostel = useMutation({
     mutationFn: () => apiFetch("/hostels", { method: "POST", body: { ...hostelForm, warden_id: hostelForm.warden_id || null } }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["hostels"] }); setShowAddHostel(false); setHostelForm({ name: "", hostel_type: "co_ed", warden_id: "" }); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["hostels"] }); setShowAddHostel(false); setHostelForm({ branch_id: "", name: "", hostel_type: "co_ed", warden_id: "" }); },
   });
 
   const addRoom = useMutation({
@@ -93,6 +96,10 @@ export function HostelPage() {
 
       {showAddHostel && (
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border p-4">
+          <select className="flex h-9 rounded-md border border-input bg-background px-2 text-sm" value={hostelForm.branch_id} onChange={(e) => setHostelForm((f) => ({ ...f, branch_id: e.target.value }))}>
+            <option value="">Select campus...</option>
+            {branches?.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+          </select>
           <Input placeholder="Name" value={hostelForm.name} onChange={(e) => setHostelForm((f) => ({ ...f, name: e.target.value }))} className="w-56" />
           <select className="flex h-9 rounded-md border border-input bg-background px-2 text-sm" value={hostelForm.hostel_type} onChange={(e) => setHostelForm((f) => ({ ...f, hostel_type: e.target.value }))}>
             <option value="co_ed">Co-ed</option>
@@ -103,7 +110,7 @@ export function HostelPage() {
             <option value="">Warden (optional)...</option>
             {employees?.map((e) => <option key={e.id} value={e.id}>{e.first_name} {e.last_name}</option>)}
           </select>
-          <Button size="sm" onClick={() => addHostel.mutate()} disabled={!hostelForm.name || addHostel.isPending}>Add</Button>
+          <Button size="sm" onClick={() => addHostel.mutate()} disabled={!hostelForm.branch_id || !hostelForm.name || addHostel.isPending}>Add</Button>
           {addHostel.error instanceof ApiError && <p className="w-full text-xs text-destructive">{addHostel.error.message}</p>}
         </div>
       )}
@@ -116,7 +123,7 @@ export function HostelPage() {
             onClick={() => { setActiveHostelId(h.id); setActiveRoomId(null); }}
             className={`flex w-full items-center justify-between rounded-md border px-3 py-2 text-left text-sm ${activeHostelId === h.id ? "border-primary bg-accent" : "border-border hover:bg-accent/50"}`}
           >
-            <span>{h.name}</span>
+            <span>{h.name}{branches && branches.length > 1 ? ` · ${branches.find((b) => b.id === h.branch_id)?.name ?? "-"}` : ""}</span>
             <span className="text-xs text-muted-foreground">{HOSTEL_TYPE_LABELS[h.hostel_type]}{h.warden_id ? ` · Warden: ${employeeById.get(h.warden_id) ?? "-"}` : ""}</span>
           </button>
         ))}

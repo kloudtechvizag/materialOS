@@ -35,11 +35,14 @@ def _company(db: Session, tenant_id: uuid.UUID) -> Company:
 
 @router.get("/admission-enquiries", response_model=list[AdmissionEnquiryOut])
 def list_enquiries(
-    status: str | None = None, db: Session = Depends(get_db_tenant), _user=Depends(require_permission("admissions.view"))
+    status: str | None = None, branch_id: uuid.UUID | None = None,
+    db: Session = Depends(get_db_tenant), _user=Depends(require_permission("admissions.view"))
 ) -> list[AdmissionEnquiry]:
     stmt = select(AdmissionEnquiry).order_by(AdmissionEnquiry.created_at.desc())
     if status:
         stmt = stmt.where(AdmissionEnquiry.status == status)
+    if branch_id:
+        stmt = stmt.where(AdmissionEnquiry.branch_id == branch_id)
     return db.execute(stmt).scalars().all()
 
 
@@ -62,11 +65,14 @@ def update_enquiry_endpoint(
 
 @router.get("/admission-applications", response_model=list[AdmissionApplicationOut])
 def list_applications(
-    status: str | None = None, db: Session = Depends(get_db_tenant), _user=Depends(require_permission("admissions.view"))
+    status: str | None = None, branch_id: uuid.UUID | None = None,
+    db: Session = Depends(get_db_tenant), _user=Depends(require_permission("admissions.view"))
 ) -> list[AdmissionApplication]:
     stmt = select(AdmissionApplication).order_by(AdmissionApplication.created_at.desc())
     if status:
         stmt = stmt.where(AdmissionApplication.status == status)
+    if branch_id:
+        stmt = stmt.where(AdmissionApplication.branch_id == branch_id)
     return db.execute(stmt).scalars().all()
 
 

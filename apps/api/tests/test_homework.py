@@ -37,7 +37,8 @@ def _setup_tenant(n_students=3):
         "/api/v1/academic-years", headers=headers,
         json={"name": "2026-27", "start_date": "2026-06-01", "end_date": "2027-04-30", "is_current": True},
     ).json()
-    school_class = client.post("/api/v1/school-classes", headers=headers, json={"academic_year_id": year["id"], "name": "Grade 5", "sequence": 5}).json()
+    branch_id = client.get("/api/v1/branches", headers=headers).json()[0]["id"]
+    school_class = client.post("/api/v1/school-classes", headers=headers, json={"academic_year_id": year["id"], "branch_id": branch_id, "name": "Grade 5", "sequence": 5}).json()
     section = client.post("/api/v1/sections", headers=headers, json={"school_class_id": school_class["id"], "name": "A"}).json()
     subject = client.post("/api/v1/subjects", headers=headers, json={"name": "Science", "code": "SCI"}).json()
 
@@ -46,7 +47,7 @@ def _setup_tenant(n_students=3):
         student = client.post(
             "/api/v1/students", headers=headers,
             json={
-                "first_name": f"Student{i}", "last_name": "Test", "admission_date": "2026-06-01",
+                "branch_id": branch_id, "first_name": f"Student{i}", "last_name": "Test", "admission_date": "2026-06-01",
                 "academic_year_id": year["id"], "school_class_id": school_class["id"], "section_id": section["id"], "roll_number": str(i + 1),
             },
         ).json()
@@ -73,7 +74,8 @@ def test_due_date_before_assigned_date_is_rejected():
     token = _signed_up_token(slug)
     headers = {"Authorization": f"Bearer {token}"}
     year = client.post("/api/v1/academic-years", headers=headers, json={"name": "2026-27", "start_date": "2026-06-01", "end_date": "2027-04-30", "is_current": True}).json()
-    school_class = client.post("/api/v1/school-classes", headers=headers, json={"academic_year_id": year["id"], "name": "Grade 5", "sequence": 5}).json()
+    branch_id = client.get("/api/v1/branches", headers=headers).json()[0]["id"]
+    school_class = client.post("/api/v1/school-classes", headers=headers, json={"academic_year_id": year["id"], "branch_id": branch_id, "name": "Grade 5", "sequence": 5}).json()
     section = client.post("/api/v1/sections", headers=headers, json={"school_class_id": school_class["id"], "name": "A"}).json()
     subject = client.post("/api/v1/subjects", headers=headers, json={"name": "Science", "code": "SCI"}).json()
 

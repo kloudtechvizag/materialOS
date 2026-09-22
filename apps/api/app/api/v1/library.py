@@ -34,8 +34,10 @@ def create_book_endpoint(payload: BookCreate, db: Session = Depends(get_db_tenan
 
 
 @router.get("/library/books/{book_id}/copies", response_model=list[BookCopyOut])
-def list_copies_endpoint(book_id: uuid.UUID, db: Session = Depends(get_db_tenant), user: User = Depends(require_permission("library.view"))):
-    return list_copies(db, tenant_id=user.tenant_id, book_id=book_id)
+def list_copies_endpoint(
+    book_id: uuid.UUID, branch_id: uuid.UUID | None = None, db: Session = Depends(get_db_tenant), user: User = Depends(require_permission("library.view"))
+):
+    return list_copies(db, tenant_id=user.tenant_id, book_id=book_id, branch_id=branch_id)
 
 
 @router.post("/library/books/{book_id}/copies", response_model=BookCopyOut, status_code=201)

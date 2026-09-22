@@ -38,7 +38,8 @@ def _setup_school():
         "/api/v1/academic-years", headers=headers,
         json={"name": "2026-27", "start_date": "2026-06-01", "end_date": "2027-04-30", "is_current": True},
     ).json()
-    school_class = client.post("/api/v1/school-classes", headers=headers, json={"academic_year_id": year["id"], "name": "Grade 3", "sequence": 3}).json()
+    branch_id = client.get("/api/v1/branches", headers=headers).json()[0]["id"]
+    school_class = client.post("/api/v1/school-classes", headers=headers, json={"academic_year_id": year["id"], "branch_id": branch_id, "name": "Grade 3", "sequence": 3}).json()
     section = client.post("/api/v1/sections", headers=headers, json={"school_class_id": school_class["id"], "name": "A"}).json()
     return headers, year, school_class, section
 
@@ -52,11 +53,11 @@ def test_module_gated_a_non_school_tenant_gets_403():
 
 
 def test_enquiry_to_application_conversion_marks_enquiry_converted():
-    headers, year, _school_class, _section = _setup_school()
+    headers, year, school_class, _section = _setup_school()
 
     enquiry = client.post(
         "/api/v1/admission-enquiries", headers=headers,
-        json={"student_name": "Aarav Shah", "desired_grade": "Grade 3", "guardian_name": "Mr. Shah", "guardian_phone": "9000000001", "source": "Website"},
+        json={"branch_id": school_class["branch_id"], "student_name": "Aarav Shah", "desired_grade": "Grade 3", "guardian_name": "Mr. Shah", "guardian_phone": "9000000001", "source": "Website"},
     )
     assert enquiry.status_code == 201, enquiry.text
     enquiry = enquiry.json()
@@ -65,7 +66,7 @@ def test_enquiry_to_application_conversion_marks_enquiry_converted():
     application = client.post(
         "/api/v1/admission-applications", headers=headers,
         json={
-            "enquiry_id": enquiry["id"], "first_name": "Aarav", "last_name": "Shah", "desired_grade": "Grade 3",
+            "branch_id": school_class["branch_id"], "enquiry_id": enquiry["id"], "first_name": "Aarav", "last_name": "Shah", "desired_grade": "Grade 3",
             "academic_year_id": year["id"], "guardian_name": "Mr. Shah", "guardian_phone": "9000000001",
         },
     )
@@ -77,10 +78,10 @@ def test_enquiry_to_application_conversion_marks_enquiry_converted():
 
 
 def test_application_status_transitions_and_terminal_lock():
-    headers, year, _school_class, _section = _setup_school()
+    headers, year, school_class, _section = _setup_school()
     application = client.post(
         "/api/v1/admission-applications", headers=headers,
-        json={"first_name": "Diya", "last_name": "Nair", "academic_year_id": year["id"], "guardian_name": "Mrs. Nair"},
+        json={"branch_id": school_class["branch_id"], "first_name": "Diya", "last_name": "Nair", "academic_year_id": year["id"], "guardian_name": "Mrs. Nair"},
     ).json()
 
     resp = client.patch(f"/api/v1/admission-applications/{application['id']}", headers=headers, json={"status": "under_review"})
@@ -99,10 +100,10 @@ def test_application_status_transitions_and_terminal_lock():
 
 
 def test_admitted_status_cannot_be_set_via_plain_patch():
-    headers, year, _school_class, _section = _setup_school()
+    headers, year, school_class, _section = _setup_school()
     application = client.post(
         "/api/v1/admission-applications", headers=headers,
-        json={"first_name": "Kabir", "last_name": "Joshi", "academic_year_id": year["id"], "guardian_name": "Mr. Joshi"},
+        json={"branch_id": school_class["branch_id"], "first_name": "Kabir", "last_name": "Joshi", "academic_year_id": year["id"], "guardian_name": "Mr. Joshi"},
     ).json()
 
     resp = client.patch(f"/api/v1/admission-applications/{application['id']}", headers=headers, json={"status": "admitted"})
@@ -113,7 +114,7 @@ def test_converting_an_application_creates_a_real_student_and_enrolment():
     headers, year, school_class, section = _setup_school()
     application = client.post(
         "/api/v1/admission-applications", headers=headers,
-        json={"first_name": "Meher", "last_name": "Kapoor", "academic_year_id": year["id"], "guardian_name": "Mrs. Kapoor"},
+        json={"branch_id": school_class["branch_id"], "first_name": "Meher", "last_name": "Kapoor", "academic_year_id": year["id"], "guardian_name": "Mrs. Kapoor"},
     ).json()
 
     convert = client.post(
@@ -146,7 +147,7 @@ def test_a_converted_application_cannot_be_converted_again():
     headers, year, school_class, _section = _setup_school()
     application = client.post(
         "/api/v1/admission-applications", headers=headers,
-        json={"first_name": "Zara", "last_name": "Khan", "academic_year_id": year["id"], "guardian_name": "Mrs. Khan"},
+        json={"branch_id": school_class["branch_id"], "first_name": "Zara", "last_name": "Khan", "academic_year_id": year["id"], "guardian_name": "Mrs. Khan"},
     ).json()
 
     first = client.post(f"/api/v1/admission-applications/{application['id']}/convert", headers=headers, json={"school_class_id": school_class["id"]})

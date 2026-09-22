@@ -28,6 +28,13 @@ class AdmissionEnquiry(Base, UUIDPk, TenantMixin, TimestampMixin):
     company_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("companies.id", ondelete="RESTRICT"), nullable=False, index=True
     )
+    # Which campus this family is enquiring about (ADR-038's
+    # multi-campus retrofit) -- a real routing fact, not metadata; a
+    # front-office staffer at one campus shouldn't have to sift through
+    # every other campus's leads to find their own.
+    branch_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("branches.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
     student_name: Mapped[str] = mapped_column(String(200), nullable=False)
     date_of_birth: Mapped[date | None] = mapped_column(Date, nullable=True)
     # Free text, not a SchoolClass FK -- an enquiry routinely predates
@@ -48,6 +55,13 @@ class AdmissionApplication(Base, UUIDPk, TenantMixin, TimestampMixin):
 
     company_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("companies.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    # Which campus this application targets -- when converted from an
+    # enquiry it must match that enquiry's own branch_id (see
+    # services/admissions.py::create_application); a fresh application
+    # taken directly still requires it.
+    branch_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("branches.id", ondelete="RESTRICT"), nullable=False, index=True
     )
     enquiry_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("admission_enquiries.id", ondelete="SET NULL"), nullable=True, index=True

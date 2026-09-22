@@ -21,11 +21,11 @@ interface Overview {
   hostel_total_beds: number;
 }
 interface TrendPoint { date: string; attendance_pct: number; }
-interface ClassRow { school_class_id: string; school_class_name: string; attendance_pct: number; }
+type ClassRow = { school_class_id: string; school_class_name: string; attendance_pct: number };
 interface FeeClassRow { school_class_id: string; school_class_name: string; invoiced: string; collected: string; }
 interface Examination { id: string; name: string; }
 interface ExamPerfRow { subject_id: string; subject_name: string; average_pct: number | null; students_marked: number; }
-interface HomeworkRow { section_id: string; section_label: string; completion_pct: number; tracked_submissions: number; }
+type HomeworkRow = { section_id: string; section_label: string; completion_pct: number; tracked_submissions: number };
 
 // Categorical slot 1 (blue), same as SalesTrendChart -- the one
 // real precedent this app already has for a single time-series.
@@ -91,17 +91,24 @@ function StatusBarChart({ data, dataKey, labelKey }: { data: Record<string, unkn
  * no new tables, no cached rollups to drift out of sync. */
 export function AnalyticsPage() {
   const [examinationId, setExaminationId] = useState<string | null>(null);
+  // "" -- every campus. Every query below appends it only when set,
+  // so the unfiltered "all campuses" view (the default) is identical
+  // to how this page behaved before ADR-038's multi-campus retrofit.
+  const [branchId, setBranchId] = useState("");
+  const qs = branchId ? `branch_id=${branchId}` : "";
+  const amp = (base: string) => (qs ? `${base}${base.includes("?") ? "&" : "?"}${qs}` : base);
 
-  const { data: overview, isLoading } = useQuery({ queryKey: ["analytics-overview"], queryFn: () => apiFetch<Overview>("/analytics/overview") });
-  const { data: trend } = useQuery({ queryKey: ["analytics-attendance-trend"], queryFn: () => apiFetch<TrendPoint[]>("/analytics/attendance-trend?days=30") });
-  const { data: byClass } = useQuery({ queryKey: ["analytics-attendance-by-class"], queryFn: () => apiFetch<ClassRow[]>("/analytics/attendance-by-class") });
-  const { data: feeByClass } = useQuery({ queryKey: ["analytics-fee-by-class"], queryFn: () => apiFetch<FeeClassRow[]>("/analytics/fee-collection-by-class") });
-  const { data: homework } = useQuery({ queryKey: ["analytics-homework"], queryFn: () => apiFetch<HomeworkRow[]>("/analytics/homework-completion") });
+  const { data: branches } = useQuery({ queryKey: ["branches"], queryFn: () => apiFetch<{ id: string; name: string }[]>("/branches") });
+  const { data: overview, isLoading } = useQuery({ queryKey: ["analytics-overview", branchId], queryFn: () => apiFetch<Overview>(amp("/analytics/overview")) });
+  const { data: trend } = useQuery({ queryKey: ["analytics-attendance-trend", branchId], queryFn: () => apiFetch<TrendPoint[]>(amp("/analytics/attendance-trend?days=30")) });
+  const { data: byClass } = useQuery({ queryKey: ["analytics-attendance-by-class", branchId], queryFn: () => apiFetch<ClassRow[]>(amp("/analytics/attendance-by-class")) });
+  const { data: feeByClass } = useQuery({ queryKey: ["analytics-fee-by-class", branchId], queryFn: () => apiFetch<FeeClassRow[]>(amp("/analytics/fee-collection-by-class")) });
+  const { data: homework } = useQuery({ queryKey: ["analytics-homework", branchId], queryFn: () => apiFetch<HomeworkRow[]>(amp("/analytics/homework-completion")) });
   const { data: examinations } = useQuery({ queryKey: ["examinations"], queryFn: () => apiFetch<Examination[]>("/examinations") });
   const activeExamId = examinationId ?? examinations?.[0]?.id ?? null;
   const { data: examPerf } = useQuery({
-    queryKey: ["analytics-exam-performance", activeExamId],
-    queryFn: () => apiFetch<ExamPerfRow[]>(`/analytics/exam-performance?examination_id=${activeExamId}`),
+    queryKey: ["analytics-exam-performance", activeExamId, branchId],
+    queryFn: () => apiFetch<ExamPerfRow[]>(amp(`/analytics/exam-performance?examination_id=${activeExamId}`)),
     enabled: !!activeExamId,
   });
 
@@ -114,9 +121,17 @@ export function AnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">School Analytics</h1>
-        <p className="text-sm text-muted-foreground">Real numbers, computed live from attendance, fees, exams, homework, library, transport, and hostel records.</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold">School Analytics</h1>
+          <p className="text-sm text-muted-foreground">Real numbers, computed live from attendance, fees, exams, homework, library, transport, and hostel records.</p>
+        </div>
+        {branches && branches.length > 1 && (
+          <select className="flex h-9 rounded-md border border-input bg-background px-2 text-sm" value={branchId} onChange={(e) => setBranchId(e.target.value)}>
+            <option value="">All campuses</option>
+            {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+          </select>
+        )}
       </div>
 
       {overview && (

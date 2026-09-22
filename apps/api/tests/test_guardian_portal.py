@@ -44,12 +44,13 @@ def _setup_tenant_with_child_and_portal_login():
         "/api/v1/academic-years", headers=staff_headers,
         json={"name": "2026-27", "start_date": "2026-06-01", "end_date": "2027-04-30", "is_current": True},
     ).json()
-    school_class = client.post("/api/v1/school-classes", headers=staff_headers, json={"academic_year_id": year["id"], "name": "Grade 5", "sequence": 5}).json()
+    branch_id = client.get("/api/v1/branches", headers=staff_headers).json()[0]["id"]
+    school_class = client.post("/api/v1/school-classes", headers=staff_headers, json={"academic_year_id": year["id"], "branch_id": branch_id, "name": "Grade 5", "sequence": 5}).json()
     section = client.post("/api/v1/sections", headers=staff_headers, json={"school_class_id": school_class["id"], "name": "A"}).json()
     student = client.post(
         "/api/v1/students", headers=staff_headers,
         json={
-            "first_name": "Aarav", "last_name": "Verma", "admission_date": "2026-06-01",
+            "branch_id": branch_id, "first_name": "Aarav", "last_name": "Verma", "admission_date": "2026-06-01",
             "academic_year_id": year["id"], "school_class_id": school_class["id"], "section_id": section["id"], "roll_number": "1",
         },
     ).json()
@@ -152,7 +153,7 @@ def test_guardian_cannot_see_a_student_that_is_not_their_own_child():
     year = client.get("/api/v1/academic-years", headers=staff_headers).json()[0]
     other_student = client.post(
         "/api/v1/students", headers=staff_headers,
-        json={"first_name": "Other", "last_name": "Kid", "admission_date": "2026-06-01", "academic_year_id": year["id"]},
+        json={"branch_id": _student["branch_id"], "first_name": "Other", "last_name": "Kid", "admission_date": "2026-06-01", "academic_year_id": year["id"]},
     ).json()
 
     token = _login(slug, f"guardian-{slug}@example.com", "guardian-pass-123")

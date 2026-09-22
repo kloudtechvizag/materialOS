@@ -113,14 +113,18 @@ portal, a Communication Center (targeted announcements), and Transport/
 Library/Hostel -- each new domain reuses existing core infra wherever
 one genuinely fit (Vehicle/Driver for buses, Employee for wardens/
 teachers, Invoice/Customer for fees) and names what it deliberately
-didn't build (SMS/WhatsApp delivery, a payment gateway, multi-campus,
-an AI Copilot) rather than faking it. Phase 7 added School Analytics
-(ADR-037, every number computed on read from tables the vertical
-already writes, no cached rollups) and education webhook events
-(ADR-038, four new entries in the platform's existing
-`WebhookSubscription` catalog -- push-based, so it needs no external
-credentials on our side). See ADR-025 through ADR-038, and
-`seed_school.py` below for a fully populated demo tenant.
+didn't build (SMS/WhatsApp delivery, a payment gateway, an AI Copilot)
+rather than faking it. Phase 7 added School Analytics (ADR-037, every
+number computed on read from tables the vertical already writes, no
+cached rollups), education webhook events (ADR-038, four new entries
+in the platform's existing `WebhookSubscription` catalog -- push-based,
+so it needs no external credentials on our side), and multi-campus
+(ADR-039, reusing the platform's existing `Branch` model as "campus"
+rather than a new entity -- `SchoolClass`/`Student`/`AdmissionEnquiry`/
+`AdmissionApplication`/`Hostel`/`BookCopy` each carry a real
+`branch_id`, with cross-campus enrolment/issuing/allocation rejected
+server-side, not just hidden in the UI). See ADR-025 through ADR-039,
+and `seed_school.py` below for a fully populated demo tenant.
 
 A **desktop app** (`apps/desktop`, see ADR-012) wraps this same web app
 in a native Tauri shell for Windows/macOS/Linux -- no second frontend,
@@ -561,7 +565,7 @@ Recorded in `docs/decisions/`:
   on `GET /suppliers` so the management page can reach a deactivated
   supplier again without changing the purchase-order supplier picker's
   active-only default.
-- **ADR-025 through ADR-038**: MaterialOS Education, a 26th industry
+- **ADR-025 through ADR-039**: MaterialOS Education, a 26th industry
   profile (`school_education`) built as a full vertical rather than a
   config entry. Each slice's own ADR documents what it reused from
   existing core infra versus what genuinely needed new tables, and
@@ -577,15 +581,18 @@ Recorded in `docs/decisions/`:
   (ADR-028) enforces a real teacher double-booking conflict check, not
   just a UI warning; Analytics (ADR-037) computes every number on read
   from tables the vertical already writes, no cached rollup tables;
-  and education webhook events (ADR-038) extend the platform's
-  existing `WebhookSubscription`/`WebhookDelivery` system (student
-  enrollment, fee invoice generation, exam results locked, admission
-  enquiries) rather than building a parallel integration mechanism.
-  Deliberately not built: SMS/WhatsApp/push delivery for announcements,
-  a fee-payment gateway, mid-year transport/hostel reassignment
-  history, multi-campus, outbound integrations that would need
-  MaterialOS to hold third-party credentials (biometric devices,
-  payment gateways), and an AI School Copilot -- each named in its own
-  ADR, not approximated.
+  education webhook events (ADR-038) extend the platform's existing
+  `WebhookSubscription`/`WebhookDelivery` system (student enrollment,
+  fee invoice generation, exam results locked, admission enquiries)
+  rather than building a parallel integration mechanism; and
+  multi-campus (ADR-039) reuses the platform's existing `Branch` model
+  as "campus" instead of a new `Campus` entity, with real server-side
+  rejection of cross-campus enrolment/book-issuing/hostel-allocation,
+  not just a UI-level filter. Deliberately not built: SMS/WhatsApp/push
+  delivery for announcements, a fee-payment gateway, mid-year transport/
+  hostel reassignment history, per-campus staff/role scoping, outbound
+  integrations that would need MaterialOS to hold third-party
+  credentials (biometric devices, payment gateways), and an AI School
+  Copilot -- each named in its own ADR, not approximated.
 
 Read these before re-litigating any of them.

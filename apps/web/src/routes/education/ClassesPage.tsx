@@ -20,8 +20,13 @@ interface AcademicYear {
 interface SchoolClass {
   id: string;
   academic_year_id: string;
+  branch_id: string;
   name: string;
   sequence: number;
+}
+interface Branch {
+  id: string;
+  name: string;
 }
 interface Section {
   id: string;
@@ -34,12 +39,18 @@ interface Section {
 export function ClassesPage() {
   const queryClient = useQueryClient();
   const { data: years } = useQuery({ queryKey: ["academic-years"], queryFn: () => apiFetch<AcademicYear[]>("/academic-years") });
+  const { data: branches } = useQuery({ queryKey: ["branches"], queryFn: () => apiFetch<Branch[]>("/branches") });
   const [yearId, setYearId] = useState<string | null>(null);
   const activeYearId = yearId ?? years?.find((y) => y.is_current)?.id ?? years?.[0]?.id ?? null;
+  // "" -- every campus, same as every other list filter in this app
+  // (Analytics' own branch_id param, ADR-038) rather than forcing a
+  // single-campus view before any campus has even been chosen.
+  const [branchFilter, setBranchFilter] = useState("");
+  const branchName = new Map((branches ?? []).map((b) => [b.id, b.name]));
 
   const { data: classes, isLoading, error, refetch } = useQuery({
-    queryKey: ["school-classes", activeYearId],
-    queryFn: () => apiFetch<SchoolClass[]>(`/school-classes?academic_year_id=${activeYearId}`),
+    queryKey: ["school-classes", activeYearId, branchFilter],
+    queryFn: () => apiFetch<SchoolClass[]>(`/school-classes?academic_year_id=${activeYearId}${branchFilter ? `&branch_id=${branchFilter}` : ""}`),
     enabled: !!activeYearId,
   });
   const { data: sections } = useQuery({
@@ -51,14 +62,17 @@ export function ClassesPage() {
   const teacherById = new Map((employees ?? []).map((e) => [e.id, employeeName(e)]));
 
   const [showClassForm, setShowClassForm] = useState(false);
-  const [classForm, setClassForm] = useState({ name: "", sequence: "0" });
+  const [classForm, setClassForm] = useState({ branch_id: "", name: "", sequence: "0" });
   const createClass = useMutation({
     mutationFn: () =>
-      apiFetch<SchoolClass>("/school-classes", { method: "POST", body: { academic_year_id: activeYearId, name: classForm.name, sequence: Number(classForm.sequence) } }),
+      apiFetch<SchoolClass>("/school-classes", {
+        method: "POST",
+        body: { academic_year_id: activeYearId, branch_id: classForm.branch_id, name: classForm.name, sequence: Number(classForm.sequence) },
+      }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["school-classes", activeYearId] });
+      queryClient.invalidateQueries({ queryKey: ["school-classes", activeYearId, branchFilter] });
       setShowClassForm(false);
-      setClassForm({ name: "", sequence: "0" });
+      setClassForm({ branch_id: "", name: "", sequence: "0" });
     },
   });
 
@@ -99,6 +113,16 @@ export function ClassesPage() {
               {years.map((y) => <option key={y.id} value={y.id}>{y.name}{y.is_current ? " (current)" : ""}</option>)}
             </select>
           )}
+          {branches && branches.length > 1 && (
+            <select
+              className="flex h-9 rounded-md border border-input bg-background px-2 text-sm"
+              value={branchFilter}
+              onChange={(e) => setBranchFilter(e.target.value)}
+            >
+              <option value="">All campuses</option>
+              {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+            </select>
+          )}
           <Button onClick={() => setShowClassForm((v) => !v)} disabled={!activeYearId}>{showClassForm ? "Cancel" : "Add class"}</Button>
         </div>
       </div>
@@ -112,6 +136,17 @@ export function ClassesPage() {
           <CardHeader><CardTitle className="text-base">New class</CardTitle></CardHeader>
           <CardContent className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
+              <Label>Campus</Label>
+              <select
+                className="flex h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                value={classForm.branch_id}
+                onChange={(e) => setClassForm((f) => ({ ...f, branch_id: e.target.value }))}
+              >
+                <option value="">Select campus...</option>
+                {branches?.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+              </select>
+            </div>
+            <div className="space-y-1.5">
               <Label>Name</Label>
               <Input value={classForm.name} onChange={(e) => setClassForm((f) => ({ ...f, name: e.target.value }))} placeholder="Grade 5" />
             </div>
@@ -121,7 +156,7 @@ export function ClassesPage() {
             </div>
             {createClass.isError && <ErrorState error={createClass.error} />}
             <div className="col-span-2">
-              <Button onClick={() => createClass.mutate()} disabled={!classForm.name || createClass.isPending}>
+              <Button onClick={() => createClass.mutate()} disabled={!classForm.name || !classForm.branch_id || createClass.isPending}>
                 {createClass.isPending ? "Saving..." : "Save class"}
               </Button>
             </div>
@@ -142,7 +177,12 @@ export function ClassesPage() {
             const classSections = (sections ?? []).filter((s) => s.school_class_id === c.id);
             return (
               <Card key={c.id}>
-                <CardHeader><CardTitle className="text-base">{c.name}</CardTitle></CardHeader>
+                <CardHeader>
+                  <CardTitle className="text-base">{c.name}</CardTitle>
+                  {!branchFilter && branches && branches.length > 1 && (
+                    <p className="text-xs text-muted-foreground">{branchName.get(c.branch_id) ?? "-"}</p>
+                  )}
+                </CardHeader>
                 <CardContent className="space-y-2">
                   {classSections.length === 0 && <p className="text-sm text-muted-foreground">No sections yet.</p>}
                   {classSections.map((s) => (

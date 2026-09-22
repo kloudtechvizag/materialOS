@@ -27,6 +27,11 @@ class Hostel(Base, UUIDPk, TenantMixin, TimestampMixin):
     company_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("companies.id", ondelete="RESTRICT"), nullable=False, index=True
     )
+    # A hostel building is a physical structure at one campus
+    # (ADR-038's multi-campus retrofit), same reasoning as SchoolClass.
+    branch_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("branches.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     hostel_type: Mapped[str] = mapped_column(String(20), nullable=False, default="co_ed")
     warden_id: Mapped[uuid.UUID | None] = mapped_column(

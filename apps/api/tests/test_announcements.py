@@ -45,13 +45,15 @@ def _setup_two_classes_with_guardians():
         json={"name": "2026-27", "start_date": "2026-06-01", "end_date": "2027-04-30", "is_current": True},
     ).json()
 
+    branch_id = client.get("/api/v1/branches", headers=staff_headers).json()[0]["id"]
+
     def _make_family(class_name, first_name):
-        school_class = client.post("/api/v1/school-classes", headers=staff_headers, json={"academic_year_id": year["id"], "name": class_name, "sequence": 1}).json()
+        school_class = client.post("/api/v1/school-classes", headers=staff_headers, json={"academic_year_id": year["id"], "branch_id": branch_id, "name": class_name, "sequence": 1}).json()
         section = client.post("/api/v1/sections", headers=staff_headers, json={"school_class_id": school_class["id"], "name": "A"}).json()
         student = client.post(
             "/api/v1/students", headers=staff_headers,
             json={
-                "first_name": first_name, "last_name": "Test", "admission_date": "2026-06-01",
+                "branch_id": branch_id, "first_name": first_name, "last_name": "Test", "admission_date": "2026-06-01",
                 "academic_year_id": year["id"], "school_class_id": school_class["id"], "section_id": section["id"], "roll_number": "1",
             },
         ).json()
