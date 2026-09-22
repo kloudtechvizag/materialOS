@@ -8,6 +8,7 @@ from app.errors import AppError, ErrorCode
 from app.models.education import Section, Student, StudentEnrolment
 from app.models.examinations import ExamMark, ExamSubjectSchedule, Examination
 from app.models.timetable import Subject
+from app.services.webhooks import emit_event
 
 # Percentage grade bands -- a real, working default, not per-school
 # configurable in this pass (named in ADR-029's "Deliberately not
@@ -56,8 +57,14 @@ def update_examination(db: Session, *, tenant_id: uuid.UUID, examination_id: uui
 
 def set_examination_lock(db: Session, *, tenant_id: uuid.UUID, examination_id: uuid.UUID, is_locked: bool) -> Examination:
     exam = _examination(db, tenant_id, examination_id)
+    was_locked = exam.is_locked
     exam.is_locked = is_locked
     db.flush()
+    if is_locked and not was_locked:
+        emit_event(
+            db, tenant_id=tenant_id, event_type="examination.results_published",
+            payload={"id": str(exam.id), "name": exam.name, "academic_year_id": str(exam.academic_year_id)},
+        )
     return exam
 
 

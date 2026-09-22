@@ -14,6 +14,7 @@ from app.models.education import (
     StudentEnrolment,
     StudentGuardian,
 )
+from app.services.webhooks import emit_event
 
 
 def _next_admission_number(db: Session, tenant_id: uuid.UUID) -> str:
@@ -144,6 +145,10 @@ def create_student(db: Session, *, tenant_id: uuid.UUID, company_id: uuid.UUID, 
             school_class_id=school_class_id, section_id=section_id, roll_number=roll_number, enrolment_date=student.admission_date,
         )
 
+    emit_event(
+        db, tenant_id=tenant_id, event_type="student.enrolled",
+        payload={"id": str(student.id), "admission_number": student.admission_number, "first_name": student.first_name, "last_name": student.last_name},
+    )
     return student
 
 

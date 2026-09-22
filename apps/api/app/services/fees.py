@@ -15,6 +15,7 @@ from app.services.invoicing import _post_invoice_journal
 from app.services.money import round_invoice_total
 from app.services.numbering import get_current_financial_year, next_document_number
 from app.services.sales_common import resolve_place_of_supply
+from app.services.webhooks import emit_event
 from app.tax.resolve import resolve_tax
 
 
@@ -199,6 +200,10 @@ def generate_fee_invoices(
             db.add(FeeInvoiceLine(tenant_id=tenant_id, fee_invoice_id=fee_invoice.id, student_id=student.id, fee_structure_item_id=structure_item.id))
         db.flush()
 
+        emit_event(
+            db, tenant_id=tenant_id, event_type="fee_invoice.generated",
+            payload={"id": str(fee_invoice.id), "student_id": str(student.id), "invoice_number": invoice.number, "total": str(invoice.total)},
+        )
         created.append(fee_invoice)
 
     return {"created": [_fee_invoice_out(db, fi) for fi in created], "skipped_student_ids": skipped_student_ids}

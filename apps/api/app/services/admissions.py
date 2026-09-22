@@ -7,6 +7,7 @@ from app.errors import AppError, ErrorCode
 from app.models.admissions import AdmissionApplication, AdmissionEnquiry
 from app.models.education import AcademicYear
 from app.services.education import create_student, enrol_student
+from app.services.webhooks import emit_event
 
 TERMINAL_STATUSES = {"admitted", "rejected", "withdrawn"}
 # "admitted" is deliberately excluded -- it's only ever reached through
@@ -21,6 +22,10 @@ def create_enquiry(db: Session, *, tenant_id: uuid.UUID, company_id: uuid.UUID, 
     enquiry = AdmissionEnquiry(tenant_id=tenant_id, company_id=company_id, **fields)
     db.add(enquiry)
     db.flush()
+    emit_event(
+        db, tenant_id=tenant_id, event_type="admission.enquiry.created",
+        payload={"id": str(enquiry.id), "student_name": enquiry.student_name, "guardian_name": enquiry.guardian_name, "source": enquiry.source},
+    )
     return enquiry
 
 

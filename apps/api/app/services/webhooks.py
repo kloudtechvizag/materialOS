@@ -33,6 +33,10 @@ DELIVERY_TIMEOUT_SECONDS = 10.0
 REAL_EVENTS = {
     "sales_order.created": "A sales order was created from an approved quotation.",
     "invoice.created": "An invoice was posted from a delivery challan.",
+    "student.enrolled": "A student was enrolled (direct admission or converted from an admission application).",
+    "fee_invoice.generated": "A fee invoice was generated for a student.",
+    "examination.results_published": "An examination's marks were locked and published.",
+    "admission.enquiry.created": "A new admission enquiry was logged.",
 }
 
 
