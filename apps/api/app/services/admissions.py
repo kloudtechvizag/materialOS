@@ -1,11 +1,11 @@
 import uuid
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.errors import AppError, ErrorCode
-from app.models.admissions import AdmissionApplication, AdmissionDocument, AdmissionEnquiry
+from app.models.admissions import AdmissionApplication, AdmissionDocument, AdmissionEnquiry, AdmissionEnquiryActivity
 from app.models.education import AcademicYear
 from app.services.education import create_student, enrol_student
 from app.services.webhooks import emit_event
@@ -18,12 +18,56 @@ TERMINAL_STATUSES = {"admitted", "rejected", "withdrawn"}
 # "admitted" with no student_id behind it.
 PATCHABLE_STATUSES = {"under_review", "interview_scheduled", "interviewed", "offered", "waitlisted", "rejected", "withdrawn"}
 DECISION_STATUSES = {"offered", "waitlisted", "rejected"}
+ENQUIRY_STATUS_LABEL = {"open": "Open", "contacted": "Contacted", "converted": "Converted", "closed": "Not proceeding"}
 
 
-def create_enquiry(db: Session, *, tenant_id: uuid.UUID, company_id: uuid.UUID, **fields) -> AdmissionEnquiry:
+def log_enquiry_activity(
+    db: Session, *, tenant_id: uuid.UUID, enquiry_id: uuid.UUID, activity_type: str, description: str, created_by_user_id: uuid.UUID | None,
+) -> AdmissionEnquiryActivity:
+    activity = AdmissionEnquiryActivity(
+        tenant_id=tenant_id, enquiry_id=enquiry_id, activity_type=activity_type, description=description, created_by_user_id=created_by_user_id,
+    )
+    db.add(activity)
+    db.flush()
+    return activity
+
+
+def list_enquiry_activities(db: Session, *, tenant_id: uuid.UUID, enquiry_id: uuid.UUID) -> list[AdmissionEnquiryActivity]:
+    return db.execute(
+        select(AdmissionEnquiryActivity).where(AdmissionEnquiryActivity.tenant_id == tenant_id, AdmissionEnquiryActivity.enquiry_id == enquiry_id)
+        .order_by(AdmissionEnquiryActivity.created_at.desc())
+    ).scalars().all()
+
+
+def find_duplicate_enquiries(db: Session, *, tenant_id: uuid.UUID, student_name: str | None, guardian_phone: str | None) -> list[AdmissionEnquiry]:
+    """Real detection, not a fabricated warning -- an open lead with the
+    same guardian phone, or the same student+guardian name pair,
+    already exists. Closed/converted enquiries don't count as
+    duplicates -- a family re-enquiring after a prior enquiry was
+    closed is a real, new lead, not a repeat."""
+    if not student_name and not guardian_phone:
+        return []
+    conditions = []
+    if guardian_phone:
+        conditions.append(AdmissionEnquiry.guardian_phone == guardian_phone)
+    if student_name:
+        conditions.append(func.lower(AdmissionEnquiry.student_name) == student_name.strip().lower())
+    return db.execute(
+        select(AdmissionEnquiry).where(
+            AdmissionEnquiry.tenant_id == tenant_id, AdmissionEnquiry.status.notin_(["closed", "converted"]), or_(*conditions),
+        )
+    ).scalars().all()
+
+
+def create_enquiry(db: Session, *, tenant_id: uuid.UUID, company_id: uuid.UUID, created_by_user_id: uuid.UUID | None = None, **fields) -> AdmissionEnquiry:
     enquiry = AdmissionEnquiry(tenant_id=tenant_id, company_id=company_id, **fields)
     db.add(enquiry)
     db.flush()
+    log_enquiry_activity(
+        db, tenant_id=tenant_id, enquiry_id=enquiry.id, activity_type="created",
+        description=f"Enquiry logged for {enquiry.student_name} via {enquiry.source or 'an unspecified source'}.",
+        created_by_user_id=created_by_user_id,
+    )
     emit_event(
         db, tenant_id=tenant_id, event_type="admission.enquiry.created",
         payload={"id": str(enquiry.id), "student_name": enquiry.student_name, "guardian_name": enquiry.guardian_name, "source": enquiry.source},
@@ -31,10 +75,27 @@ def create_enquiry(db: Session, *, tenant_id: uuid.UUID, company_id: uuid.UUID, 
     return enquiry
 
 
-def update_enquiry(db: Session, *, tenant_id: uuid.UUID, enquiry_id: uuid.UUID, **fields) -> AdmissionEnquiry:
+def update_enquiry(db: Session, *, tenant_id: uuid.UUID, enquiry_id: uuid.UUID, changed_by_user_id: uuid.UUID | None = None, **fields) -> AdmissionEnquiry:
     enquiry = db.get(AdmissionEnquiry, enquiry_id)
     if enquiry is None or enquiry.tenant_id != tenant_id:
         raise AppError(ErrorCode.NOT_FOUND, "Enquiry not found.", status_code=404)
+
+    new_status = fields.get("status")
+    if new_status == "converted" and enquiry.status != "converted":
+        raise AppError(ErrorCode.VALIDATION_ERROR, "An enquiry can only become 'converted' by starting a real application, not a plain status change.")
+    if new_status is not None and new_status != enquiry.status:
+        log_enquiry_activity(
+            db, tenant_id=tenant_id, enquiry_id=enquiry.id, activity_type="status_change",
+            description=f"Status changed from {ENQUIRY_STATUS_LABEL.get(enquiry.status, enquiry.status)} to {ENQUIRY_STATUS_LABEL.get(new_status, new_status)}.",
+            created_by_user_id=changed_by_user_id,
+        )
+    new_follow_up = fields.get("follow_up_date")
+    if new_follow_up is not None and new_follow_up != enquiry.follow_up_date:
+        log_enquiry_activity(
+            db, tenant_id=tenant_id, enquiry_id=enquiry.id, activity_type="follow_up_scheduled",
+            description=f"Follow-up scheduled for {new_follow_up}.", created_by_user_id=changed_by_user_id,
+        )
+
     for field, value in fields.items():
         if value is not None:
             setattr(enquiry, field, value)
@@ -42,7 +103,51 @@ def update_enquiry(db: Session, *, tenant_id: uuid.UUID, enquiry_id: uuid.UUID, 
     return enquiry
 
 
-def create_application(db: Session, *, tenant_id: uuid.UUID, company_id: uuid.UUID, **fields) -> AdmissionApplication:
+def get_admissions_summary(db: Session, *, tenant_id: uuid.UUID, branch_id: uuid.UUID | None = None) -> dict:
+    """Every number here is computed on read from admission_enquiries/
+    admission_applications -- no cached rollup, same discipline
+    services/analytics.py (ADR-037) already established."""
+    stmt = select(AdmissionEnquiry).where(AdmissionEnquiry.tenant_id == tenant_id)
+    if branch_id:
+        stmt = stmt.where(AdmissionEnquiry.branch_id == branch_id)
+    enquiries = db.execute(stmt).scalars().all()
+
+    today = date.today()
+    week_ago = today - timedelta(days=7)
+    enquiry_ids = {e.id for e in enquiries}
+
+    started_enquiry_ids: set[uuid.UUID] = set()
+    if enquiry_ids:
+        started_enquiry_ids = set(
+            db.execute(
+                select(AdmissionApplication.enquiry_id).where(AdmissionApplication.tenant_id == tenant_id, AdmissionApplication.enquiry_id.in_(enquiry_ids))
+            ).scalars().all()
+        )
+
+    total = len(enquiries)
+    new = sum(1 for e in enquiries if e.created_at.date() >= week_ago)
+    overdue = sum(1 for e in enquiries if e.follow_up_date and e.follow_up_date < today and e.status not in ("converted", "closed"))
+    due_today = sum(1 for e in enquiries if e.follow_up_date == today and e.status not in ("converted", "closed"))
+    converted = sum(1 for e in enquiries if e.status == "converted")
+    applications_started = len(started_enquiry_ids)
+    conversion_rate = round(converted / total * 100, 1) if total else None
+
+    pipeline = {
+        "open": sum(1 for e in enquiries if e.status == "open"),
+        "contacted": sum(1 for e in enquiries if e.status == "contacted"),
+        "application_started": applications_started,
+        "converted": converted,
+        "closed": sum(1 for e in enquiries if e.status == "closed"),
+    }
+
+    return {
+        "total_enquiries": total, "new_enquiries": new, "follow_ups_due_today": due_today, "overdue_follow_ups": overdue,
+        "applications_started": applications_started, "converted": converted, "conversion_rate_pct": conversion_rate,
+        "pipeline": pipeline,
+    }
+
+
+def create_application(db: Session, *, tenant_id: uuid.UUID, company_id: uuid.UUID, created_by_user_id: uuid.UUID | None = None, **fields) -> AdmissionApplication:
     year = db.get(AcademicYear, fields["academic_year_id"])
     if year is None or year.tenant_id != tenant_id:
         raise AppError(ErrorCode.VALIDATION_ERROR, "Academic year not found.")
@@ -54,7 +159,14 @@ def create_application(db: Session, *, tenant_id: uuid.UUID, company_id: uuid.UU
             raise AppError(ErrorCode.VALIDATION_ERROR, "Enquiry not found.")
         if enquiry.branch_id != fields["branch_id"]:
             raise AppError(ErrorCode.VALIDATION_ERROR, "This application's campus must match the enquiry's own campus.")
+        previous_status = enquiry.status
         enquiry.status = "converted"
+        if previous_status != "converted":
+            log_enquiry_activity(
+                db, tenant_id=tenant_id, enquiry_id=enquiry.id, activity_type="status_change",
+                description=f"Status changed from {ENQUIRY_STATUS_LABEL.get(previous_status, previous_status)} to Converted -- an application was started.",
+                created_by_user_id=created_by_user_id,
+            )
 
     application = AdmissionApplication(
         tenant_id=tenant_id, company_id=company_id,

@@ -17,6 +17,11 @@ class AdmissionEnquiryOut(BaseModel):
     status: str
     follow_up_date: date | None
     notes: str | None
+    assigned_to_id: uuid.UUID | None
+    assigned_to_name: str | None = None
+    # Real, derived from an actual AdmissionApplication.enquiry_id match --
+    # never a stored/draggable pipeline stage of its own.
+    has_application: bool = False
     created_at: datetime
 
     class Config:
@@ -34,12 +39,55 @@ class AdmissionEnquiryCreate(BaseModel):
     source: str | None = None
     follow_up_date: date | None = None
     notes: str | None = None
+    assigned_to_id: uuid.UUID | None = None
 
 
 class AdmissionEnquiryUpdate(BaseModel):
     status: str | None = None
     follow_up_date: date | None = None
     notes: str | None = None
+    assigned_to_id: uuid.UUID | None = None
+
+
+class AdmissionEnquiryActivityOut(BaseModel):
+    id: uuid.UUID
+    enquiry_id: uuid.UUID
+    activity_type: str
+    description: str
+    created_by_user_id: uuid.UUID | None
+    created_by_name: str | None = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class AdmissionEnquiryActivityCreate(BaseModel):
+    activity_type: str  # "note" | "call"
+    description: str
+
+
+class AdmissionDuplicateCheckOut(BaseModel):
+    id: uuid.UUID
+    student_name: str
+    guardian_name: str
+    guardian_phone: str | None
+    status: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class AdmissionsSummaryOut(BaseModel):
+    total_enquiries: int
+    new_enquiries: int
+    follow_ups_due_today: int
+    overdue_follow_ups: int
+    applications_started: int
+    converted: int
+    conversion_rate_pct: float | None
+    pipeline: dict[str, int]
 
 
 class AdmissionApplicationOut(BaseModel):

@@ -144,8 +144,20 @@ surfaced and fixed a real, pre-existing bug: guardian portal logins
 worked but never set `Guardian.user_id`, so every guardian with real,
 working portal access read as "inactive" everywhere that field was
 checked (fixed at the source, backfilled for every existing tenant).
-See ADR-025 through ADR-044, and `seed_school.py` below for a fully
-populated demo tenant.
+Admission Enquiries was then rebuilt as an **Admissions CRM workspace**
+(ADR-045): a KPI strip, a real pipeline strip over the actual
+`open|contacted|converted|closed` vocabulary (with "Application
+started" always shown as a derived indicator -- a real
+`AdmissionApplication.enquiry_id` match -- never a fabricated fifth
+status), search/filter/assign toolbar, a table and an optional
+drag-and-drop board view over the same data, and a real enquiry detail
+workspace with an honest multi-entry activity timeline. Two small,
+justified backend additions made this possible: `AdmissionEnquiry.
+assigned_to_id` (reusing the core `Employee` model, same pattern as
+`Section.class_teacher_id`) and `AdmissionEnquiryActivity` (a real,
+small append-only log, since the pre-existing single `notes` field
+had no history). See ADR-025 through ADR-045, and `seed_school.py`
+below for a fully populated demo tenant.
 
 A **desktop app** (`apps/desktop`, see ADR-012) wraps this same web app
 in a native Tauri shell for Windows/macOS/Linux -- no second frontend,
@@ -586,7 +598,7 @@ Recorded in `docs/decisions/`:
   on `GET /suppliers` so the management page can reach a deactivated
   supplier again without changing the purchase-order supplier picker's
   active-only default.
-- **ADR-025 through ADR-044**: MaterialOS Education, a 26th industry
+- **ADR-025 through ADR-045**: MaterialOS Education, a 26th industry
   profile (`school_education`) built as a full vertical rather than a
   config entry. Each slice's own ADR documents what it reused from
   existing core infra versus what genuinely needed new tables, and
@@ -623,7 +635,15 @@ Recorded in `docs/decisions/`:
   navigation, each tab fetching its own data only when opened), which
   in the process found and fixed a real pre-existing bug -- guardian
   portal logins worked but never set `Guardian.user_id`, backfilled for
-  every existing tenant once fixed. Deliberately not built: SMS/
+  every existing tenant once fixed; and the Admissions CRM workspace
+  (ADR-045) rebuilds Admission Enquiries around the real
+  `open|contacted|converted|closed` vocabulary plus a derived
+  "Application started" indicator (a real `AdmissionApplication.
+  enquiry_id` match, never a stored/draggable pipeline stage of its
+  own), adding `AdmissionEnquiry.assigned_to_id` (reusing the core
+  `Employee` model) and a real, small `AdmissionEnquiryActivity`
+  append-only log so the activity timeline isn't approximated from a
+  single overwritable `notes` field. Deliberately not built: SMS/
   WhatsApp/push delivery (no provider credentials exist in any
   environment this runs in, and unlike a payment gateway there's no
   honest way to sandbox actually delivering a message), mid-year

@@ -143,6 +143,147 @@ def test_converting_an_application_creates_a_real_student_and_enrolment():
     assert len(students) == 1
 
 
+def test_enquiry_created_and_status_change_activities_are_logged_automatically():
+    headers, _year, school_class, _section = _setup_school()
+    enquiry = client.post(
+        "/api/v1/admission-enquiries", headers=headers,
+        json={"branch_id": school_class["branch_id"], "student_name": "Ira Bose", "guardian_name": "Mr. Bose", "source": "Referral"},
+    ).json()
+
+    activities = client.get(f"/api/v1/admission-enquiries/{enquiry['id']}/activities", headers=headers).json()
+    assert len(activities) == 1
+    assert activities[0]["activity_type"] == "created"
+
+    resp = client.patch(f"/api/v1/admission-enquiries/{enquiry['id']}", headers=headers, json={"status": "contacted"})
+    assert resp.status_code == 200, resp.text
+
+    activities = client.get(f"/api/v1/admission-enquiries/{enquiry['id']}/activities", headers=headers).json()
+    assert len(activities) == 2
+    status_change = next(a for a in activities if a["activity_type"] == "status_change")
+    assert "contacted" in status_change["description"].lower()
+
+    # PATCHing an unchanged status must not fabricate a second entry.
+    client.patch(f"/api/v1/admission-enquiries/{enquiry['id']}", headers=headers, json={"status": "contacted"})
+    assert len(client.get(f"/api/v1/admission-enquiries/{enquiry['id']}/activities", headers=headers).json()) == 2
+
+
+def test_staff_can_log_a_note_and_a_call_on_an_enquiry():
+    headers, _year, school_class, _section = _setup_school()
+    enquiry = client.post(
+        "/api/v1/admission-enquiries", headers=headers,
+        json={"branch_id": school_class["branch_id"], "student_name": "Vihaan Rao", "guardian_name": "Mrs. Rao"},
+    ).json()
+
+    note = client.post(
+        f"/api/v1/admission-enquiries/{enquiry['id']}/activities", headers=headers,
+        json={"activity_type": "note", "description": "Family visited campus, liked the science lab."},
+    )
+    assert note.status_code == 201, note.text
+    assert note.json()["created_by_name"]
+
+    call = client.post(
+        f"/api/v1/admission-enquiries/{enquiry['id']}/activities", headers=headers,
+        json={"activity_type": "call", "description": "Called guardian, will decide by Friday."},
+    )
+    assert call.status_code == 201, call.text
+
+    invalid = client.post(
+        f"/api/v1/admission-enquiries/{enquiry['id']}/activities", headers=headers,
+        json={"activity_type": "not_a_real_type", "description": "x"},
+    )
+    assert invalid.status_code == 400, invalid.text
+
+    activities = client.get(f"/api/v1/admission-enquiries/{enquiry['id']}/activities", headers=headers).json()
+    assert len(activities) == 3  # created + note + call
+
+
+def test_assigning_a_counsellor_reuses_the_real_employee_directory():
+    headers, _year, school_class, _section = _setup_school()
+    employee = client.post(
+        "/api/v1/employees", headers=headers,
+        json={"branch_id": school_class["branch_id"], "first_name": "Asha", "last_name": "Rao", "joining_date": "2026-01-01", "employment_type": "full_time"},
+    ).json()
+
+    enquiry = client.post(
+        "/api/v1/admission-enquiries", headers=headers,
+        json={"branch_id": school_class["branch_id"], "student_name": "Kiaan Verma", "guardian_name": "Mr. Verma", "assigned_to_id": employee["id"]},
+    ).json()
+    assert enquiry["assigned_to_id"] == employee["id"]
+    assert enquiry["assigned_to_name"] == "Asha Rao"
+
+
+def test_duplicate_enquiry_detection_ignores_closed_and_converted_leads():
+    headers, year, school_class, _section = _setup_school()
+    first = client.post(
+        "/api/v1/admission-enquiries", headers=headers,
+        json={"branch_id": school_class["branch_id"], "student_name": "Reyansh Iyer", "guardian_name": "Mr. Iyer", "guardian_phone": "9000000099"},
+    ).json()
+
+    dupes = client.get(
+        "/api/v1/admission-enquiries/duplicates", headers=headers,
+        params={"student_name": "Reyansh Iyer", "guardian_phone": "9000000099"},
+    ).json()
+    assert len(dupes) == 1
+    assert dupes[0]["id"] == first["id"]
+
+    client.patch(f"/api/v1/admission-enquiries/{first['id']}", headers=headers, json={"status": "closed"})
+    dupes_after_close = client.get(
+        "/api/v1/admission-enquiries/duplicates", headers=headers,
+        params={"student_name": "Reyansh Iyer", "guardian_phone": "9000000099"},
+    ).json()
+    assert dupes_after_close == []
+
+
+def test_converted_status_cannot_be_set_via_plain_enquiry_patch():
+    headers, _year, school_class, _section = _setup_school()
+    enquiry = client.post(
+        "/api/v1/admission-enquiries", headers=headers,
+        json={"branch_id": school_class["branch_id"], "student_name": "Advika Pillai", "guardian_name": "Mrs. Pillai"},
+    ).json()
+    resp = client.patch(f"/api/v1/admission-enquiries/{enquiry['id']}", headers=headers, json={"status": "converted"})
+    assert resp.status_code == 400, resp.text
+
+
+def test_converting_via_application_logs_a_real_status_change_activity():
+    headers, year, school_class, _section = _setup_school()
+    enquiry = client.post(
+        "/api/v1/admission-enquiries", headers=headers,
+        json={"branch_id": school_class["branch_id"], "student_name": "Ishaan Chatterjee", "guardian_name": "Mr. Chatterjee"},
+    ).json()
+    client.post(
+        "/api/v1/admission-applications", headers=headers,
+        json={"branch_id": school_class["branch_id"], "enquiry_id": enquiry["id"], "first_name": "Ishaan", "last_name": "Chatterjee", "academic_year_id": year["id"], "guardian_name": "Mr. Chatterjee"},
+    )
+    activities = client.get(f"/api/v1/admission-enquiries/{enquiry['id']}/activities", headers=headers).json()
+    status_change = next(a for a in activities if a["activity_type"] == "status_change")
+    assert "converted" in status_change["description"].lower()
+
+
+def test_admissions_summary_reflects_real_counts_and_derived_application_started():
+    headers, year, school_class, _section = _setup_school()
+    enquiry = client.post(
+        "/api/v1/admission-enquiries", headers=headers,
+        json={"branch_id": school_class["branch_id"], "student_name": "Myra Sen", "guardian_name": "Mrs. Sen"},
+    ).json()
+
+    summary = client.get("/api/v1/admission-enquiries/summary", headers=headers).json()
+    assert summary["total_enquiries"] == 1
+    assert summary["applications_started"] == 0
+    assert summary["pipeline"]["open"] == 1
+
+    client.post(
+        "/api/v1/admission-applications", headers=headers,
+        json={"branch_id": school_class["branch_id"], "enquiry_id": enquiry["id"], "first_name": "Myra", "last_name": "Sen", "academic_year_id": year["id"], "guardian_name": "Mrs. Sen"},
+    )
+
+    summary = client.get("/api/v1/admission-enquiries/summary", headers=headers).json()
+    assert summary["applications_started"] == 1
+    assert summary["pipeline"]["application_started"] == 1
+
+    enquiry_after = client.get(f"/api/v1/admission-enquiries/{enquiry['id']}", headers=headers).json()
+    assert enquiry_after["has_application"] is True
+
+
 def test_a_converted_application_cannot_be_converted_again():
     headers, year, school_class, _section = _setup_school()
     application = client.post(

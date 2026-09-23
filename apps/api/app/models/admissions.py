@@ -17,6 +17,16 @@ table (a birth certificate, a transfer certificate, and a photo are
 three separate real files for one application), not a single path
 column like `Homework.attachment_path`, since an application
 genuinely needs more than one document at once.
+
+**Admissions CRM workspace (ADR-045)**: `AdmissionEnquiry.
+assigned_to_id` reuses the core `Employee` model for "assigned
+counsellor" -- same reasoning as `Section.class_teacher_id`, a
+counsellor IS an employee, not a parallel staff entity.
+`AdmissionEnquiryActivity` is a real, small, append-only log (call
+logged, note added, status changed, follow-up scheduled) -- the
+`notes` field above stays a single current-state field; an honest
+multi-entry activity timeline needed its own table rather than
+pretending one field's edit history was a timeline.
 """
 
 import uuid
@@ -55,6 +65,9 @@ class AdmissionEnquiry(Base, UUIDPk, TenantMixin, TimestampMixin):
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="open")
     follow_up_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    assigned_to_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("employees.id", ondelete="SET NULL"), nullable=True, index=True
+    )
 
 
 class AdmissionApplication(Base, UUIDPk, TenantMixin, TimestampMixin):
@@ -113,3 +126,26 @@ class AdmissionDocument(Base, UUIDPk, TenantMixin, TimestampMixin):
     document_type: Mapped[str] = mapped_column(String(100), nullable=False)
     file_name: Mapped[str] = mapped_column(String(255), nullable=False)
     file_path: Mapped[str] = mapped_column(String(500), nullable=False)
+
+
+ENQUIRY_ACTIVITY_TYPES = ["note", "call", "status_change", "follow_up_scheduled", "created"]
+
+
+class AdmissionEnquiryActivity(Base, UUIDPk, TenantMixin, TimestampMixin):
+    """The real activity timeline for one enquiry. `created` and
+    `status_change` rows are written automatically by services.
+    admissions itself (create_enquiry / update_enquiry) so the timeline
+    is populated from the moment an enquiry exists, not only once staff
+    starts manually logging things -- `note`/`call`/
+    `follow_up_scheduled` are the staff-initiated entries."""
+
+    __tablename__ = "admission_enquiry_activities"
+
+    enquiry_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("admission_enquiries.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    activity_type: Mapped[str] = mapped_column(String(30), nullable=False)
+    description: Mapped[str] = mapped_column(String(1000), nullable=False)
+    created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
