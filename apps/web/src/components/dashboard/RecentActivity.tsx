@@ -52,6 +52,12 @@ const TABLE_META: Record<string, TableMeta> = {
   warehouses: { label: "Warehouse", toHref: () => "/warehouses" },
   companies: { label: "Company", toHref: () => "/company-settings" },
   users: { label: "User", toHref: () => "/users" },
+  students: { label: "Student", toHref: (id) => `/students/${id}` },
+  admission_enquiries: { label: "Admission enquiry", toHref: () => "/admission-enquiries" },
+  admission_applications: { label: "Admission application", toHref: (id) => `/admission-applications/${id}` },
+  fee_invoices: { label: "Fee invoice", toHref: () => "/fees" },
+  homework: { label: "Homework", toHref: (id) => `/homework/${id}` },
+  examinations: { label: "Examination", toHref: (id) => `/examinations/${id}` },
 };
 
 // Real audited tables, but pure internal bookkeeping a business user
@@ -86,6 +92,12 @@ function recordReference(data: Record<string, unknown> | null): string | null {
   if (!data) return null;
   if (typeof data.number === "string") return data.number;
   if (typeof data.name === "string") return data.name;
+  // Education tables' own real field names (student_name on an
+  // enquiry, title on homework, first_name/last_name on a Student or
+  // Application row) -- never a fabricated label.
+  if (typeof data.student_name === "string") return data.student_name;
+  if (typeof data.title === "string") return data.title;
+  if (typeof data.first_name === "string" && typeof data.last_name === "string") return `${data.first_name} ${data.last_name}`;
   return null;
 }
 

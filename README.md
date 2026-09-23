@@ -156,8 +156,20 @@ justified backend additions made this possible: `AdmissionEnquiry.
 assigned_to_id` (reusing the core `Employee` model, same pattern as
 `Section.class_teacher_id`) and `AdmissionEnquiryActivity` (a real,
 small append-only log, since the pre-existing single `notes` field
-had no history). See ADR-025 through ADR-045, and `seed_school.py`
-below for a fully populated demo tenant.
+had no history). The School Dashboard was then rebuilt as a real
+**Command Center** (ADR-046): a dedicated page tree (not a branch of
+the generic trade `DashboardPage`/`/dashboard/summary`, which stays
+byte-for-byte unchanged for every other industry profile) with a real
+KPI grid, a Needs Attention feed, Today's Schedule (real exams and
+timetable periods only -- no calendar model exists to fabricate
+meetings/events from), and Admissions/Fee/Academic/Staff snapshots.
+Personalization is real, backend-enforced per-resource permission
+gating (`deps.user_permission_codes`) rather than new RBAC role
+personas -- no principal/teacher/counsellor/transport-manager roles
+exist in this app, so a user without a given permission genuinely
+receives `null` for that section, not a UI-hidden number they were
+still sent. See ADR-025 through ADR-046, and `seed_school.py` below
+for a fully populated demo tenant.
 
 A **desktop app** (`apps/desktop`, see ADR-012) wraps this same web app
 in a native Tauri shell for Windows/macOS/Linux -- no second frontend,
@@ -598,7 +610,7 @@ Recorded in `docs/decisions/`:
   on `GET /suppliers` so the management page can reach a deactivated
   supplier again without changing the purchase-order supplier picker's
   active-only default.
-- **ADR-025 through ADR-045**: MaterialOS Education, a 26th industry
+- **ADR-025 through ADR-046**: MaterialOS Education, a 26th industry
   profile (`school_education`) built as a full vertical rather than a
   config entry. Each slice's own ADR documents what it reused from
   existing core infra versus what genuinely needed new tables, and
@@ -643,7 +655,16 @@ Recorded in `docs/decisions/`:
   own), adding `AdmissionEnquiry.assigned_to_id` (reusing the core
   `Employee` model) and a real, small `AdmissionEnquiryActivity`
   append-only log so the activity timeline isn't approximated from a
-  single overwritable `notes` field. Deliberately not built: SMS/
+  single overwritable `notes` field; and the School Dashboard Command
+  Center (ADR-046) replaces the near-empty `dashboard_widgets: []`
+  shell with a dedicated page tree (the generic trade `DashboardPage`/
+  `/dashboard/summary` stays byte-for-byte unchanged for every other
+  profile) whose KPI grid, Needs Attention feed, Today's Schedule (real
+  exams/timetable periods only, no fabricated calendar events), and
+  Admissions/Fee/Academic/Staff snapshots are each independently gated
+  by the real per-resource permissions a user actually holds
+  (`deps.user_permission_codes`) rather than invented RBAC role
+  personas. Deliberately not built: SMS/
   WhatsApp/push delivery (no provider credentials exist in any
   environment this runs in, and unlike a payment gateway there's no
   honest way to sandbox actually delivering a message), mid-year

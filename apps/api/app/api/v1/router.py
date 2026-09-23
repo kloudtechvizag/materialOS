@@ -52,6 +52,7 @@ from app.api.v1 import (
     receipts,
     reports,
     sales,
+    school_dashboard,
     search,
     serial,
     student_attendance,
@@ -100,6 +101,7 @@ api_router.include_router(education.router)
 api_router.include_router(admissions.router)
 api_router.include_router(announcements.router)
 api_router.include_router(analytics.router)
+api_router.include_router(school_dashboard.router)
 api_router.include_router(student_attendance.router)
 api_router.include_router(timetable.router)
 api_router.include_router(examinations.router)

@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
 import { timeAgo } from "@/lib/format";
 import { useIndustryProfile, type GoldenWorkflow } from "@/lib/industryProfile";
+import { SchoolDashboardPage } from "@/routes/school/SchoolDashboardPage";
 
 /** The trade/dealer flow every profile without its own bespoke
  * workflow falls back to -- still a real, working flow (Quotation,
@@ -41,6 +42,39 @@ function greeting(): string {
 
 export function DashboardPage() {
   const queryClient = useQueryClient();
+  const { profile, companyName, isLoading: profileLoading } = useIndustryProfile();
+  const enabledModulesEarly = profile?.enabled_modules;
+
+  // School Management gets a dedicated Command Center (ADR-046), not a
+  // branch of the generic trade dashboard below -- its data shape
+  // (needs-attention, today's schedule, admissions pipeline, real
+  // permission-gated sections) doesn't fit the flat DASHBOARD_WIDGETS/
+  // DashboardSummary registry every other profile shares, and this
+  // return happens before any of that generic path's own hooks run so
+  // every other profile's rendering is completely untouched.
+  if (profileLoading) {
+    return (
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-20" />)}
+      </div>
+    );
+  }
+
+  if (enabledModulesEarly?.includes("education")) {
+    return <SchoolDashboardPage />;
+  }
+
+  return <GenericDashboard companyName={companyName} profile={profile} enabledModules={enabledModulesEarly} queryClient={queryClient} />;
+}
+
+function GenericDashboard({
+  companyName, profile, enabledModules, queryClient,
+}: {
+  companyName: string | null;
+  profile: ReturnType<typeof useIndustryProfile>["profile"];
+  enabledModules: string[] | undefined;
+  queryClient: ReturnType<typeof useQueryClient>;
+}) {
   const { data, isLoading, error, refetch, isRefetching, dataUpdatedAt } = useQuery({
     queryKey: ["dashboard-summary"],
     queryFn: () => apiFetch<DashboardSummary>("/dashboard/summary"),
@@ -53,9 +87,7 @@ export function DashboardPage() {
     queryFn: () => apiFetch<CurrentUser>("/auth/me"),
     staleTime: Infinity,
   });
-  const { profile, companyName } = useIndustryProfile();
   const widgetKeys = profile?.dashboard_widgets ?? DEFAULT_DASHBOARD_WIDGETS;
-  const enabledModules = profile?.enabled_modules;
   const workflow: GoldenWorkflow =
     profile?.golden_workflow?.cta_href && profile.golden_workflow.cta_label && profile.golden_workflow.steps
       ? (profile.golden_workflow as GoldenWorkflow)

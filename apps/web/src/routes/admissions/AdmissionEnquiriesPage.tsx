@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import {
   CalendarClock, Inbox, LayoutGrid, List, MoreHorizontal, Phone, Plus, Search, Target, TrendingUp, Users,
 } from "lucide-react";
@@ -42,12 +43,24 @@ function matchesStatusFilter(enquiry: Enquiry, filter: StatusFilter): boolean {
 
 export function AdmissionEnquiriesPage() {
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [logOpen, setLogOpen] = useState(false);
   const [selectedEnquiry, setSelectedEnquiry] = useState<Enquiry | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [assignedFilter, setAssignedFilter] = useState<string>("all");
   const [view, setView] = useState<ViewMode>("table");
+
+  // Deep-link support (e.g. the School Dashboard's "Log admission
+  // enquiry" quick action) -- opens the real drawer, then drops the
+  // param so a refresh doesn't keep reopening it.
+  useEffect(() => {
+    if (searchParams.get("new") === "1") {
+      setLogOpen(true);
+      searchParams.delete("new");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const { data: enquiries, isLoading, error, refetch } = useQuery({
     queryKey: ["admission-enquiries"],

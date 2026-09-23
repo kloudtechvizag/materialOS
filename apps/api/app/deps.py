@@ -86,6 +86,20 @@ def require_permission(permission_code: str):
     return _check
 
 
+def user_permission_codes(db: Session, user_id: uuid.UUID) -> set[str]:
+    """All permission codes a user holds, in one query -- for a caller
+    that needs to honestly show/hide several independent sections of
+    one response by real permission (e.g. the School Dashboard), not
+    just gate a single endpoint the way `require_permission` does."""
+    stmt = (
+        select(Permission.code)
+        .join(RolePermission, RolePermission.permission_id == Permission.id)
+        .join(UserRole, UserRole.role_id == RolePermission.role_id)
+        .where(UserRole.user_id == user_id)
+    )
+    return set(db.execute(stmt).scalars().all())
+
+
 def require_module(module_key: str):
     """RBAC (require_permission) only proves a role was granted a
     permission -- it has no idea what the tenant's active industry
