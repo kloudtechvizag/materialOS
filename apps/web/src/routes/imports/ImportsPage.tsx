@@ -44,7 +44,7 @@ export function ImportsPage() {
           </p>
         </div>
         <Button asChild>
-          <Link to="/imports/new">New import</Link>
+          <Link to="/settings/imports/new">New import</Link>
         </Button>
       </div>
 
@@ -57,7 +57,7 @@ export function ImportsPage() {
           title="No imports yet"
           description="Upload a Tally XML export or a Busy/Marg CSV export to bring in your customers, suppliers, items, and opening balances."
           actionLabel="Start your first import"
-          onAction={() => (window.location.href = "/imports/new")}
+          onAction={() => (window.location.href = "/settings/imports/new")}
         />
       )}
 

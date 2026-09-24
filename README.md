@@ -180,8 +180,21 @@ codes (`deps.user_permission_codes`, the same helper ADR-046
 introduced), and the sidebar drops any item the current user's real
 permissions don't reach -- with zero visible change for the `owner`
 role every existing tenant already runs as, since signup grants it the
-entire permission catalog. See ADR-025 through ADR-047, and
-`seed_school.py` below for a fully populated demo tenant.
+entire permission catalog. ADR-047's own "Organization Settings" vs
+"Platform Administration" split was then consolidated one step further
+(ADR-048) into a single "Settings" entry point (one link, in the
+sidebar footer next to Log out) opening one profile-aware settings
+workspace -- reusing every existing settings page as-is via a nested
+`/settings/*` layout route, never a second implementation. What
+ADR-047 had called "Platform Administration" turned out, on inspection,
+to never be platform-wide administration at all (that already exists,
+completely separately, at `/platform/*` behind its own `PlatformAdmin`
+login no tenant User can reach) -- it was always this tenant's own
+relationship with MaterialOS (Industry, Subscription, Capabilities,
+Webhooks), so those were relabeled into the categories that actually
+describe them instead of getting a fifth, structurally-fictional tab.
+See ADR-025 through ADR-048, and `seed_school.py` below for a fully
+populated demo tenant.
 
 A **desktop app** (`apps/desktop`, see ADR-012) wraps this same web app
 in a native Tauri shell for Windows/macOS/Linux -- no second frontend,
@@ -622,7 +635,7 @@ Recorded in `docs/decisions/`:
   on `GET /suppliers` so the management page can reach a deactivated
   supplier again without changing the purchase-order supplier picker's
   active-only default.
-- **ADR-025 through ADR-047**: MaterialOS Education, a 26th industry
+- **ADR-025 through ADR-048**: MaterialOS Education, a 26th industry
   profile (`school_education`) built as a full vertical rather than a
   config entry. Each slice's own ADR documents what it reused from
   existing core infra versus what genuinely needed new tables, and
@@ -683,7 +696,18 @@ Recorded in `docs/decisions/`:
   long-declared-but-never-enforced `NavigationItem.permission` field
   into a real gate off `GET /auth/me`'s new `permissions` field -- with
   zero visible change for the full-permission `owner` role every
-  existing tenant already runs as. Deliberately not built: SMS/
+  existing tenant already runs as; and that Organization Settings/
+  Platform Administration split was itself consolidated one step
+  further (ADR-048) into one real "Settings" entry point (sidebar
+  footer, next to Log out) opening one profile-aware workspace that
+  reuses every existing settings page unmodified via a nested
+  `/settings/*` layout route -- with no "Platform Administration" tab
+  at all, once inspection showed that category was never real
+  platform-wide administration (that already exists, completely
+  separately, at `/platform/*` behind its own `PlatformAdmin` login) but
+  was always this tenant's own relationship with MaterialOS, relabeled
+  into the categories that actually describe it. Deliberately not
+  built: SMS/
   WhatsApp/push delivery (no provider credentials exist in any
   environment this runs in, and unlike a payment gateway there's no
   honest way to sandbox actually delivering a message), mid-year

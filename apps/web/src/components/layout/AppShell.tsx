@@ -1,6 +1,6 @@
-import { Menu, Search } from "lucide-react";
+import { LifeBuoy, Menu, Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Link, Outlet, useNavigate } from "react-router-dom";
 import { Toaster } from "sonner";
 
 import { CommandPalette } from "@/components/CommandPalette";
@@ -92,6 +92,16 @@ export function AppShell({ children }: { children?: React.ReactNode } = {}) {
               </button>
               <DensityToggle />
               <ThemeToggle />
+              {/* ADR-048: Support lives here, globally, instead of a
+                  Settings category or a separate sidebar item -- one
+                  place, reachable from anywhere. */}
+              <Link
+                to="/support"
+                aria-label="Support"
+                className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              >
+                <LifeBuoy className="h-4 w-4" aria-hidden="true" />
+              </Link>
               <NotificationBell />
             </div>
           </header>

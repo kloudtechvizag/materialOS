@@ -300,7 +300,7 @@ export function ImportWizardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => navigate("/imports")}>Done</Button>
+            <Button onClick={() => navigate("/settings/imports")}>Done</Button>
           </CardContent>
         </Card>
       )}

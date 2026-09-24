@@ -14,7 +14,6 @@ import {
   CalendarDays,
   ClipboardList,
   Clock,
-  Coins,
   ClipboardCheck,
   Cpu,
   CreditCard,
@@ -33,7 +32,6 @@ import {
   KanbanSquare,
   Layers,
   LayoutDashboard,
-  LifeBuoy,
   ListChecks,
   MapPin,
   Megaphone,
@@ -41,19 +39,14 @@ import {
   Package,
   Printer,
   Receipt,
-  Settings,
   ShieldCheck,
   ShoppingCart,
-  SlidersHorizontal,
   Smartphone,
-  Store,
   Target,
   Truck,
-  UploadCloud,
   Users,
   Wallet,
   Warehouse,
-  Webhook,
 } from "lucide-react";
 
 export interface NavigationItem {
@@ -325,54 +318,6 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
       { id: "backups", label: "Backups", href: "/operations/backups", icon: Database, permission: "backup.view" },
       { id: "audit-log", label: "Audit log", href: "/operations/audit-log", icon: History, permission: "audit.view" },
       { id: "notification-rules", label: "Notification rules", href: "/operations/notification-rules", icon: Bell, permission: "notification_rules.manage" },
-    ],
-  },
-  {
-    // ADR-047: day-to-day, organization-scoped administration -- who
-    // has a login, the company's own record, and one-time/ongoing data
-    // migration into this org. Never platform-level (see "platform-
-    // administration" below for the actual distinction).
-    id: "organization-settings",
-    label: "Organization Settings",
-    // Strictly system-level configuration from here down -- no
-    // transactional/operational entity (Items, Customers, Branches,
-    // Projects) belongs in this section; each has a real home in the
-    // active profile's own domain section instead (see
-    // OPERATIONAL_ENTITY_IDS and the "projects-services"/"inventory-
-    // trading"/"laboratory"/"printing" sections above, or the Sales &
-    // Dispatch fallback for every other profile).
-    items: [
-      { id: "users", label: "Users", href: "/users", icon: Users },
-      { id: "company-settings", label: "Company settings", href: "/company-settings", icon: Settings },
-      // A Tally/Busy accounting-software migration wizard (ImportBatch's
-      // own docstring) -- meaningless without "accounting" (see Books).
-      { id: "imports", label: "Import from Tally/Busy", href: "/imports", icon: UploadCloud, module: "accounting" },
-      // Configures the payment-receipt template (POS/sales receipts) --
-      // meaningless without "accounting" (see Books).
-      { id: "receipt-settings", label: "Receipts", href: "/settings/receipts", icon: Printer, permission: "receipts.manage", module: "accounting" },
-      // Jewellery-only: gold/silver rate entry for weight-priced items
-      // (resolve_price()'s jewellery branch, ADR-010's jewellery
-      // addendum) -- was showing for every profile before this fix.
-      { id: "metal-rates", label: "Metal rates", href: "/settings/metal-rates", icon: Coins, permission: "items.edit", module: "jewellery" },
-    ],
-  },
-  {
-    // ADR-047: MaterialOS-the-platform's own administration -- which
-    // industry profile this org runs as, its subscription/billing, the
-    // capability marketplace, outbound platform webhooks, and platform
-    // support. Split out of the old single "Setup" section per the
-    // master prompt's own distinction (section 7): an ordinary School
-    // ERP/Retail/etc. user configuring their own day-to-day data should
-    // never have to wade through platform-tenant administration to get
-    // there, and vice versa.
-    id: "platform-administration",
-    label: "Platform Administration",
-    items: [
-      { id: "industry-config", label: "Industry", href: "/settings/industry", icon: SlidersHorizontal },
-      { id: "subscription", label: "Subscription", href: "/settings/subscription", icon: CreditCard, permission: "subscription.view" },
-      { id: "capabilities", label: "Capabilities", href: "/settings/capabilities", icon: Store, permission: "subscription.view" },
-      { id: "webhooks", label: "Webhooks", href: "/settings/webhooks", icon: Webhook, permission: "webhooks.view" },
-      { id: "support", label: "Support", href: "/support", icon: LifeBuoy },
     ],
   },
 ];

@@ -40,10 +40,16 @@ const ALLOWED_ORPHANS = new Set([
 async function main() {
   const server = await createServer({ root, appType: "custom", server: { middlewareMode: true } });
   const { NAVIGATION_CONFIG } = await server.ssrLoadModule("/src/lib/navigation.ts");
+  // ADR-048: the settings workspace has its own module-gated item
+  // registry (Webhooks/Receipts/Metal rates/Import-from-Tally, moved
+  // out of the main sidebar's Setup section into the unified /settings
+  // workspace) -- a real second source of nav items this guard must
+  // also scan, or a module gated only from here reads as a false orphan.
+  const { SETTINGS_CATEGORIES } = await server.ssrLoadModule("/src/lib/settingsNav.ts");
   await server.close();
 
   const gatedModules = new Set();
-  for (const section of NAVIGATION_CONFIG) {
+  for (const section of [...NAVIGATION_CONFIG, ...SETTINGS_CATEGORIES]) {
     for (const item of section.items) {
       if (item.module) gatedModules.add(item.module);
     }

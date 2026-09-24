@@ -42,7 +42,7 @@ export function RequireModule({ module, children }: RequireModuleProps) {
           <Link to="/">Go to dashboard</Link>
         </Button>
         <Button asChild size="sm">
-          <Link to="/settings/industry">Business profile settings</Link>
+          <Link to="/settings/business">Business profile settings</Link>
         </Button>
       </div>
     </div>

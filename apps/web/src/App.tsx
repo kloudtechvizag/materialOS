@@ -138,6 +138,7 @@ import { LabWorksheetDetailPage } from "@/routes/laboratory/LabWorksheetDetailPa
 import { LabWorksheetsPage } from "@/routes/laboratory/LabWorksheetsPage";
 import { MetalRatesPage } from "@/routes/settings/MetalRatesPage";
 import { ReceiptSettingsPage } from "@/routes/settings/ReceiptSettingsPage";
+import { SettingsLayout } from "@/routes/settings/SettingsLayout";
 import { WebhooksPage } from "@/routes/settings/WebhooksPage";
 import { SubscriptionPaymentsPage } from "@/routes/settings/SubscriptionPaymentsPage";
 import { UsersPage } from "@/routes/UsersPage";
@@ -344,20 +345,20 @@ export default function App() {
         <Route path="/serial-rma" element={<SerialRmaPage />} />
         <Route path="/collections" element={<CollectionsPage />} />
         <Route path="/field-sales" element={<FieldSalesPage />} />
-        <Route path="/imports" element={<ImportsPage />} />
-        <Route path="/imports/new" element={<ImportWizardPage />} />
+        <Route path="/imports" element={<Navigate to="/settings/imports" replace />} />
+        <Route path="/imports/new" element={<Navigate to="/settings/imports/new" replace />} />
         <Route path="/branches" element={<BranchesPage />} />
         <Route path="/warehouses" element={<RequireModule module="warehouse"><WarehousesPage /></RequireModule>} />
         <Route path="/batches" element={<RequireModule module="warehouse"><BatchesPage /></RequireModule>} />
         <Route path="/stock-ledger" element={<RequireModule module="warehouse"><StockMovementsPage /></RequireModule>} />
-        <Route path="/users" element={<UsersPage />} />
+        <Route path="/users" element={<Navigate to="/settings/users" replace />} />
         <Route path="/books" element={<BooksPage />} />
         <Route path="/gst" element={<GstPage />} />
         <Route path="/credit-debit-notes" element={<CreditDebitNotesPage />} />
         <Route path="/reports" element={<ReportsPage />} />
         <Route path="/approvals" element={<ApprovalsPage />} />
-        <Route path="/company-settings" element={<CompanySettingsPage />} />
-        <Route path="/settings/industry" element={<IndustryConfigPage />} />
+        <Route path="/company-settings" element={<Navigate to="/settings/company" replace />} />
+        <Route path="/settings/industry" element={<Navigate to="/settings/business" replace />} />
         <Route path="/people" element={<PeopleOverviewPage />} />
         <Route path="/people/employees" element={<EmployeesPage />} />
         <Route path="/people/employees/:employeeId" element={<EmployeeDetailPage />} />
@@ -369,12 +370,6 @@ export default function App() {
         <Route path="/operations/backups" element={<BackupPage />} />
         <Route path="/operations/audit-log" element={<AuditLogPage />} />
         <Route path="/operations/notification-rules" element={<NotificationRulesPage />} />
-        <Route path="/settings/subscription" element={<SubscriptionPage />} />
-        <Route path="/settings/capabilities" element={<CapabilityMarketplacePage />} />
-        <Route path="/settings/subscription/invoices" element={<SubscriptionInvoicesPage />} />
-        <Route path="/settings/subscription/payments" element={<SubscriptionPaymentsPage />} />
-        <Route path="/settings/receipts" element={<ReceiptSettingsPage />} />
-        <Route path="/settings/metal-rates" element={<MetalRatesPage />} />
         <Route path="/lab/samples" element={<RequireModule module="laboratory"><LabSamplesPage /></RequireModule>} />
         <Route path="/lab/samples/:sampleId" element={<RequireModule module="laboratory"><LabSampleDetailPage /></RequireModule>} />
         <Route path="/lab/test-catalog" element={<RequireModule module="laboratory"><LabTestCatalogPage /></RequireModule>} />
@@ -384,7 +379,22 @@ export default function App() {
         <Route path="/lab/worksheets/:worksheetId" element={<RequireModule module="laboratory"><LabWorksheetDetailPage /></RequireModule>} />
         <Route path="/lab/instruments" element={<RequireModule module="laboratory"><LabInstrumentsPage /></RequireModule>} />
         <Route path="/lab/storage" element={<RequireModule module="laboratory"><LabStorageLocationsPage /></RequireModule>} />
-        <Route path="/settings/webhooks" element={<WebhooksPage />} />
+
+        <Route path="/settings" element={<SettingsLayout />}>
+          <Route index element={<Navigate to="business" replace />} />
+          <Route path="business" element={<IndustryConfigPage />} />
+          <Route path="users" element={<UsersPage />} />
+          <Route path="company" element={<CompanySettingsPage />} />
+          <Route path="subscription" element={<SubscriptionPage />} />
+          <Route path="subscription/invoices" element={<SubscriptionInvoicesPage />} />
+          <Route path="subscription/payments" element={<SubscriptionPaymentsPage />} />
+          <Route path="capabilities" element={<CapabilityMarketplacePage />} />
+          <Route path="webhooks" element={<WebhooksPage />} />
+          <Route path="receipts" element={<ReceiptSettingsPage />} />
+          <Route path="metal-rates" element={<MetalRatesPage />} />
+          <Route path="imports" element={<ImportsPage />} />
+          <Route path="imports/new" element={<ImportWizardPage />} />
+        </Route>
       </Route>
 
       <Route path="*" element={<MarketingLayout><NotFoundPage /></MarketingLayout>} />
