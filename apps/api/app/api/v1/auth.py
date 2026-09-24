@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db import get_db, set_session_context
-from app.deps import get_current_user, get_db_tenant
+from app.deps import get_current_user, get_db_tenant, user_permission_codes
 from app.errors import AppError, ErrorCode
 from app.models.tenant import Tenant
 from app.models.user import Role, User, UserRole
@@ -67,12 +67,14 @@ def me(db: Session = Depends(get_db_tenant), user: User = Depends(get_current_us
     roles = db.execute(
         select(Role.name).join(UserRole, UserRole.role_id == Role.id).where(UserRole.user_id == user.id)
     ).scalars().all()
+    permissions = user_permission_codes(db, user.id)
     return CurrentUserResponse(
         id=str(user.id),
         email=user.email,
         full_name=user.full_name,
         tenant_id=str(user.tenant_id),
         roles=list(roles),
+        permissions=sorted(permissions),
         customer_id=str(user.customer_id) if user.customer_id else None,
         guardian_id=str(user.guardian_id) if user.guardian_id else None,
         impersonated_by_admin_id=db.info.get("impersonated_by"),

@@ -23,6 +23,11 @@ class CurrentUserResponse(BaseModel):
     full_name: str
     tenant_id: str
     roles: list[str]
+    # Every real permission code this user's roles grant (deps.
+    # user_permission_codes) -- lets the frontend filter navigation and
+    # other UI by the user's *actual* access instead of an unenforced
+    # placeholder, without a second round-trip.
+    permissions: list[str]
     customer_id: str | None = None
     guardian_id: str | None = None
     impersonated_by_admin_id: str | None = None

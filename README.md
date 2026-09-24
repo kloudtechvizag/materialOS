@@ -168,8 +168,20 @@ gating (`deps.user_permission_codes`) rather than new RBAC role
 personas -- no principal/teacher/counsellor/transport-manager roles
 exist in this app, so a user without a given permission genuinely
 receives `null` for that section, not a UI-hidden number they were
-still sent. See ADR-025 through ADR-046, and `seed_school.py` below
-for a fully populated demo tenant.
+still sent. The School sidebar was then reorganized into five focused
+sections (Students, Admissions, Academics, Finance, Campus Operations)
+and the platform's own shared "Setup" navigation section was split into
+Organization Settings vs Platform Administration -- for every industry
+profile at once, since it's the same shared `lib/navigation.ts` code
+(ADR-047). That same ADR turned the `NavigationItem.permission` field,
+declared since the sidebar's own first version but never enforced, into
+a real gate: `GET /auth/me` now returns the caller's actual permission
+codes (`deps.user_permission_codes`, the same helper ADR-046
+introduced), and the sidebar drops any item the current user's real
+permissions don't reach -- with zero visible change for the `owner`
+role every existing tenant already runs as, since signup grants it the
+entire permission catalog. See ADR-025 through ADR-047, and
+`seed_school.py` below for a fully populated demo tenant.
 
 A **desktop app** (`apps/desktop`, see ADR-012) wraps this same web app
 in a native Tauri shell for Windows/macOS/Linux -- no second frontend,
@@ -610,7 +622,7 @@ Recorded in `docs/decisions/`:
   on `GET /suppliers` so the management page can reach a deactivated
   supplier again without changing the purchase-order supplier picker's
   active-only default.
-- **ADR-025 through ADR-046**: MaterialOS Education, a 26th industry
+- **ADR-025 through ADR-047**: MaterialOS Education, a 26th industry
   profile (`school_education`) built as a full vertical rather than a
   config entry. Each slice's own ADR documents what it reused from
   existing core infra versus what genuinely needed new tables, and
@@ -664,7 +676,14 @@ Recorded in `docs/decisions/`:
   Admissions/Fee/Academic/Staff snapshots are each independently gated
   by the real per-resource permissions a user actually holds
   (`deps.user_permission_codes`) rather than invented RBAC role
-  personas. Deliberately not built: SMS/
+  personas; and navigation/Setup (ADR-047) reorganizes the School
+  sidebar into five focused sections, splits the platform's shared
+  "Setup" section into Organization Settings vs Platform Administration
+  for every industry profile at once, and turns the sidebar's own
+  long-declared-but-never-enforced `NavigationItem.permission` field
+  into a real gate off `GET /auth/me`'s new `permissions` field -- with
+  zero visible change for the full-permission `owner` role every
+  existing tenant already runs as. Deliberately not built: SMS/
   WhatsApp/push delivery (no provider credentials exist in any
   environment this runs in, and unlike a payment gateway there's no
   honest way to sandbox actually delivering a message), mid-year

@@ -64,9 +64,13 @@ export interface NavigationItem {
   /** Exact-match only (react-router NavLink `end`) -- just Dashboard at "/". */
   end?: boolean;
   badge?: string | number;
-  /** Not enforced yet (no RBAC in the app) -- present so a permission or
-   * role gate can filter the resolved nav later without touching every
-   * sidebar variant that renders it. */
+  /** A real permission code from services/permissions.py's own catalog
+   * (e.g. "employees.view") -- buildNavigation() filters an item out
+   * when the caller's real permission set (CurrentUserResponse.
+   * permissions, via deps.user_permission_codes) doesn't include it.
+   * `permissions === undefined` (not loaded yet) shows the item rather
+   * than flashing an empty sidebar, the same "unknown = show" default
+   * `module` already uses. */
   permission?: string;
   /** IndustryProfile.enabled_modules key gating this item. Undefined =
    * always visible ("core" -- e.g. Dashboard, Customers, Company
@@ -189,47 +193,79 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
     ],
   },
   {
+    // The Student lifecycle -- who's enrolled and their day-to-day
+    // attendance record. Classes/Timetable/Examinations/Homework moved
+    // out to "academics" (ADR-047): those are the curriculum's own
+    // structure, not the student roster itself.
+    id: "students",
+    label: "Students",
+    items: [
+      { id: "student-directory", label: "Student Directory", href: "/students", icon: GraduationCap, module: "education", permission: "students.view" },
+      { id: "student-attendance", label: "Attendance", href: "/student-attendance", icon: CalendarCheck, module: "education", permission: "student_attendance.view" },
+      // Multi-campus (spec's own "School Groups", Phase 7) isn't built
+      // yet -- a single-school tenant still has exactly one real
+      // Branch from signup and needs somewhere to manage it, same
+      // reasoning as inventory-trading/projects-services's own copies.
+      { id: "branches", label: "Branches", href: "/branches", icon: Building2, module: "education", permission: "branches.view" },
+    ],
+  },
+  {
     id: "admissions",
     label: "Admissions",
     items: [
-      { id: "admission-enquiries", label: "Enquiries", href: "/admission-enquiries", icon: Inbox, module: "education" },
-      { id: "admission-applications", label: "Applications", href: "/admission-applications", icon: ClipboardCheck, module: "education" },
+      { id: "admission-enquiries", label: "Enquiries", href: "/admission-enquiries", icon: Inbox, module: "education", permission: "admissions.view" },
+      { id: "admission-applications", label: "Applications", href: "/admission-applications", icon: ClipboardCheck, module: "education", permission: "admissions.view" },
+    ],
+  },
+  {
+    // ADR-047: the curriculum structure and its day-to-day academic
+    // workflow -- classes exist to be taught in, timetabled, examined,
+    // and given homework in, so they group with those, not with the
+    // student roster itself.
+    id: "academics",
+    label: "Academics",
+    items: [
+      { id: "school-classes", label: "Classes & Sections", href: "/classes", icon: KanbanSquare, module: "education", permission: "school_classes.view" },
+      { id: "academic-years", label: "Academic Years", href: "/academic-years", icon: CalendarDays, module: "education", permission: "academic_years.view" },
+      { id: "timetable", label: "Timetable", href: "/timetable", icon: CalendarClock, module: "education", permission: "timetable.view" },
+      { id: "homework", label: "Homework", href: "/homework", icon: FilePenLine, module: "education", permission: "homework.view" },
+      { id: "examinations", label: "Examinations", href: "/examinations", icon: FileCheck2, module: "education", permission: "examinations.view" },
+    ],
+  },
+  {
+    id: "school-finance",
+    label: "Finance",
+    items: [
+      // Fee structures, invoices, payments, and outstanding balances
+      // all live inside this one real page (ADR-031/ADR-042) -- no
+      // separate Concessions/Expenses pages exist yet (fees.py's own
+      // docstring names concessions as deliberately not built).
+      { id: "fees", label: "Fees", href: "/fees", icon: IndianRupee, module: "education", permission: "fees.view" },
     ],
   },
   {
     id: "communications",
     label: "Communications",
     items: [
-      { id: "announcements", label: "Announcements", href: "/announcements", icon: Megaphone, module: "education" },
+      { id: "announcements", label: "Announcements", href: "/announcements", icon: Megaphone, module: "education", permission: "announcements.view" },
+    ],
+  },
+  {
+    // ADR-047: campus-wide facilities a student may use, distinct from
+    // the academic/admissions/finance workflows above.
+    id: "campus-operations",
+    label: "Campus Operations",
+    items: [
+      { id: "transport", label: "Transport", href: "/transport", icon: Bus, module: "education", permission: "transport.view" },
+      { id: "library", label: "Library", href: "/library", icon: BookOpen, module: "education", permission: "library.view" },
+      { id: "hostel", label: "Hostel", href: "/hostel", icon: Bed, module: "education", permission: "hostel.view" },
     ],
   },
   {
     id: "analytics",
     label: "Analytics",
     items: [
-      { id: "school-analytics", label: "School Analytics", href: "/analytics", icon: BarChart3, module: "education" },
-    ],
-  },
-  {
-    id: "students",
-    label: "Students",
-    items: [
-      { id: "student-directory", label: "Student Directory", href: "/students", icon: GraduationCap, module: "education" },
-      { id: "student-attendance", label: "Student Attendance", href: "/student-attendance", icon: CalendarCheck, module: "education" },
-      { id: "timetable", label: "Timetable", href: "/timetable", icon: CalendarClock, module: "education" },
-      { id: "examinations", label: "Examinations", href: "/examinations", icon: FileCheck2, module: "education" },
-      { id: "homework", label: "Homework", href: "/homework", icon: FilePenLine, module: "education" },
-      { id: "fees", label: "Fees", href: "/fees", icon: IndianRupee, module: "education" },
-      { id: "transport", label: "Transport", href: "/transport", icon: Bus, module: "education" },
-      { id: "library", label: "Library", href: "/library", icon: BookOpen, module: "education" },
-      { id: "hostel", label: "Hostel", href: "/hostel", icon: Bed, module: "education" },
-      { id: "school-classes", label: "Classes & Sections", href: "/classes", icon: KanbanSquare, module: "education" },
-      { id: "academic-years", label: "Academic Years", href: "/academic-years", icon: CalendarDays, module: "education" },
-      // Multi-campus (spec's own "School Groups", Phase 7) isn't built
-      // yet -- a single-school tenant still has exactly one real
-      // Branch from signup and needs somewhere to manage it, same
-      // reasoning as inventory-trading/projects-services's own copies.
-      { id: "branches", label: "Branches", href: "/branches", icon: Building2, module: "education" },
+      { id: "school-analytics", label: "School Analytics", href: "/analytics", icon: BarChart3, module: "education", permission: "analytics.view" },
     ],
   },
   {
@@ -292,8 +328,12 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
     ],
   },
   {
-    id: "setup",
-    label: "Setup",
+    // ADR-047: day-to-day, organization-scoped administration -- who
+    // has a login, the company's own record, and one-time/ongoing data
+    // migration into this org. Never platform-level (see "platform-
+    // administration" below for the actual distinction).
+    id: "organization-settings",
+    label: "Organization Settings",
     // Strictly system-level configuration from here down -- no
     // transactional/operational entity (Items, Customers, Branches,
     // Projects) belongs in this section; each has a real home in the
@@ -302,14 +342,11 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
     // trading"/"laboratory"/"printing" sections above, or the Sales &
     // Dispatch fallback for every other profile).
     items: [
+      { id: "users", label: "Users", href: "/users", icon: Users },
+      { id: "company-settings", label: "Company settings", href: "/company-settings", icon: Settings },
       // A Tally/Busy accounting-software migration wizard (ImportBatch's
       // own docstring) -- meaningless without "accounting" (see Books).
       { id: "imports", label: "Import from Tally/Busy", href: "/imports", icon: UploadCloud, module: "accounting" },
-      { id: "users", label: "Users", href: "/users", icon: Users },
-      { id: "company-settings", label: "Company settings", href: "/company-settings", icon: Settings },
-      { id: "industry-config", label: "Industry", href: "/settings/industry", icon: SlidersHorizontal },
-      { id: "subscription", label: "Subscription", href: "/settings/subscription", icon: CreditCard, permission: "subscription.view" },
-      { id: "capabilities", label: "Capabilities", href: "/settings/capabilities", icon: Store, permission: "subscription.view" },
       // Configures the payment-receipt template (POS/sales receipts) --
       // meaningless without "accounting" (see Books).
       { id: "receipt-settings", label: "Receipts", href: "/settings/receipts", icon: Printer, permission: "receipts.manage", module: "accounting" },
@@ -317,6 +354,23 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
       // (resolve_price()'s jewellery branch, ADR-010's jewellery
       // addendum) -- was showing for every profile before this fix.
       { id: "metal-rates", label: "Metal rates", href: "/settings/metal-rates", icon: Coins, permission: "items.edit", module: "jewellery" },
+    ],
+  },
+  {
+    // ADR-047: MaterialOS-the-platform's own administration -- which
+    // industry profile this org runs as, its subscription/billing, the
+    // capability marketplace, outbound platform webhooks, and platform
+    // support. Split out of the old single "Setup" section per the
+    // master prompt's own distinction (section 7): an ordinary School
+    // ERP/Retail/etc. user configuring their own day-to-day data should
+    // never have to wade through platform-tenant administration to get
+    // there, and vice versa.
+    id: "platform-administration",
+    label: "Platform Administration",
+    items: [
+      { id: "industry-config", label: "Industry", href: "/settings/industry", icon: SlidersHorizontal },
+      { id: "subscription", label: "Subscription", href: "/settings/subscription", icon: CreditCard, permission: "subscription.view" },
+      { id: "capabilities", label: "Capabilities", href: "/settings/capabilities", icon: Store, permission: "subscription.view" },
       { id: "webhooks", label: "Webhooks", href: "/settings/webhooks", icon: Webhook, permission: "webhooks.view" },
       { id: "support", label: "Support", href: "/support", icon: LifeBuoy },
     ],
@@ -383,13 +437,18 @@ export function buildGlobalNavItems(enabledModules: string[] | undefined): Navig
   return GLOBAL_NAV_ITEMS.filter((item) => !item.module || enabledModules === undefined || enabledModules.includes(item.module));
 }
 
-/** Filters ALL_NAV_SECTIONS down to what a profile actually enables,
- * and relabels the handful of nav items whose name genuinely varies
- * by industry (IndustryProfile.terminology, ADR-010) -- "Items" reads
+/** Filters ALL_NAV_SECTIONS down to what a profile actually enables and
+ * what the calling user's real permissions actually grant (ADR-047 --
+ * CurrentUserResponse.permissions, deps.user_permission_codes), and
+ * relabels the handful of nav items whose name genuinely varies by
+ * industry (IndustryProfile.terminology, ADR-010) -- "Items" reads
  * "Medicines" for a pharmacy, "Materials" for a print shop, and so on.
- * `enabledModules === undefined` (profile not loaded yet) shows
- * everything rather than flashing an empty sidebar while it loads. */
-export function buildNavigation(enabledModules: string[] | undefined, terminology?: Record<string, string>): NavigationSection[] {
+ * `enabledModules`/`permissions` each being `undefined` (not loaded
+ * yet) shows every item gated by that dimension rather than flashing
+ * an empty sidebar while either query is still in flight. */
+export function buildNavigation(
+  enabledModules: string[] | undefined, terminology?: Record<string, string>, permissions?: string[] | undefined
+): NavigationSection[] {
   const itemsLabel = terminology?.items_label;
 
   // Resolved once, up front, so the per-item filter below can use it:
@@ -408,14 +467,16 @@ export function buildNavigation(enabledModules: string[] | undefined, terminolog
     ...section,
     items: section.items
       .filter((item) => !item.module || enabledModules === undefined || enabledModules.includes(item.module))
+      .filter((item) => !item.permission || permissions === undefined || permissions.includes(item.permission))
       .filter((item) => !(OPERATIONAL_ENTITY_IDS.includes(item.id) && section.id !== entityHomeSectionId))
       .map((item) => (item.id === "items" && itemsLabel ? { ...item, label: itemsLabel } : item)),
   })).filter((section) => section.items.length > 0);
 
   // Promote the active profile's own dedicated section (if it has one)
   // to the very top, right after the global items -- "this is YOUR
-  // business" ahead of People & Payroll / Operations / Setup, which
-  // exist for every business regardless of industry.
+  // business" ahead of People & Payroll / Operations / Organization
+  // Settings / Platform Administration, which exist for every business
+  // regardless of industry.
   if (primarySectionId) {
     const primaryIndex = sections.findIndex((s) => s.id === primarySectionId);
     if (primaryIndex > 0) {
