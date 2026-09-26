@@ -22,6 +22,7 @@ def _to_company_out(db: Session, company: Company) -> CompanyOut:
     # e.g. Item.category_id, Batch.item_id); relationship() here is
     # reserved for header->line-item collections.
     profile = db.get(IndustryProfile, company.industry_profile_id) if company.industry_profile_id else None
+    logo_url = "/api/v1/tenant/branding/logo" if company.logo_path else None
     return CompanyOut(
         id=company.id,
         name=company.name,
@@ -32,6 +33,7 @@ def _to_company_out(db: Session, company: Company) -> CompanyOut:
         e_invoice_enabled=company.e_invoice_enabled,
         e_way_bill_enabled=company.e_way_bill_enabled,
         industry_profile=IndustryProfileOut.model_validate(profile) if profile else None,
+        logo_url=logo_url,
     )
 
 

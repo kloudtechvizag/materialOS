@@ -15,6 +15,7 @@ class Tenant(Base, UUIDPk, TimestampMixin):
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     slug: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="active")
+    logo_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
 
 class Company(Base, UUIDPk, TenantMixin, TimestampMixin):
@@ -22,6 +23,7 @@ class Company(Base, UUIDPk, TenantMixin, TimestampMixin):
 
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     legal_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    logo_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     gstin: Mapped[str | None] = mapped_column(String(15), nullable=True)
     pan: Mapped[str | None] = mapped_column(String(10), nullable=True)
     # ADR-016: the receipt/invoice header's own phone/email -- previously

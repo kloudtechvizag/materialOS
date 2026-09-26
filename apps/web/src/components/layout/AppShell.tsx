@@ -1,4 +1,5 @@
-import { LifeBuoy, Menu, Search } from "lucide-react";
+import { useState } from "react";
+import { Keyboard, LifeBuoy, Menu, Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { Toaster } from "sonner";
@@ -6,7 +7,9 @@ import { Toaster } from "sonner";
 import { CommandPalette } from "@/components/CommandPalette";
 import { DesktopUpdateNotifier } from "@/components/DesktopUpdateNotifier";
 import { DensityToggle } from "@/components/layout/DensityToggle";
+import { KeyboardShortcutsModal } from "@/components/layout/KeyboardShortcutsModal";
 import { NotificationBell } from "@/components/layout/NotificationBell";
+import { OnboardingTourCard } from "@/components/layout/OnboardingTourCard";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { MobileDrawer } from "@/components/layout/sidebar/MobileDrawer";
 import { SidebarFooter } from "@/components/layout/sidebar/SidebarFooter";
@@ -21,6 +24,7 @@ import { useSidebarStore } from "@/store/sidebar";
 
 export function AppShell({ children }: { children?: React.ReactNode } = {}) {
   const navigate = useNavigate();
+  const [keyboardModalOpen, setKeyboardModalOpen] = useState(false);
   const clearSession = useAuthStore((s) => s.clearSession);
   const tenantSlug = useAuthStore((s) => s.tenantSlug);
   const collapsed = useSidebarStore((s) => s.collapsed);
@@ -102,6 +106,15 @@ export function AppShell({ children }: { children?: React.ReactNode } = {}) {
                 )}
               </div>
             </div>
+
+            {/* Live Status Beacon */}
+            <div className="hidden lg:flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-2.5 py-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+              <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>All systems operational</span>
+              <span className="text-muted-foreground/40">•</span>
+              <span className="text-muted-foreground text-[11px]">Real-time sync</span>
+            </div>
+
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -114,6 +127,15 @@ export function AppShell({ children }: { children?: React.ReactNode } = {}) {
               </button>
               <DensityToggle />
               <ThemeToggle />
+              <button
+                type="button"
+                onClick={() => setKeyboardModalOpen(true)}
+                aria-label="Keyboard Shortcuts"
+                title="Keyboard Shortcuts (?)"
+                className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              >
+                <Keyboard className="h-4 w-4" aria-hidden="true" />
+              </button>
               {/* ADR-048: Support lives here, globally, instead of a
                   Settings category or a separate sidebar item -- one
                   place, reachable from anywhere. */}
@@ -128,10 +150,12 @@ export function AppShell({ children }: { children?: React.ReactNode } = {}) {
             </div>
           </header>
           <main className="flex-1 overflow-auto p-4 md:p-6">
+            <OnboardingTourCard tenantLogoUrl={tenantLogoUrl} />
             {children ?? <Outlet />}
           </main>
         </div>
       </div>
+      <KeyboardShortcutsModal open={keyboardModalOpen} onOpenChange={setKeyboardModalOpen} />
       <CommandPalette />
       <DesktopUpdateNotifier />
       <Toaster
