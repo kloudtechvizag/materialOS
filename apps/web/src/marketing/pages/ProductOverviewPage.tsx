@@ -55,7 +55,7 @@ const MORE_MODULES = [
 
 export function ProductOverviewPage() {
   return (
-    <div className="bg-[#F9FAFB]">
+    <div className="relative min-h-screen overflow-hidden bg-[#070B14] text-white selection:bg-violet-500/30 selection:text-violet-200">
       <Seo
         title="Product Overview -- Everything MaterialOS Runs on One Platform"
         description="Sales, inventory, procurement, warehouse, dispatch, billing, accounting, collections, and more -- every MaterialOS module, in one place."
@@ -63,78 +63,144 @@ export function ProductOverviewPage() {
         jsonLd={breadcrumbJsonLd(BREADCRUMB_ITEMS, "/product")}
       />
 
-      <div className="mx-auto max-w-6xl px-6 pt-8">
+      {/* Ambient lighting glows & mesh grid */}
+      <div
+        className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 h-[600px] w-[950px] rounded-full bg-[radial-gradient(circle_at_center,rgba(124,58,237,0.25)_0%,rgba(59,130,246,0.12)_45%,transparent_75%)] blur-3xl"
+        aria-hidden="true"
+      />
+      <div
+        className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"
+        aria-hidden="true"
+      />
+
+      <div className="relative mx-auto max-w-6xl px-6 pt-8">
         <Breadcrumbs items={BREADCRUMB_ITEMS} />
       </div>
 
-      {/* Hero -- centered headline, floating screenshot on a soft gradient
-          field with a couple of decorative UI chips layered on top (real
-          DOM elements, not baked into the screenshot itself) so it feels
-          alive rather than a static picture. */}
-      <header className="mx-auto max-w-4xl px-6 pb-4 pt-10 text-center">
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-black/[0.06] bg-white px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm">
-          <Sparkles className="h-3.5 w-3.5 text-[#7C3AED]" />
-          One platform, every module
-        </span>
-        <h1 className="mt-5 text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
-          Every module, one connected system.
+      {/* Hero Header */}
+      <header className="relative mx-auto max-w-4xl px-6 pb-6 pt-12 text-center">
+        <div className="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-3.5 py-1.5 text-xs font-medium text-violet-300 backdrop-blur-md">
+          <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="font-semibold text-white">Unified Operating Graph</span>
+          <span className="text-white/40">•</span>
+          <span>Every Enterprise Module In One System</span>
+          <Sparkles className="h-3.5 w-3.5 text-violet-400" />
+        </div>
+
+        <h1 className="mt-7 text-4xl font-extrabold tracking-tight sm:text-6xl sm:leading-[1.15]">
+          Every module.{" "}
+          <span className="bg-gradient-to-r from-violet-400 via-indigo-300 to-sky-400 bg-clip-text text-transparent">
+            One Connected System.
+          </span>
         </h1>
-        <p className="mx-auto mt-4 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-          Sales, inventory, dispatch, and accounting read and write the same data — never a separate app per module.{" "}
-          <Link to="/why-materialos" className="font-medium text-[#7C3AED] hover:underline">See why that matters</Link>.
+
+        <p className="mx-auto mt-6 max-w-2xl text-base text-zinc-300 sm:text-xl sm:leading-relaxed">
+          Sales, inventory, dispatch, billing, and accounting read and write the exact same data — never a separate sync app or manual spreadsheet export.
         </p>
-        <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-          <Button size="lg" className="bg-[#7C3AED] text-white hover:bg-[#6D28D9]" asChild>
-            <Link to="/signup">Start free</Link>
+
+        <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
+          <Button
+            size="lg"
+            className="group relative overflow-hidden rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-8 py-6 text-base font-semibold text-white shadow-[0_0_30px_-5px_rgba(124,58,237,0.5)] transition-all duration-300 hover:scale-[1.02] hover:from-violet-500 hover:to-indigo-500"
+            asChild
+          >
+            <Link to="/signup">
+              Start Free 14-Day Trial
+              <span className="ml-2 inline-block transition-transform duration-200 group-hover:translate-x-1">&rarr;</span>
+            </Link>
           </Button>
-          <Button size="lg" variant="outline" className="bg-white" asChild>
-            <Link to="/book-demo">Book a demo</Link>
+          <Button
+            size="lg"
+            variant="outline"
+            className="rounded-xl border-white/15 bg-white/5 px-8 py-6 text-base font-semibold text-white backdrop-blur-md transition-all hover:bg-white/10 hover:border-white/30"
+            asChild
+          >
+            <Link to="/book-demo">Book Architecture Walkthrough</Link>
           </Button>
         </div>
       </header>
 
-      <section className="relative mx-auto max-w-5xl px-6 pb-20 pt-16 sm:pt-20">
-        <div
-          className="pointer-events-none absolute inset-x-0 -top-10 h-[420px] bg-[radial-gradient(60%_60%_at_50%_35%,rgba(124,58,237,0.14),transparent_70%)]"
-          aria-hidden="true"
-        />
+      {/* Floating Interactive Screenshot Presentation */}
+      <section className="relative mx-auto max-w-5xl px-6 pb-20 pt-8 sm:pt-12">
         <div className="relative">
           <BrowserFrame
             src={HERO_SCREENSHOTS.dashboard}
-            alt="MaterialOS dashboard showing outstanding, invoiced, quotations, and stock in real time"
-            className="mx-auto max-w-4xl -rotate-1 shadow-[0_40px_80px_-30px_rgba(15,23,42,0.35)] transition-transform duration-500 hover:rotate-0"
+            alt="MaterialOS dashboard showing real-time ledger, outstanding receivables, stock alerts, and orders"
+            className="mx-auto max-w-4xl -rotate-1 shadow-[0_30px_70px_rgba(0,0,0,0.8)] transition-transform duration-500 hover:rotate-0"
           />
 
+          {/* Floating Live Signal Chips */}
           <div
-            className="absolute -right-2 top-10 hidden items-center gap-2 rounded-xl border border-black/[0.06] bg-white px-3.5 py-2.5 text-left shadow-[0_12px_30px_-10px_rgba(15,23,42,0.25)] sm:flex sm:right-4 lg:right-0"
+            className="absolute -right-2 top-8 hidden items-center gap-3 rounded-2xl border border-emerald-500/30 bg-[#0B0F19]/90 px-4 py-3 text-left shadow-[0_15px_35px_rgba(0,0,0,0.6)] backdrop-blur-xl sm:flex sm:right-4 lg:right-0"
             aria-hidden="true"
           >
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#D1FAE5]">
-              <Bell className="h-4 w-4 text-[#059669]" />
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10">
+              <Bell className="h-4 w-4 text-emerald-400" />
             </span>
             <div>
-              <p className="text-xs font-semibold text-foreground">Invoice #1042 paid</p>
-              <p className="text-[11px] text-muted-foreground">Just now -- auto-reconciled</p>
+              <p className="text-xs font-semibold text-white">Invoice #1042 Paid & Reconciled</p>
+              <p className="text-[11px] text-zinc-400">Zero latency ledger update across branches</p>
             </div>
           </div>
 
           <div
-            className="absolute -bottom-4 left-6 hidden items-center gap-1.5 rounded-lg bg-foreground px-3 py-1.5 text-xs font-medium text-white shadow-lg sm:flex lg:left-16"
+            className="absolute -bottom-4 left-6 hidden items-center gap-2 rounded-xl border border-violet-500/30 bg-[#0B0F19]/90 px-3.5 py-2 text-xs font-medium text-white shadow-xl backdrop-blur-xl sm:flex lg:left-12"
             aria-hidden="true"
           >
-            <MousePointer2 className="h-3.5 w-3.5" />
-            Sribalaji Traders
+            <MousePointer2 className="h-3.5 w-3.5 text-violet-400" />
+            <span>Sribalaji Metals & Industrial Supply</span>
           </div>
         </div>
       </section>
 
-      <div className="mx-auto max-w-6xl px-6 pb-24">
+      {/* Connected Business Pipeline Section */}
+      <section className="relative border-y border-white/10 bg-[#0B0F19]/60 py-16 backdrop-blur-md">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="text-center">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-500/30 bg-sky-500/10 px-3 py-1 text-xs font-semibold text-sky-300">
+              Live Pipeline Architecture
+            </span>
+            <h2 className="mt-3 text-2xl font-bold tracking-tight text-white sm:text-3xl">
+              Zero Data Re-Entry. Seamless Transaction Flow.
+            </h2>
+            <p className="mx-auto mt-2 max-w-xl text-sm text-zinc-400">
+              Data travels automatically through each operational gate without manual intervention or batch syncs.
+            </p>
+          </div>
+
+          <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+            {[
+              { step: "01", name: "Quotation", desc: "Live margin check & customer credit", icon: ClipboardList, color: "text-violet-400" },
+              { step: "02", name: "Sales Order", desc: "Auto-reserves warehouse stock", icon: ShoppingCart, color: "text-sky-400" },
+              { step: "03", name: "Dispatch", desc: "Digital pick-list & POD tracking", icon: Truck, color: "text-amber-400" },
+              { step: "04", name: "Tax Invoice", desc: "Instant GSTN e-invoice QR code", icon: Banknote, color: "text-emerald-400" },
+              { step: "05", name: "Stock Ledger", desc: "Weighted average cost calculated", icon: Factory, color: "text-indigo-400" },
+              { step: "06", name: "Audit Trail", desc: "Tamper-proof digital event log", icon: ShieldCheck, color: "text-rose-400" },
+            ].map((node) => (
+              <div
+                key={node.step}
+                className="group relative rounded-2xl border border-white/10 bg-white/[0.02] p-4 backdrop-blur-xl transition-all duration-300 hover:border-violet-500/40 hover:bg-white/[0.05]"
+              >
+                <div className="flex items-center justify-between text-xs font-mono text-zinc-500">
+                  <span>{node.step}</span>
+                  <node.icon className={`h-4 w-4 ${node.color}`} />
+                </div>
+                <h3 className="mt-3 font-semibold text-white">{node.name}</h3>
+                <p className="mt-1 text-xs leading-relaxed text-zinc-400">{node.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Core Modules Bento Grid */}
+      <div className="mx-auto max-w-6xl px-6 py-24">
         <section>
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-semibold tracking-tight text-foreground">Core modules</h2>
-            <p className="mt-2 text-muted-foreground">The eight modules every MaterialOS workspace runs on.</p>
+            <h2 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">Core Enterprise Modules</h2>
+            <p className="mt-3 text-base text-zinc-400">The eight high-capacity foundational engines running inside every workspace.</p>
           </div>
-          <div className="mt-10 grid grid-cols-1 items-start gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-12 grid grid-cols-1 items-start gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map((feature, i) => {
               const isHero = HERO_SLUGS.has(feature.slug);
               return (
@@ -154,12 +220,16 @@ export function ProductOverviewPage() {
           </div>
         </section>
 
-        <section className="mt-20">
+        {/* Also Included Capabilities Section */}
+        <section className="mt-28">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-semibold tracking-tight text-foreground">Also included</h2>
-            <p className="mt-2 text-muted-foreground">No add-on pricing, no separate setup -- these ship with every workspace.</p>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-xs font-semibold text-violet-300">
+              Standard On Every Plan
+            </span>
+            <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">Also Built-In Out of the Box</h2>
+            <p className="mt-3 text-base text-zinc-400">No nickel-and-dime add-on pricing. Real operational tools included with every workspace.</p>
           </div>
-          <div className="mt-10 grid grid-cols-1 items-start gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-12 grid grid-cols-1 items-start gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {MORE_MODULES.map((module, i) => (
               <ModuleCard
                 key={module.name}
@@ -172,21 +242,37 @@ export function ProductOverviewPage() {
           </div>
         </section>
 
-        <section className="relative mt-24 overflow-hidden rounded-[28px] border border-black/[0.06] bg-gradient-to-br from-[#F5F3FF] to-white p-10 text-center sm:p-14">
+        {/* Bottom Conversion CTA */}
+        <section className="relative mt-28 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#0B0F19] to-[#04070E] p-10 text-center shadow-[0_20px_50px_rgba(0,0,0,0.6)] sm:p-16">
           <div
-            className="pointer-events-none absolute inset-0 opacity-[0.4]"
-            style={{ backgroundImage: "radial-gradient(rgba(124,58,237,0.12) 1px, transparent 1px)", backgroundSize: "24px 24px" }}
+            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[350px] w-[600px] rounded-full bg-[radial-gradient(circle_at_center,rgba(124,58,237,0.25)_0%,transparent_70%)] blur-3xl"
             aria-hidden="true"
           />
           <div className="relative">
-            <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Ready to see it connected?</h2>
-            <p className="mx-auto mt-2 max-w-md text-muted-foreground">Set up your workspace in minutes -- no credit card required.</p>
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-              <Button size="lg" className="bg-[#7C3AED] text-white hover:bg-[#6D28D9]" asChild>
-                <Link to="/signup">Start free</Link>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 text-xs font-semibold text-emerald-300">
+              Instant Workspace Provisioning
+            </span>
+            <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+              Ready to Run on a Connected System?
+            </h2>
+            <p className="mx-auto mt-3 max-w-lg text-base text-zinc-300">
+              Launch your pre-configured workspace with full feature access in under 3 minutes. No credit card required.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+              <Button
+                size="lg"
+                className="rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-8 py-6 text-base font-semibold text-white shadow-[0_0_25px_rgba(124,58,237,0.5)] transition-all hover:scale-[1.02] hover:from-violet-500 hover:to-indigo-500"
+                asChild
+              >
+                <Link to="/signup">Start Free 14-Day Trial</Link>
               </Button>
-              <Button size="lg" variant="outline" className="bg-white" asChild>
-                <Link to="/book-demo">Book a demo</Link>
+              <Button
+                size="lg"
+                variant="outline"
+                className="rounded-xl border-white/15 bg-white/5 px-8 py-6 text-base font-semibold text-white backdrop-blur-md transition-all hover:bg-white/10 hover:border-white/30"
+                asChild
+              >
+                <Link to="/book-demo">Schedule Live Architecture Demo</Link>
               </Button>
             </div>
           </div>

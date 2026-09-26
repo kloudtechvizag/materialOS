@@ -12,16 +12,21 @@ export interface BreadcrumbItem {
  * pass the returned jsonLd into <Seo jsonLd={...}>. */
 export function Breadcrumbs({ items }: { items: BreadcrumbItem[] }) {
   return (
-    <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm text-muted-foreground">
+    <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs font-medium text-zinc-400">
       {items.map((item, i) => (
-        <span key={i} className="flex items-center gap-1.5">
-          {i > 0 && <ChevronRight className="h-3.5 w-3.5" />}
+        <span key={i} className="flex items-center gap-2">
+          {i > 0 && <ChevronRight className="h-3.5 w-3.5 text-zinc-600" />}
           {item.href ? (
-            <Link to={item.href} className="hover:text-foreground hover:underline">
+            <Link
+              to={item.href}
+              className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-zinc-400 backdrop-blur-md transition-colors hover:border-violet-500/40 hover:bg-white/10 hover:text-white"
+            >
               {item.label}
             </Link>
           ) : (
-            <span className="font-medium text-foreground">{item.label}</span>
+            <span className="rounded-lg border border-violet-500/30 bg-violet-500/10 px-2.5 py-1 font-semibold text-violet-300 backdrop-blur-md">
+              {item.label}
+            </span>
           )}
         </span>
       ))}

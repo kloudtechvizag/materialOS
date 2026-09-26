@@ -6,9 +6,9 @@
  * software concepts. */
 export function PhotoBanner({ src, alt, credit }: { src: string; alt: string; credit: string }) {
   return (
-    <div className="relative overflow-hidden rounded-xl border border-[#E2E8F0] shadow-sm">
-      <img src={src} alt={alt} className="aspect-[21/9] w-full object-cover" loading="lazy" />
-      <span className="absolute bottom-2 right-3 rounded bg-black/40 px-2 py-0.5 text-[11px] text-white/90">{credit}</span>
+    <div className="relative overflow-hidden rounded-2xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+      <img src={src} alt={alt} className="aspect-[21/9] w-full object-cover brightness-90 hover:brightness-100 transition-all duration-300" loading="lazy" />
+      <span className="absolute bottom-3 right-4 rounded-md border border-white/10 bg-black/60 px-2.5 py-1 text-[11px] text-zinc-300 backdrop-blur-md">{credit}</span>
     </div>
   );
 }

@@ -19,7 +19,7 @@ export function MarketingHeader({ active, theme }: { active?: AuthAction; theme?
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const isDark = theme ? theme === "dark" : location.pathname === "/" || location.pathname === "/pricing";
+  const isDark = theme ? theme !== "light" : true;
 
   return (
     <header
@@ -40,7 +40,7 @@ export function MarketingHeader({ active, theme }: { active?: AuthAction; theme?
 
         <nav
           className={cn(
-            "hidden items-center gap-6 text-sm font-medium md:flex",
+            "hidden items-center gap-2 text-sm font-medium md:flex",
             isDark ? "text-zinc-400" : "text-muted-foreground",
           )}
         >
@@ -49,13 +49,13 @@ export function MarketingHeader({ active, theme }: { active?: AuthAction; theme?
               key={link.href}
               to={link.href}
               className={cn(
-                "transition-colors",
+                "rounded-lg px-3 py-1.5 transition-all",
                 isDark
                   ? location.pathname === link.href
-                    ? "text-white font-semibold"
-                    : "hover:text-white"
+                    ? "bg-white/10 text-white font-semibold border border-white/10 shadow-[0_0_15px_rgba(124,58,237,0.15)]"
+                    : "hover:text-white hover:bg-white/5"
                   : location.pathname === link.href
-                    ? "text-foreground font-semibold"
+                    ? "text-foreground font-semibold bg-accent"
                     : "hover:text-foreground",
               )}
             >

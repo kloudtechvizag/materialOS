@@ -7,12 +7,12 @@ export function Faq({ items }: { items: FaqEntry[] }) {
   if (items.length === 0) return null;
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-semibold">Frequently asked questions</h2>
-      <div className="space-y-5">
+      <h2 className="text-2xl font-bold tracking-tight text-white">Frequently Asked Questions</h2>
+      <div className="space-y-4">
         {items.map((item) => (
-          <div key={item.q}>
-            <h3 className="font-medium">{item.q}</h3>
-            <p className="mt-1 text-sm text-muted-foreground">{item.a}</p>
+          <div key={item.q} className="rounded-xl border border-white/10 bg-white/[0.02] p-5 backdrop-blur-md transition-all hover:border-violet-500/30">
+            <h3 className="font-semibold text-white">{item.q}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-zinc-300">{item.a}</p>
           </div>
         ))}
       </div>

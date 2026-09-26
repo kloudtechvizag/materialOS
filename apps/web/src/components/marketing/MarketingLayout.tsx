@@ -1,7 +1,6 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 import { MarketingHeader } from "@/components/marketing/MarketingHeader";
-import { cn } from "@/lib/utils";
 
 const FOOTER_SECTIONS = [
   {
@@ -33,47 +32,36 @@ const FOOTER_SECTIONS = [
 ];
 
 export function MarketingLayout({ children }: { children: React.ReactNode }) {
-  const location = useLocation();
-  const isDark = location.pathname === "/" || location.pathname === "/pricing";
-
   return (
-    <div className={cn("flex min-h-screen flex-col", isDark ? "bg-[#070B14] text-white" : "bg-white")}>
-      <MarketingHeader theme={isDark ? "dark" : "light"} />
+    <div className="flex min-h-screen flex-col bg-[#070B14] text-white selection:bg-violet-500/30 selection:text-violet-200">
+      <MarketingHeader theme="dark" />
 
       <main className="flex-1">{children}</main>
 
-      <footer
-        className={cn(
-          "transition-colors",
-          isDark ? "border-t border-white/10 bg-[#04070E] text-zinc-400" : "border-t border-[#E2E8F0] bg-[#F8FAFC]",
-        )}
-      >
+      <footer className="border-t border-white/10 bg-[#04070E] text-zinc-400 transition-colors">
         <div className="mx-auto grid max-w-6xl gap-8 px-6 py-12 sm:grid-cols-2 md:grid-cols-4">
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               <img src="/brand/symbol.svg" alt="" className="h-8 w-8" />
-              <span className={cn("text-lg font-bold tracking-tight", isDark ? "text-white" : "text-foreground")}>
-                Material<span className="text-violet-400">OS</span>
+              <span className="text-lg font-bold tracking-tight text-white">
+                Material<span className="bg-gradient-to-r from-violet-400 to-sky-400 bg-clip-text text-transparent">OS</span>
               </span>
             </div>
-            <p className={cn("mt-3 max-w-xs text-sm", isDark ? "text-zinc-400" : "text-muted-foreground")}>
-              The intelligent business operating system for 26 modern industries.
+            <p className="mt-3 max-w-xs text-sm text-zinc-400">
+              The intelligent business operating system unifying operations across 26 modern industries.
             </p>
           </div>
           {FOOTER_SECTIONS.map((section) => (
             <div key={section.title}>
-              <h3 className={cn("text-sm font-semibold", isDark ? "text-white" : "text-foreground")}>
+              <h3 className="text-sm font-semibold text-white">
                 {section.title}
               </h3>
-              <ul className={cn("mt-3 space-y-2 text-sm", isDark ? "text-zinc-400" : "text-muted-foreground")}>
+              <ul className="mt-3 space-y-2 text-sm text-zinc-400">
                 {section.links.map((link) => (
                   <li key={link.href}>
                     <Link
                       to={link.href}
-                      className={cn(
-                        "transition-colors",
-                        isDark ? "hover:text-white" : "hover:text-foreground",
-                      )}
+                      className="transition-colors hover:text-white"
                     >
                       {link.label}
                     </Link>
@@ -83,12 +71,7 @@ export function MarketingLayout({ children }: { children: React.ReactNode }) {
             </div>
           ))}
         </div>
-        <div
-          className={cn(
-            "border-t px-6 py-4 text-center text-xs",
-            isDark ? "border-white/10 text-zinc-500" : "border-[#E2E8F0] text-muted-foreground",
-          )}
-        >
+        <div className="border-t border-white/10 px-6 py-4 text-center text-xs text-zinc-500">
           &copy; {new Date().getFullYear()} MaterialOS Inc. All rights reserved. • ISO 27001 & SOC 2 Type II Certified
         </div>
       </footer>
