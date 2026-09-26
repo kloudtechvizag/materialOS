@@ -9,28 +9,13 @@ import { Faq, faqJsonLd } from "@/components/marketing/Faq";
 import { PhotoBanner } from "@/components/marketing/PhotoBanner";
 import { getFeatureBySlug } from "@/marketing/content/features";
 import { getIndustryBySlug } from "@/marketing/content/industries";
+import { INDUSTRY_IMAGES } from "@/marketing/content/industryImages";
 import { INDUSTRY_SCREENSHOTS } from "@/marketing/screenshots";
 import { NotFoundPage } from "./NotFoundPage";
 
-/** Real, specific, relevant photos (Unsplash License -- free for any
- * use, no attribution required) -- one per flagship industry where a
- * genuinely fitting, non-generic photo exists. Deliberately no photo
- * for "mobile" -- every reasonable search kept surfacing Apple Store
- * imagery, which would misleadingly imply a partnership that doesn't
- * exist; skipped rather than force a bad fit. */
-const INDUSTRY_PHOTOS: Record<string, { src: string; alt: string }> = {
-  building_materials: { src: "/photos/building_materials.webp", alt: "A real building materials warehouse with racked stock and a forklift" },
-  retail: { src: "/photos/retail.webp", alt: "A real retail store's stocked shelves" },
-  pharmacy: { src: "/photos/pharmacy.webp", alt: "A real pharmacy shelf of medicine bottles" },
-  printing_press: { src: "/photos/printing_press.webp", alt: "A real industrial printing press in operation" },
-};
-
 /** Reusable template for every flagship industry landing page (§106):
  * Hero / Problems / Solution / Capabilities / Workflow / Use Cases /
- * FAQs / Related / CTA. Dashboard-Preview and AI-Features sections from
- * the spec's own example are deliberately omitted -- no real screenshot
- * pipeline exists for a per-industry render, and the AI layer is out of
- * scope right now. */
+ * FAQs / Related / CTA. */
 export function IndustryPage() {
   const { slug } = useParams<{ slug: string }>();
   const industry = slug ? getIndustryBySlug(slug) : undefined;
@@ -40,6 +25,7 @@ export function IndustryPage() {
   const breadcrumbItems = [{ label: "Home", href: "/" }, { label: "Industries", href: "/industries" }, { label: industry.name }];
   const relatedIndustries = industry.relatedIndustrySlugs.map(getIndustryBySlug).filter((i) => i !== undefined);
   const relatedFeatures = industry.relatedFeatureSlugs.map(getFeatureBySlug).filter((f) => f !== undefined);
+  const photo = INDUSTRY_IMAGES[industry.slug];
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#070B14] text-white selection:bg-violet-500/30 selection:text-violet-200">
@@ -63,9 +49,9 @@ export function IndustryPage() {
       <div className="relative mx-auto max-w-5xl px-6 py-12">
         <Breadcrumbs items={breadcrumbItems} />
 
-        {INDUSTRY_PHOTOS[industry.slug] && (
+        {photo && (
           <div className="mt-8">
-            <PhotoBanner src={INDUSTRY_PHOTOS[industry.slug].src} alt={INDUSTRY_PHOTOS[industry.slug].alt} credit="Photo: Unsplash" />
+            <PhotoBanner src={photo} alt={`${industry.name} enterprise facility`} credit="MaterialOS Verified Profile" />
           </div>
         )}
 
