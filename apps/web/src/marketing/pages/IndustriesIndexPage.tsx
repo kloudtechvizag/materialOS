@@ -91,7 +91,7 @@ export function IndustriesIndexPage() {
       <header className="relative mx-auto max-w-4xl px-6 pb-6 pt-10 text-center">
         <div className="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-3.5 py-1.5 text-xs font-medium text-violet-300 backdrop-blur-md">
           <Sparkles className="h-3.5 w-3.5 text-violet-400" />
-          <span>25 Pre-Configured Industry Operating Engines • Zero Generic ERP Bloat</span>
+          <span>{ALL_INDUSTRIES.length} Pre-Configured Industry Operating Engines • Zero Generic ERP Bloat</span>
         </div>
 
         <h1 className="mt-6 text-4xl font-extrabold tracking-tight sm:text-6xl sm:leading-[1.15]">

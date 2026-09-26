@@ -22,6 +22,7 @@ export const INDUSTRY_ICONS: Record<string, IconComponent> = {
   pharmacy: Pill,
   printing_press: Printer,
   mobile: Smartphone,
+  construction_contractor: Building2,
 };
 
 export const CATEGORY_ICONS: Record<string, IconComponent> = {

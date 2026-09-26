@@ -26,6 +26,7 @@ export const INDUSTRY_IMAGES: Record<string, string> = {
   grocery: "/photos/industries/grocery.webp",
   printing_press: "/photos/industries/printing_press.webp",
   laboratory: "/photos/industries/laboratory.webp",
+  construction_contractor: "/photos/industries/construction_contractor.webp",
 };
 
 /** Pre-configured native modules for each industry profile */
@@ -55,4 +56,5 @@ export const INDUSTRY_MODULES: Record<string, string[]> = {
   grocery: ["Barcode Scanning", "Weight Scale POS", "Perishable Batches", "Fast UPI Split"],
   printing_press: ["Live Production Board", "Paper/Ink Stock", "Job Status HUD", "Project Billing"],
   laboratory: ["Sample Barcodes", "Turnaround Timing", "Test Ledgers", "Compliance Reports"],
+  construction_contractor: ["BOQ & Cost Budget Lock", "Subcontractor RA Bills", "Client Progress Billing", "QA/QC Hard Gate", "Site Diary (DPR)"],
 };

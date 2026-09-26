@@ -85,6 +85,7 @@ const INDUSTRY_PROFILE_MAP: Record<string, { name: string; icon: React.Component
   laboratory: { name: "Laboratory & LIMS", icon: FlaskConical },
   school_erp: { name: "School & Academy ERP", icon: GraduationCap },
   jewellery: { name: "Jewellery & Bullion", icon: Gem },
+  construction_contractor: { name: "Civil & Building Contractor", icon: Building2 },
 };
 
 export function AiCopilotHud() {

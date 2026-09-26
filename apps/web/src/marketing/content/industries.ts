@@ -33,9 +33,10 @@ export const ALL_INDUSTRIES: { slug: string; name: string; category: string }[] 
   { slug: "grocery", name: "Grocery", category: "retail" },
   { slug: "printing_press", name: "Printing Press & Digital Color Lab", category: "printing" },
   { slug: "laboratory", name: "Laboratory & Scientific Testing", category: "laboratory" },
+  { slug: "construction_contractor", name: "Building Contractors & Civil Construction", category: "construction" },
 ];
 
-/** Fully-authored industry landing pages -- deliberately only the 5
+/** Fully-authored industry landing pages -- 6 flagship profiles
  * where MaterialOS has real, tested, shipped functionality to describe
  * (no generic filler). Cross-checked by hand against each slug's real
  * enabled_modules/inventory_flags in services/industry.py at the time
@@ -267,6 +268,86 @@ export const INDUSTRIES: IndustryContent[] = [
     ],
     relatedIndustrySlugs: ["computer_hardware", "electronics"],
     relatedFeatureSlugs: ["serial-imei-rma-tracking", "pos"],
+  },
+  {
+    slug: "construction_contractor",
+    name: "Building Contractors & Civil Construction",
+    category: "construction",
+    seoTitle: "Construction ERP & Contractor Management Software | NirmaanOS on MaterialOS",
+    seoDescription:
+      "Unified operating system for building contractors and civil EPC: multi-level BOQ budget locks, measured subcontractor RA bills, client progressive billing, daily site diary (DPR), and QA/QC hard gates.",
+    keywords: [
+      "construction ERP software",
+      "building contractor software",
+      "civil EPC management software",
+      "BOQ budget management",
+      "subcontractor RA billing software",
+      "client progressive billing",
+      "construction site DPR software",
+      "civil construction project accounting",
+    ],
+    heroTagline: "One operating system for building contractors, civil EPC, and on-site project execution.",
+    problems: [
+      "BOQ items and budget revisions live in detached spreadsheets, leading to silent cost overruns that are discovered only at project completion.",
+      "Subcontractor RA bills are submitted with inflated quantities, duplicate measurements, and unverified work progress.",
+      "Client progressive billing is disputed because site measurement sheets and joint inspection sign-offs are missing or unorganized.",
+      "Site material indents and consumption lack direct link to BOQ allowances, causing invisible leakage and unbudgeted procurement.",
+      "Daily progress reports (DPRs), muster rolls, and plant/machinery logbooks are delayed by days, leaving project managers blind to site blockers.",
+    ],
+    solution:
+      "Powered by the nirmaanOS construction execution engine, MaterialOS unifies commercial BOQ controls with field execution. Lock baseline BOQs with rate analysis, approve subcontractor RA bills against verified joint measurements, enforce mandatory QA/QC inspection sign-offs before billing, and generate client progressive IPCs with automatic retention and advance deductions.",
+    capabilities: [
+      "Multi-level hierarchical BOQ (WBS structure) with CPWD/DSR rate analysis and material/labor coefficient breakdown",
+      "Strict baseline budget locks with change order and deviation management to halt unbudgeted procurement",
+      "Subcontractor Running Account (RA) billing with cumulative measurement sheets, retention money, and mobilization advance recovery",
+      "Client progressive billing with Interim Payment Certificate (IPC) generation, tax invoices, and TDS/GST reconciliation",
+      "Site store management with project-tagged indents, three-way PO-GRN matching, and issue slips linked to BOQ line items",
+      "Digital Site Diary (DPR) capturing daily trade-wise labor headcount, equipment running hours, weather, and physical output",
+      "QA/QC hard gate verification preventing RA bill certification without attached test certificates and inspection sign-offs",
+      "Seamless two-way accounting sync for subcontract expenses, client receivables, retention ledgers, and Tally XML export",
+    ],
+    workflow: [
+      "DSR / Rate Analysis",
+      "BOQ & Budget Lock",
+      "Site Indent & PO",
+      "Site GRN & Issue",
+      "Digital Site Diary (DPR)",
+      "Joint Measurement Sheet",
+      "QA/QC Inspection Sign-off",
+      "Subcontractor RA Bill",
+      "Client Progress IPC",
+      "Retention & Ledger Posting",
+    ],
+    useCases: [
+      "A commercial civil contractor locking an 800-item structural BOQ and preventing site engineers from over-indenting TMT rebars beyond the structural design allowance.",
+      "A project billing engineer vetting a plastering subcontractor's 4th RA bill, verifying cumulative laser measurements against previously certified quantities before auto-deducting 5% retention.",
+      "A residential developer exporting certified client running bills with attached cube-test QA reports directly into statutory GST and accounting books.",
+      "A site manager submitting daily labor headcounts and excavator diesel logbooks on mobile, instantly updating project cost-to-complete projections.",
+    ],
+    faqs: [
+      {
+        q: "How does nirmaanOS inside MaterialOS handle multi-level BOQs?",
+        a: "The system supports unlimited WBS levels (e.g. Project > Tower > Floor > Flat > Sub-structure > RCC M25). Each item can be imported from Excel or standard CPWD DSR schedules with full rate analysis breakdowns into materials, skilled/unskilled labor, and machinery.",
+      },
+      {
+        q: "Can the system prevent subcontractor over-billing?",
+        a: "Yes. Every subcontractor RA bill is validated against the cumulative measured quantity recorded in Joint Measurement Sheets (JMS). The system automatically flags any claim exceeding the sanctioned BOQ quantity and requires a formal deviation or extra-item work order.",
+      },
+      {
+        q: "Does it manage retention money and mobilization advance recovery?",
+        a: "Yes. When generating both Subcontractor RA bills and Client Progressive Bills, the system automatically applies configurable percentage deductions for retention money, mobilization advance amortization, and statutory TDS/WCT.",
+      },
+      {
+        q: "What is the QA/QC Hard Gate mechanism?",
+        a: "The QA/QC Hard Gate prevents any work item from being certified for payment until the corresponding site inspection checklist, cube test report, or lab clearance certificate is attached and signed off by the quality engineer.",
+      },
+      {
+        q: "How does this integrate with building material suppliers on MaterialOS?",
+        a: "Because MaterialOS natively hosts building material dealers, contractor site indents can optionally be dispatched directly to vetted local cement, steel, and aggregate suppliers on the network, streamlining quotation, delivery challans, and GST e-way tracking.",
+      },
+    ],
+    relatedIndustrySlugs: ["building_materials", "real_estate", "electrical"],
+    relatedFeatureSlugs: ["inventory-management", "warehouse-dispatch-management", "gst-accounting-financial-reports"],
   },
 ];
 
