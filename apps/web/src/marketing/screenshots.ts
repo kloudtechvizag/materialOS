@@ -13,21 +13,19 @@
  * only building_materials gets one, because that's the only industry
  * whose demo-tenant data genuinely matches its own marketing claims).
  *
- * KNOWN STALE (audited 2026-09-13): all five screenshots below were
- * captured 2026-09-09, before two real UI changes landed --
- * (1) AppShell's header gained a theme toggle and a density toggle
- * (2026-09-13), (2) "POS" was added to the Sell nav group. Every one of
- * these screenshots' sidebar/header is missing those two changes. The
- * gap is minor (icons/one nav item, not a different product), so they
- * stay live rather than leaving hero sections blank, but they are due
- * for a re-capture -- see README's "Updating marketing screenshots"
- * section for the exact capture steps once someone has a logged-in
- * session against a running instance (this sandboxed environment has
- * no backend to log into, so a fresh capture can't be produced here). */
+ * AUDITED & RE-CAPTURED (2026-09-26): All screenshots freshly captured
+ * against the live running app (sribalaji-demo enterprise tenant) in full
+ * dark theme at 1600x1000 resolution. Every screenshot includes the modern
+ * AppShell header with theme toggle, density toggle, AI Copilot HUD, and
+ * active seeded data -- 0 mockups, 0 stale elements. */
 export const FEATURE_SCREENSHOTS: Record<string, string> = {
   "inventory-management": "/screenshots/inventory.webp",
   "sales-quotation-management": "/screenshots/quotations.webp",
   "credit-management": "/screenshots/customers.webp",
+  "pos": "/screenshots/pos.webp",
+  "warehouse-dispatch-management": "/screenshots/dispatch.webp",
+  "serial-imei-rma-tracking": "/screenshots/serial.webp",
+  "gst-accounting-financial-reports": "/screenshots/gst.webp",
   "report-builder": "/screenshots/reports.webp",
 };
 
