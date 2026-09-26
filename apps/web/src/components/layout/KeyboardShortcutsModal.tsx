@@ -32,6 +32,7 @@ const SHORTCUTS: ShortcutItem[] = [
 
   // Actions
   { keys: ["⌘ / Ctrl", "K"], description: "Open Command Palette & Search", category: "actions" },
+  { keys: ["⌘ / Ctrl", "J"], description: "Open AI Copilot Autonomous HUD", category: "actions" },
   { keys: ["?"], description: "Open Keyboard Cheat Sheet", category: "actions" },
   { keys: ["Esc"], description: "Close active drawer, modal, or palette", category: "actions" },
 ];

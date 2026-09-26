@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Keyboard, LifeBuoy, Menu, Search } from "lucide-react";
+import { Keyboard, LifeBuoy, Menu, Search, Sparkles } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { Toaster } from "sonner";
 
 import { CommandPalette } from "@/components/CommandPalette";
 import { DesktopUpdateNotifier } from "@/components/DesktopUpdateNotifier";
+import { AiCopilotHud } from "@/components/layout/AiCopilotHud";
 import { DensityToggle } from "@/components/layout/DensityToggle";
 import { KeyboardShortcutsModal } from "@/components/layout/KeyboardShortcutsModal";
 import { NotificationBell } from "@/components/layout/NotificationBell";
@@ -18,6 +19,7 @@ import { SidebarNav } from "@/components/layout/sidebar/SidebarNav";
 import { apiFetch } from "@/lib/api";
 import { useAuthenticatedImage } from "@/lib/useAuthenticatedImage";
 import { cn } from "@/lib/utils";
+import { useAiCopilotStore } from "@/store/aiCopilot";
 import { useAuthStore } from "@/store/auth";
 import { useCommandPaletteStore } from "@/store/commandPalette";
 import { useSidebarStore } from "@/store/sidebar";
@@ -31,6 +33,7 @@ export function AppShell({ children }: { children?: React.ReactNode } = {}) {
   const toggleCollapsed = useSidebarStore((s) => s.toggleCollapsed);
   const setMobileOpen = useSidebarStore((s) => s.setMobileOpen);
   const openCommandPalette = useCommandPaletteStore((s) => s.setOpen);
+  const openCopilot = useAiCopilotStore((s) => s.openCopilot);
 
   const { data: tenantSettings } = useQuery({
     queryKey: ["tenant-settings"],
@@ -118,6 +121,19 @@ export function AppShell({ children }: { children?: React.ReactNode } = {}) {
             <div className="flex items-center gap-2">
               <button
                 type="button"
+                onClick={() => openCopilot()}
+                className="relative flex h-9 items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-3 text-xs font-semibold text-violet-300 hover:bg-violet-500/20 hover:border-violet-500/50 transition-all shadow-[0_0_15px_rgba(124,58,237,0.15)]"
+              >
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-500" />
+                </span>
+                <Sparkles className="h-3.5 w-3.5 text-violet-400" />
+                <span className="hidden sm:inline font-medium">AI Copilot</span>
+                <kbd className="hidden rounded border border-violet-500/30 bg-violet-950/50 px-1.5 py-0.5 text-[10px] font-mono text-violet-300 md:inline">Ctrl J</kbd>
+              </button>
+              <button
+                type="button"
                 onClick={() => openCommandPalette(true)}
                 className="flex h-9 items-center gap-2 rounded-md border border-input px-3 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
               >
@@ -156,6 +172,7 @@ export function AppShell({ children }: { children?: React.ReactNode } = {}) {
         </div>
       </div>
       <KeyboardShortcutsModal open={keyboardModalOpen} onOpenChange={setKeyboardModalOpen} />
+      <AiCopilotHud />
       <CommandPalette />
       <DesktopUpdateNotifier />
       <Toaster
@@ -171,3 +188,4 @@ export function AppShell({ children }: { children?: React.ReactNode } = {}) {
     </div>
   );
 }
+

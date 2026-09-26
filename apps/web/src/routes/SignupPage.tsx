@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
+import { Sparkles } from "lucide-react";
 
 import { AuthLayout } from "@/components/layout/AuthLayout";
 import { Button } from "@/components/ui/button";
@@ -22,7 +23,7 @@ interface IndustryProfileOption {
 
 const schema = z.object({
   companyName: z.string().min(1, "Required"),
-  companyState: z.string().min(1, "Required -- this decides CGST+SGST vs IGST on every invoice"),
+  companyState: z.string().min(1, "Required -- decides GST tax computation"),
   companyCity: z.string().min(1, "Required"),
   industrySlug: z.string().min(1, "Required"),
   tenantSlug: z
@@ -86,88 +87,157 @@ export function SignupPage() {
 
   return (
     <AuthLayout active="signup">
-      <div className="w-full max-w-md">
-      <Card className="rounded-xl border-[#E2E8F0] shadow-sm">
-        <CardHeader>
-          <CardTitle>Create your MaterialOS workspace</CardTitle>
-          <CardDescription>Takes about a minute. You can import your Tally data right after.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="companyName">Company name</Label>
-              <Input id="companyName" placeholder="Your company name" {...register("companyName")} />
-              {errors.companyName && <p className="text-sm text-destructive">{errors.companyName.message}</p>}
+      <div className="w-full max-w-md my-6">
+        <Card className="rounded-2xl border border-white/10 bg-white/[0.02] shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-xl text-white">
+          <CardHeader className="space-y-3 pb-6">
+            <div className="flex items-center justify-between">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-xs font-semibold text-violet-300">
+                <Sparkles className="h-3 w-3 text-violet-400" />
+                Instant Setup • 14-Day Full Access Trial
+              </span>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="companyState">Business state</Label>
-              <select
-                id="companyState"
-                defaultValue=""
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                {...register("companyState")}
+            <div>
+              <CardTitle className="text-2xl font-bold tracking-tight text-white">
+                Create your MaterialOS workspace
+              </CardTitle>
+              <CardDescription className="text-zinc-400 mt-1">
+                Takes about a minute. You can import your Tally / ERP data right after.
+              </CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="companyName" className="text-xs font-medium text-zinc-300">Company Name</Label>
+                <Input
+                  id="companyName"
+                  placeholder="Your Company Pvt Ltd"
+                  className="h-10 border-white/10 bg-white/5 text-white placeholder:text-zinc-500 focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50"
+                  {...register("companyName")}
+                />
+                {errors.companyName && <p className="text-xs text-rose-400">{errors.companyName.message}</p>}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="companyState" className="text-xs font-medium text-zinc-300">Business State (GST)</Label>
+                  <select
+                    id="companyState"
+                    defaultValue=""
+                    className="flex h-10 w-full rounded-md border border-white/10 bg-[#0D121F] px-3 text-xs text-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50"
+                    {...register("companyState")}
+                  >
+                    <option value="" disabled className="bg-[#0D121F] text-zinc-400">Select State</option>
+                    {INDIAN_STATES.map((state) => (
+                      <option key={state} value={state} className="bg-[#0D121F] text-white">{state}</option>
+                    ))}
+                  </select>
+                  {errors.companyState && <p className="text-xs text-rose-400">{errors.companyState.message}</p>}
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="companyCity" className="text-xs font-medium text-zinc-300">City / Town</Label>
+                  <Input
+                    id="companyCity"
+                    placeholder="Vijayawada"
+                    className="h-10 border-white/10 bg-white/5 text-white placeholder:text-zinc-500 focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50"
+                    {...register("companyCity")}
+                  />
+                  {errors.companyCity && <p className="text-xs text-rose-400">{errors.companyCity.message}</p>}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="industrySlug" className="text-xs font-medium text-zinc-300">Industry Profile</Label>
+                <select
+                  id="industrySlug"
+                  className="flex h-10 w-full rounded-md border border-white/10 bg-[#0D121F] px-3 text-xs text-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50"
+                  {...register("industrySlug")}
+                >
+                  {(industries ?? [{ slug: "building_materials", name: "Building Materials & Steel" }]).map((i) => (
+                    <option key={i.slug} value={i.slug} className="bg-[#0D121F] text-white">{i.name}</option>
+                  ))}
+                </select>
+                {errors.industrySlug && <p className="text-xs text-rose-400">{errors.industrySlug.message}</p>}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="tenantSlug" className="text-xs font-medium text-zinc-300">Workspace Subdomain URL</Label>
+                <div className="flex rounded-md border border-white/10 bg-white/5 focus-within:border-violet-500 focus-within:ring-1 focus-within:ring-violet-500/50">
+                  <span className="flex items-center px-3 text-xs font-mono text-zinc-400 bg-white/5 border-r border-white/10 rounded-l-md shrink-0">
+                    app.materialos.com/
+                  </span>
+                  <Input
+                    id="tenantSlug"
+                    placeholder="sribalaji"
+                    className="h-10 border-0 bg-transparent text-white placeholder:text-zinc-500 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    {...register("tenantSlug")}
+                  />
+                </div>
+                {errors.tenantSlug && <p className="text-xs text-rose-400">{errors.tenantSlug.message}</p>}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="ownerFullName" className="text-xs font-medium text-zinc-300">Your Full Name</Label>
+                  <Input
+                    id="ownerFullName"
+                    placeholder="Srikanth Rao"
+                    className="h-10 border-white/10 bg-white/5 text-white placeholder:text-zinc-500 focus:border-violet-500"
+                    {...register("ownerFullName")}
+                  />
+                  {errors.ownerFullName && <p className="text-xs text-rose-400">{errors.ownerFullName.message}</p>}
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="ownerEmail" className="text-xs font-medium text-zinc-300">Work Email</Label>
+                  <Input
+                    id="ownerEmail"
+                    type="email"
+                    placeholder="owner@company.com"
+                    className="h-10 border-white/10 bg-white/5 text-white placeholder:text-zinc-500 focus:border-violet-500"
+                    {...register("ownerEmail")}
+                  />
+                  {errors.ownerEmail && <p className="text-xs text-rose-400">{errors.ownerEmail.message}</p>}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="ownerPassword" className="text-xs font-medium text-zinc-300">Password</Label>
+                <PasswordInput
+                  id="ownerPassword"
+                  className="h-10 border-white/10 bg-white/5 text-white placeholder:text-zinc-500 focus:border-violet-500"
+                  {...register("ownerPassword")}
+                />
+                {errors.ownerPassword && <p className="text-xs text-rose-400">{errors.ownerPassword.message}</p>}
+              </div>
+
+              {serverError && <p className="text-xs text-rose-400 font-medium">{serverError}</p>}
+
+              <Button
+                type="submit"
+                size="lg"
+                className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 font-semibold text-white hover:from-violet-500 hover:to-indigo-500 shadow-[0_0_25px_rgba(124,58,237,0.4)] transition-all"
+                disabled={isSubmitting}
               >
-                <option value="" disabled>Select state</option>
-                {INDIAN_STATES.map((state) => (
-                  <option key={state} value={state}>{state}</option>
-                ))}
-              </select>
-              {errors.companyState && <p className="text-sm text-destructive">{errors.companyState.message}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="companyCity">City / Town</Label>
-              <Input id="companyCity" placeholder="Vijayawada" {...register("companyCity")} />
-              {errors.companyCity && <p className="text-sm text-destructive">{errors.companyCity.message}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="industrySlug">Industry</Label>
-              <select
-                id="industrySlug"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                {...register("industrySlug")}
-              >
-                {(industries ?? [{ slug: "building_materials", name: "Building Materials" }]).map((i) => (
-                  <option key={i.slug} value={i.slug}>{i.name}</option>
-                ))}
-              </select>
-              {errors.industrySlug && <p className="text-sm text-destructive">{errors.industrySlug.message}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="tenantSlug">Workspace URL name</Label>
-              <Input id="tenantSlug" placeholder="sribalaji" {...register("tenantSlug")} />
-              {errors.tenantSlug && <p className="text-sm text-destructive">{errors.tenantSlug.message}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="ownerFullName">Your name</Label>
-              <Input id="ownerFullName" {...register("ownerFullName")} />
-              {errors.ownerFullName && <p className="text-sm text-destructive">{errors.ownerFullName.message}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="ownerEmail">Your email</Label>
-              <Input id="ownerEmail" type="email" {...register("ownerEmail")} />
-              {errors.ownerEmail && <p className="text-sm text-destructive">{errors.ownerEmail.message}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="ownerPassword">Password</Label>
-              <PasswordInput id="ownerPassword" {...register("ownerPassword")} />
-              {errors.ownerPassword && <p className="text-sm text-destructive">{errors.ownerPassword.message}</p>}
-            </div>
-            {serverError && <p className="text-sm text-destructive">{serverError}</p>}
-            <Button type="submit" size="lg" className="w-full bg-[#7C3AED] text-white hover:bg-[#6D28D9]" disabled={isSubmitting}>
-              {isSubmitting ? "Creating workspace..." : "Create workspace"}
-            </Button>
-          </form>
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            Already have a workspace?{" "}
-            <Link to="/login" className="font-medium text-[#7C3AED] underline-offset-4 hover:underline">
-              Sign in
-            </Link>
-          </p>
-        </CardContent>
-      </Card>
-      <p className="mt-4 text-center text-xs text-muted-foreground/70">
-        <Link to="/server-settings" className="underline-offset-4 hover:underline">Server settings</Link>
-      </p>
+                {isSubmitting ? "Creating workspace..." : "Launch MaterialOS Workspace"}
+              </Button>
+            </form>
+
+            <p className="mt-5 text-center text-xs text-zinc-400">
+              Already registered?{" "}
+              <Link to="/login" className="font-semibold text-violet-400 underline-offset-4 hover:underline hover:text-violet-300">
+                Sign in to your workspace
+              </Link>
+            </p>
+          </CardContent>
+        </Card>
+
+        <p className="mt-4 text-center text-xs text-zinc-500">
+          <Link to="/server-settings" className="underline-offset-4 hover:underline hover:text-zinc-300">
+            Self-Hosted Server Settings
+          </Link>
+        </p>
       </div>
     </AuthLayout>
   );

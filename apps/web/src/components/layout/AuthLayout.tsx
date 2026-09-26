@@ -25,10 +25,7 @@ function byId(id: string) {
   return NODES.find((n) => n.id === id)!;
 }
 
-/** Coded in place of a flat exported image so it always matches the live
- * brand palette and never drifts the way a baked PNG did. Kept
- * deliberately restrained (thin lines, low glow, one pulsing link) --
- * this is brand texture behind a sign-in form, not a dashboard. */
+/** Node Network diagram styled for Obsidian Dark background with glowing data packets. */
 function NodeNetwork() {
   return (
     <div className="relative hidden h-64 w-full max-w-md lg:block">
@@ -50,13 +47,12 @@ function NodeNetwork() {
               x2={to.left}
               y2={to.top}
               stroke="url(#linkGrad)"
-              strokeWidth={1}
+              strokeWidth={1.5}
             />
           );
         })}
-        {/* One quiet pulse of "data movement" along the busiest edge --
-            everything else on this panel is static. */}
-        <circle r={2.5} fill="#A78BFA">
+        {/* Animated glowing data packet traversing network */}
+        <circle r={3} fill="#A78BFA" className="shadow-[0_0_8px_#A78BFA]">
           <animateMotion
             dur="4s"
             repeatCount="indefinite"
@@ -69,55 +65,52 @@ function NodeNetwork() {
       {NODES.map(({ id, label, icon: Icon, top, left }) => (
         <div
           key={id}
-          className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5 backdrop-blur-sm"
+          className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center gap-1.5 rounded-lg border border-white/15 bg-white/[0.06] px-3 py-1.5 shadow-[0_4px_20px_rgba(0,0,0,0.4)] backdrop-blur-md transition-all hover:border-violet-400/40 hover:bg-white/10"
           style={{ top, left }}
         >
-          <Icon className="h-3.5 w-3.5 shrink-0 text-slate-300" />
-          <span className="whitespace-nowrap text-xs font-medium text-slate-200">{label}</span>
+          <Icon className="h-3.5 w-3.5 shrink-0 text-violet-400" />
+          <span className="whitespace-nowrap text-xs font-semibold text-slate-200">{label}</span>
         </div>
       ))}
     </div>
   );
 }
 
-/** Shared shell for Login/Signup/Portal login: the same global
- * MarketingHeader as every marketing page on top (so auth pages never
- * feel like a separate app), a branded panel on tablet+ below it
- * (reduced to just a tagline on md, the full node network joins at lg),
- * and the real form on a soft off-white background everywhere. The hero
- * is decorative only -- the functional form is always our own
- * component, never baked into an image. `active` tells MarketingHeader
- * which auth action this page IS, so Login/Signup can show where the
- * visitor already is. */
+/** Shared Obsidian Dark shell for Login/Signup/Portal login:
+ * Deep #070B14 canvas, glowing node network background with animated data packets,
+ * radial aurora glows, and enterprise dark typography. */
 export function AuthLayout({ children, active }: { children: React.ReactNode; active?: AuthAction }) {
   return (
-    <div className="flex min-h-screen flex-col bg-white">
-      <MarketingHeader active={active} />
+    <div className="flex min-h-screen flex-col bg-[#070B14] text-white">
+      <MarketingHeader active={active} theme="dark" />
 
-      <div className="flex flex-1">
-        <div className="relative hidden shrink-0 overflow-hidden bg-[#081426] md:flex md:w-[38%] lg:w-[45%]">
+      <div className="relative flex flex-1">
+        {/* Radial Aurora Glows */}
+        <div className="pointer-events-none absolute left-1/4 top-1/4 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-600/15 blur-[120px]" />
+        <div className="pointer-events-none absolute right-1/4 bottom-1/4 h-[450px] w-[450px] rounded-full bg-indigo-600/10 blur-[120px]" />
+
+        <div className="relative hidden shrink-0 overflow-hidden border-r border-white/10 bg-[#070B14] md:flex md:w-[40%] lg:w-[45%]">
           <div
-            className="absolute inset-0 opacity-[0.07]"
+            className="absolute inset-0 opacity-[0.08]"
             style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.4) 1px, transparent 1px)", backgroundSize: "32px 32px" }}
           />
-          <div className="pointer-events-none absolute left-1/3 top-1/3 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-500/10 blur-[100px]" />
 
-          <div className="relative flex h-full flex-col justify-center gap-10 p-10 lg:p-12">
+          <div className="relative flex h-full flex-col justify-center gap-10 p-10 lg:p-12 z-10">
             <NodeNetwork />
 
             <div className="max-w-sm space-y-4">
               <div className="space-y-2">
-                <p className="text-xl font-semibold leading-snug text-white">
+                <p className="text-2xl font-bold tracking-tight leading-snug text-white">
                   One connected operating system for your business.
                 </p>
-                <p className="text-sm leading-relaxed text-slate-400">
+                <p className="text-sm leading-relaxed text-zinc-400">
                   Sales, inventory, purchasing, finance, operations and AI -- connected in one intelligent platform.
                 </p>
               </div>
               <div className="flex flex-wrap gap-x-3 gap-y-1.5">
                 {MODULES.map((m, i) => (
-                  <span key={m} className="flex items-center text-xs font-medium text-slate-500">
-                    {i > 0 && <span className="mr-3 text-slate-700">·</span>}
+                  <span key={m} className="flex items-center text-xs font-medium text-zinc-400">
+                    {i > 0 && <span className="mr-3 text-zinc-600">·</span>}
                     {m}
                   </span>
                 ))}
@@ -126,7 +119,7 @@ export function AuthLayout({ children, active }: { children: React.ReactNode; ac
           </div>
         </div>
 
-        <div className="flex flex-1 items-center justify-center bg-[#F8FAFC] p-6">
+        <div className="relative flex flex-1 items-center justify-center bg-[#070B14] p-6 z-10">
           {children}
         </div>
       </div>

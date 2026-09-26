@@ -5,7 +5,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 
 import { AuthLayout } from "@/components/layout/AuthLayout";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -25,10 +24,7 @@ type FormValues = z.infer<typeof schema>;
 
 type ConnectionState = "checking" | "online" | "offline";
 
-/** Real reachability against this device's configured server, not a
- * decorative dot -- reuses the same /health/live check Server Settings
- * uses. Re-checks on the browser's online/offline events so a user who
- * plugs their network back in sees it update without reloading. */
+/** Real reachability against this device's configured server with live pulsing beacon. */
 function useConnectionStatus(): ConnectionState {
   const [state, setState] = useState<ConnectionState>("checking");
 
@@ -52,10 +48,29 @@ function useConnectionStatus(): ConnectionState {
   return state;
 }
 
-function ConnectionBadge({ state }: { state: ConnectionState }) {
-  if (state === "checking") return <Badge variant="secondary">Checking connection...</Badge>;
-  if (state === "online") return <Badge variant="success">Online</Badge>;
-  return <Badge variant="destructive">Can't reach server</Badge>;
+function ConnectionBeacon({ state }: { state: ConnectionState }) {
+  if (state === "checking") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-zinc-400">
+        <span className="h-2 w-2 rounded-full bg-zinc-400 animate-pulse" />
+        Checking node...
+      </span>
+    );
+  }
+  if (state === "online") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-400">
+        <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+        Backend Operational
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 text-xs font-medium text-rose-400">
+      <span className="h-2 w-2 rounded-full bg-rose-500" />
+      Server Unreachable
+    </span>
+  );
 }
 
 export function LoginPage() {
@@ -100,51 +115,80 @@ export function LoginPage() {
   return (
     <AuthLayout active="login">
       <div className="w-full max-w-md">
-        <Card className="rounded-xl border-[#E2E8F0] shadow-sm">
-          <CardHeader>
-            <div className="mb-1 flex justify-end">
-              <ConnectionBadge state={connection} />
+        <Card className="rounded-2xl border border-white/10 bg-white/[0.02] shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-xl text-white">
+          <CardHeader className="space-y-3 pb-6">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-violet-400">Staff Access</span>
+              <ConnectionBeacon state={connection} />
             </div>
-            <CardTitle>{lastTenantSlug ? `Welcome back to ${lastTenantSlug}` : "Sign in to MaterialOS"}</CardTitle>
-            <CardDescription>
-              {lastTenantSlug ? "Sign in to continue to your workspace." : "Enter your workspace, email, and password."}
-            </CardDescription>
+            <div>
+              <CardTitle className="text-2xl font-bold tracking-tight text-white">
+                {lastTenantSlug ? `Welcome back to ${lastTenantSlug}` : "Sign in to MaterialOS"}
+              </CardTitle>
+              <CardDescription className="text-zinc-400 mt-1">
+                {lastTenantSlug ? "Sign in to continue to your workspace." : "Enter your workspace, email, and password."}
+              </CardDescription>
+            </div>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="tenantSlug">Workspace</Label>
-                <Input id="tenantSlug" className="h-11" placeholder="sribalaji" {...register("tenantSlug")} />
-                {errors.tenantSlug && <p className="text-sm text-destructive">{errors.tenantSlug.message}</p>}
+                <Label htmlFor="tenantSlug" className="text-xs font-medium text-zinc-300">Workspace Slug</Label>
+                <Input
+                  id="tenantSlug"
+                  className="h-11 border-white/10 bg-white/5 text-white placeholder:text-zinc-500 focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50"
+                  placeholder="sribalaji"
+                  {...register("tenantSlug")}
+                />
+                {errors.tenantSlug && <p className="text-xs text-rose-400">{errors.tenantSlug.message}</p>}
               </div>
+
               <div className="space-y-1.5">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" className="h-11" placeholder="owner@yourcompany.com" {...register("email")} />
-                {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+                <Label htmlFor="email" className="text-xs font-medium text-zinc-300">Email Address</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  className="h-11 border-white/10 bg-white/5 text-white placeholder:text-zinc-500 focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50"
+                  placeholder="owner@yourcompany.com"
+                  {...register("email")}
+                />
+                {errors.email && <p className="text-xs text-rose-400">{errors.email.message}</p>}
               </div>
+
               <div className="space-y-1.5">
-                <Label htmlFor="password">Password</Label>
-                <PasswordInput id="password" className="h-11" {...register("password")} />
-                {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
+                <Label htmlFor="password" className="text-xs font-medium text-zinc-300">Password</Label>
+                <PasswordInput
+                  id="password"
+                  className="h-11 border-white/10 bg-white/5 text-white placeholder:text-zinc-500 focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50"
+                  {...register("password")}
+                />
+                {errors.password && <p className="text-xs text-rose-400">{errors.password.message}</p>}
               </div>
-              {serverError && <p className="text-sm text-destructive">{serverError}</p>}
-              <Button type="submit" size="lg" className="w-full bg-[#7C3AED] text-white hover:bg-[#6D28D9]" disabled={isSubmitting}>
-                {isSubmitting ? "Signing in..." : "Sign in"}
+
+              {serverError && <p className="text-xs text-rose-400 font-medium">{serverError}</p>}
+
+              <Button
+                type="submit"
+                size="lg"
+                className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 font-semibold text-white hover:from-violet-500 hover:to-indigo-500 shadow-[0_0_25px_rgba(124,58,237,0.4)] transition-all"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Signing in..." : "Sign in to Workspace"}
               </Button>
             </form>
 
-            <div className="my-5 h-px bg-[#E2E8F0]" />
+            <div className="my-6 h-px bg-white/10" />
 
-            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-sm text-muted-foreground">
-              <Link to="/signup" className="font-medium text-[#7C3AED] underline-offset-4 hover:underline">
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-zinc-400">
+              <Link to="/signup" className="font-medium text-violet-400 underline-offset-4 hover:underline hover:text-violet-300">
                 Create a workspace
               </Link>
-              <span className="text-[#E2E8F0]">|</span>
-              <Link to="/portal/login" className="font-medium text-[#7C3AED] underline-offset-4 hover:underline">
+              <span className="text-white/20">|</span>
+              <Link to="/portal/login" className="font-medium text-violet-400 underline-offset-4 hover:underline hover:text-violet-300">
                 Customer portal
               </Link>
-              <span className="text-[#E2E8F0]">|</span>
-              <Link to="/server-settings" className="text-muted-foreground/70 underline-offset-4 hover:underline">
+              <span className="text-white/20">|</span>
+              <Link to="/server-settings" className="text-zinc-400 underline-offset-4 hover:underline hover:text-zinc-200">
                 Server settings
               </Link>
             </div>
