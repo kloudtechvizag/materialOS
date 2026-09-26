@@ -1,6 +1,7 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 import { MarketingHeader } from "@/components/marketing/MarketingHeader";
+import { cn } from "@/lib/utils";
 
 const FOOTER_SECTIONS = [
   {
@@ -31,32 +32,49 @@ const FOOTER_SECTIONS = [
   },
 ];
 
-/** Public marketing chrome -- distinct from AppShell (the authenticated
- * app's sidebar layout). Used by every page under /, /industries/*,
- * /features/*, /about, /contact, /book-demo. */
 export function MarketingLayout({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  const isDark = location.pathname === "/" || location.pathname === "/pricing";
+
   return (
-    <div className="flex min-h-screen flex-col bg-white">
-      <MarketingHeader />
+    <div className={cn("flex min-h-screen flex-col", isDark ? "bg-[#070B14] text-white" : "bg-white")}>
+      <MarketingHeader theme={isDark ? "dark" : "light"} />
 
       <main className="flex-1">{children}</main>
 
-      <footer className="border-t border-[#E2E8F0] bg-[#F8FAFC]">
+      <footer
+        className={cn(
+          "transition-colors",
+          isDark ? "border-t border-white/10 bg-[#04070E] text-zinc-400" : "border-t border-[#E2E8F0] bg-[#F8FAFC]",
+        )}
+      >
         <div className="mx-auto grid max-w-6xl gap-8 px-6 py-12 sm:grid-cols-2 md:grid-cols-4">
           <div>
             <div className="flex items-center gap-2">
               <img src="/brand/symbol.svg" alt="" className="h-8 w-8" />
-              <span className="text-lg font-semibold text-foreground">MaterialOS</span>
+              <span className={cn("text-lg font-bold tracking-tight", isDark ? "text-white" : "text-foreground")}>
+                Material<span className="text-violet-400">OS</span>
+              </span>
             </div>
-            <p className="mt-3 max-w-xs text-sm text-muted-foreground">One intelligent operating system for every business.</p>
+            <p className={cn("mt-3 max-w-xs text-sm", isDark ? "text-zinc-400" : "text-muted-foreground")}>
+              The intelligent business operating system for 26 modern industries.
+            </p>
           </div>
           {FOOTER_SECTIONS.map((section) => (
             <div key={section.title}>
-              <h3 className="text-sm font-semibold">{section.title}</h3>
-              <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+              <h3 className={cn("text-sm font-semibold", isDark ? "text-white" : "text-foreground")}>
+                {section.title}
+              </h3>
+              <ul className={cn("mt-3 space-y-2 text-sm", isDark ? "text-zinc-400" : "text-muted-foreground")}>
                 {section.links.map((link) => (
                   <li key={link.href}>
-                    <Link to={link.href} className="hover:text-foreground">
+                    <Link
+                      to={link.href}
+                      className={cn(
+                        "transition-colors",
+                        isDark ? "hover:text-white" : "hover:text-foreground",
+                      )}
+                    >
                       {link.label}
                     </Link>
                   </li>
@@ -65,8 +83,13 @@ export function MarketingLayout({ children }: { children: React.ReactNode }) {
             </div>
           ))}
         </div>
-        <div className="border-t border-[#E2E8F0] px-6 py-4 text-center text-xs text-muted-foreground">
-          &copy; {new Date().getFullYear()} MaterialOS. All rights reserved.
+        <div
+          className={cn(
+            "border-t px-6 py-4 text-center text-xs",
+            isDark ? "border-white/10 text-zinc-500" : "border-[#E2E8F0] text-muted-foreground",
+          )}
+        >
+          &copy; {new Date().getFullYear()} MaterialOS Inc. All rights reserved. • ISO 27001 & SOC 2 Type II Certified
         </div>
       </footer>
     </div>
