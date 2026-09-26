@@ -1,8 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { ShieldCheck } from "lucide-react";
-import { Link } from "react-router-dom";
 
 import { Skeleton } from "@/components/ui/skeleton";
+import { AttentionPanel, type AttentionItem, NextBestAction } from "@/components/workspace";
 import { apiFetch, ApiError } from "@/lib/api";
 import { formatINRCompact } from "@/lib/format";
 
@@ -24,53 +23,6 @@ interface LowStockItem {
   warehouse_id: string;
 }
 
-interface Row {
-  key: string;
-  label: string;
-  href: string;
-  count: number;
-  detail?: string;
-  isLoading: boolean;
-  isError: boolean;
-  onRetry: () => void;
-}
-
-function QueueRow({ row }: { row: Row }) {
-  if (row.isLoading) return <Skeleton className="h-11 w-full" />;
-  if (row.isError) {
-    return (
-      <div className="flex items-center justify-between rounded-md border border-dashed border-border px-3 py-2 text-sm text-muted-foreground">
-        <span>{row.label} couldn&apos;t load.</span>
-        <button className="text-primary hover:underline" onClick={row.onRetry}>
-          Retry
-        </button>
-      </div>
-    );
-  }
-  if (row.count === 0) return null;
-  return (
-    <Link
-      to={row.href}
-      className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm transition-colors hover:border-primary/40 hover:bg-accent/40"
-    >
-      <span>{row.label}</span>
-      <span className="flex items-center gap-2">
-        {row.detail && <span className="text-xs text-muted-foreground">{row.detail}</span>}
-        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-500/20 dark:text-amber-400">
-          {row.count}
-        </span>
-      </span>
-    </Link>
-  );
-}
-
-/** "Needs Attention" -- deliberately five independent queries, not one
- * aggregate endpoint: a slow or failing category (per the dashboard's
- * own functional requirements) must not block the others, and each
- * reuses a real, already-tested endpoint rather than a bespoke rollup.
- * Only categories relevant to the active profile's enabled_modules are
- * queried at all; a category with zero results renders nothing (see
- * QueueRow) rather than a padded "0" row. */
 export function WorkQueue({ enabledModules }: { enabledModules: string[] | undefined }) {
   const hasSales = enabledModules === undefined || enabledModules.includes("sales");
   const hasCollections = enabledModules === undefined || enabledModules.includes("collections");
@@ -104,67 +56,139 @@ export function WorkQueue({ enabledModules }: { enabledModules: string[] | undef
 
   const isForbidden = (q: { error: unknown }) => q.error instanceof ApiError && q.error.status === 403;
 
-  const rows: Row[] = [
-    {
-      key: "approvals", label: "Pending approvals", href: "/approvals",
-      count: approvals.data?.length ?? 0, isLoading: approvals.isLoading,
-      isError: approvals.isError && !isForbidden(approvals), onRetry: () => approvals.refetch(),
-    },
-    ...(hasSales
-      ? [
-          {
-            key: "quotations", label: "Quotations awaiting response", href: "/quotations?status=sent",
-            count: quotations.data?.length ?? 0, isLoading: quotations.isLoading,
-            isError: quotations.isError && !isForbidden(quotations), onRetry: () => quotations.refetch(),
-          },
-          {
-            key: "orders", label: "Orders awaiting dispatch", href: "/sales-orders?status=reserved",
-            count: orders.data?.length ?? 0, isLoading: orders.isLoading,
-            isError: orders.isError && !isForbidden(orders), onRetry: () => orders.refetch(),
-          },
-        ]
-      : []),
-    ...(hasCollections
-      ? [
-          {
-            key: "overdue", label: "Overdue invoices", href: "/collections",
-            count: overdue.data?.length ?? 0,
-            detail: overdue.data && overdue.data.length > 0
-              ? formatINRCompact(overdue.data.reduce((sum, l) => sum + Number(l.amount_due), 0))
-              : undefined,
-            isLoading: overdue.isLoading, isError: overdue.isError && !isForbidden(overdue), onRetry: () => overdue.refetch(),
-          },
-        ]
-      : []),
-    ...(hasInventory
-      ? [
-          {
-            key: "low-stock", label: "Low-stock items", href: "/items",
-            count: new Set((lowStock.data ?? []).map((i) => i.item_id)).size,
-            isLoading: lowStock.isLoading, isError: lowStock.isError && !isForbidden(lowStock), onRetry: () => lowStock.refetch(),
-          },
-        ]
-      : []),
-  ];
+  const anyLoading =
+    approvals.isLoading ||
+    (hasSales && (quotations.isLoading || orders.isLoading)) ||
+    (hasCollections && overdue.isLoading) ||
+    (hasInventory && lowStock.isLoading);
 
-  const anyLoading = rows.some((r) => r.isLoading);
-  const allClear = !anyLoading && rows.every((r) => r.isError || r.count === 0);
+  if (anyLoading) {
+    return <Skeleton className="h-32 w-full rounded-lg" />;
+  }
+
+  const attentionItems: AttentionItem[] = [];
+
+  const approvalCount = (!isForbidden(approvals) && approvals.data?.length) || 0;
+  if (approvalCount > 0) {
+    attentionItems.push({
+      id: "approvals",
+      title: "Pending Commercial Approvals",
+      count: approvalCount,
+      description: "Credit-limit overrides or blocked orders awaiting managerial sign-off.",
+      severity: "critical",
+      actionLabel: "Review Approvals",
+      actionHref: "/approvals",
+    });
+  }
+
+  const overdueCount = (hasCollections && !isForbidden(overdue) && overdue.data?.length) || 0;
+  if (overdueCount > 0) {
+    const overdueTotal = overdue.data!.reduce((sum, l) => sum + Number(l.amount_due || 0), 0);
+    attentionItems.push({
+      id: "overdue",
+      title: "Overdue Invoices",
+      count: overdueCount,
+      description: `${formatINRCompact(overdueTotal)} outstanding beyond credit terms.`,
+      severity: "critical",
+      actionLabel: "View Collections",
+      actionHref: "/collections",
+    });
+  }
+
+  const ordersCount = (hasSales && !isForbidden(orders) && orders.data?.length) || 0;
+  if (ordersCount > 0) {
+    attentionItems.push({
+      id: "orders",
+      title: "Orders Awaiting Dispatch",
+      count: ordersCount,
+      description: "Inventory is allocated and ready for delivery challan generation.",
+      severity: "warning",
+      actionLabel: "Open Dispatch",
+      actionHref: "/sales-orders?status=reserved",
+    });
+  }
+
+  const lowStockCount =
+    hasInventory && !isForbidden(lowStock) && lowStock.data
+      ? new Set(lowStock.data.map((i) => i.item_id)).size
+      : 0;
+  if (lowStockCount > 0) {
+    attentionItems.push({
+      id: "low-stock",
+      title: "Items Below Reorder Level",
+      count: lowStockCount,
+      description: "Stock is nearing safety thresholds. Generate purchase orders to replenish.",
+      severity: "warning",
+      actionLabel: "Review Inventory",
+      actionHref: "/items",
+    });
+  }
+
+  const quotesCount = (hasSales && !isForbidden(quotations) && quotations.data?.length) || 0;
+  if (quotesCount > 0) {
+    attentionItems.push({
+      id: "quotations",
+      title: "Quotations Awaiting Response",
+      count: quotesCount,
+      description: "Open quotes sent to prospective or existing buyers.",
+      severity: "info",
+      actionLabel: "Follow Up",
+      actionHref: "/quotations?status=sent",
+    });
+  }
+
+  // Next Best Action determination based on business urgency
+  let nextAction: { title: string; recommendation: string; reason: string; actionLabel: string; actionHref: string } | null = null;
+  if (approvalCount > 0) {
+    nextAction = {
+      title: "Recommended Action: Commercial Approval",
+      recommendation: `Resolve ${approvalCount} pending credit-limit override${approvalCount > 1 ? "s" : ""}`,
+      reason: "Blocked orders cannot proceed to warehouse reservation or delivery without approval.",
+      actionLabel: "Review Approvals",
+      actionHref: "/approvals",
+    };
+  } else if (overdueCount > 0) {
+    nextAction = {
+      title: "Recommended Action: Cash Collection",
+      recommendation: `Follow up on ${overdueCount} high-priority overdue customer invoice${overdueCount > 1 ? "s" : ""}`,
+      reason: "Accelerating collections improves Days Sales Outstanding (DSO) and working capital.",
+      actionLabel: "Open Collections",
+      actionHref: "/collections",
+    };
+  } else if (ordersCount > 0) {
+    nextAction = {
+      title: "Recommended Action: Order Dispatch",
+      recommendation: `Dispatch ${ordersCount} order${ordersCount > 1 ? "s" : ""} ready for shipment`,
+      reason: "Reserved items are prepared for staging, gate pass, and delivery challan issuance.",
+      actionLabel: "Generate Challan",
+      actionHref: "/dispatch-board",
+    };
+  } else if (lowStockCount > 0) {
+    nextAction = {
+      title: "Recommended Action: Procurement Replenishment",
+      recommendation: `Raise purchase orders for ${lowStockCount} low-stock catalog item${lowStockCount > 1 ? "s" : ""}`,
+      reason: "Stock levels have dropped below configured safety points.",
+      actionLabel: "Create Purchase Order",
+      actionHref: "/purchase-orders",
+    };
+  }
 
   return (
-    <div className="rounded-lg border border-border p-4">
-      <p className="mb-3 text-sm font-semibold">Needs attention</p>
-      {allClear ? (
-        <div className="flex items-center gap-2 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-400">
-          <ShieldCheck className="h-4 w-4" />
-          <span>Nothing needs attention right now.</span>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {rows.map((row) => (
-            <QueueRow key={row.key} row={row} />
-          ))}
-        </div>
+    <div className="space-y-4">
+      {nextAction && (
+        <NextBestAction
+          title={nextAction.title}
+          recommendation={nextAction.recommendation}
+          reason={nextAction.reason}
+          actionLabel={nextAction.actionLabel}
+          actionHref={nextAction.actionHref}
+        />
       )}
+      <AttentionPanel
+        title="Action Center & Exceptions"
+        items={attentionItems}
+        allClearMessage="All systems operational. No overdue invoices, pending approvals, or critical stock exceptions."
+      />
     </div>
   );
 }

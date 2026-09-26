@@ -62,3 +62,7 @@ export function DetailField({ label, value }: { label: string; value: React.Reac
     </div>
   );
 }
+
+export function DrawerFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return <div className={cn("mt-4 flex items-center justify-end gap-2 border-t border-border pt-4", className)} {...props} />;
+}
