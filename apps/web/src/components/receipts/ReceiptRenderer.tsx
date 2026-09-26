@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 
+import { useAuthenticatedImage } from "@/lib/useAuthenticatedImage";
 import { DOCUMENT_TYPE_LABELS, type ReceiptData } from "@/lib/receipts";
 
 interface ReceiptRendererProps {
@@ -34,6 +35,7 @@ export function ReceiptRenderer({ data, paperWidthMm }: ReceiptRendererProps) {
   const settings = data.settings;
   const showGst = settings.show_gst_breakdown;
   const hasGst = Number(data.cgst_amount) > 0 || Number(data.sgst_amount) > 0 || Number(data.igst_amount) > 0;
+  const companyLogoUrl = useAuthenticatedImage(data.company_logo_url ?? null, data.company_logo_url);
 
   useEffect(() => {
     if (!settings.show_qr_code || !settings.upi_id) {
@@ -57,7 +59,11 @@ export function ReceiptRenderer({ data, paperWidthMm }: ReceiptRendererProps) {
     >
       {settings.show_logo && (
         <div className="flex justify-center pb-1">
-          <img src="/brand/symbol.svg" alt="" style={{ height: "28px", width: "28px", filter: "grayscale(1) contrast(1.2)" }} />
+          <img
+            src={companyLogoUrl || data.company_logo_url || "/brand/symbol.svg"}
+            alt={data.company_name}
+            style={{ maxHeight: "32px", maxWidth: "120px", objectFit: "contain", filter: "grayscale(1) contrast(1.2)" }}
+          />
         </div>
       )}
 

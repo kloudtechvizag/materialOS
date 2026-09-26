@@ -42,6 +42,7 @@ export interface ReceiptData {
   company_phone: string | null;
   company_email: string | null;
   company_address: string | null;
+  company_logo_url?: string | null;
 
   branch_name: string;
   branch_gstin: string | null;

@@ -105,6 +105,7 @@ def _base(
         document_date=occurred_at.date().isoformat(), document_time=occurred_at.strftime("%H:%M"),
         company_name=company.name, company_legal_name=company.legal_name, company_gstin=company.gstin,
         company_phone=company.phone, company_email=company.email, company_address=_company_address(company),
+        company_logo_url="/api/v1/tenant/branding/logo" if company.logo_path else None,
         branch_name=branch.name, branch_gstin=branch.gstin,
         customer_id=customer.id if customer else None,
         customer_name=customer.name if customer else None,

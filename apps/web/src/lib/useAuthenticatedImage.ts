@@ -28,7 +28,8 @@ export function useAuthenticatedImage(path: string | null, cacheKey?: string | n
     let localUrl: string | null = null;
     const token = useAuthStore.getState().accessToken;
 
-    fetch(`${getApiBase()}${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+    const cleanPath = path.startsWith("/api/v1") ? path.slice(7) : path;
+    fetch(`${getApiBase()}${cleanPath}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
       .then((res) => (res.ok ? res.blob() : null))
       .then((blob) => {
         if (cancelled || !blob) return;

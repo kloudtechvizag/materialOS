@@ -13,6 +13,7 @@ import { SidebarFooter } from "@/components/layout/sidebar/SidebarFooter";
 import { SidebarHeader } from "@/components/layout/sidebar/SidebarHeader";
 import { SidebarNav } from "@/components/layout/sidebar/SidebarNav";
 import { apiFetch } from "@/lib/api";
+import { useAuthenticatedImage } from "@/lib/useAuthenticatedImage";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth";
 import { useCommandPaletteStore } from "@/store/commandPalette";
@@ -26,6 +27,13 @@ export function AppShell({ children }: { children?: React.ReactNode } = {}) {
   const toggleCollapsed = useSidebarStore((s) => s.toggleCollapsed);
   const setMobileOpen = useSidebarStore((s) => s.setMobileOpen);
   const openCommandPalette = useCommandPaletteStore((s) => s.setOpen);
+
+  const { data: tenantSettings } = useQuery({
+    queryKey: ["tenant-settings"],
+    queryFn: () => apiFetch<{ name: string; slug: string; logo_url: string | null }>("/tenant/settings"),
+    staleTime: 5 * 60 * 1000,
+  });
+  const tenantLogoUrl = useAuthenticatedImage(tenantSettings?.logo_url ?? null, tenantSettings?.logo_url);
 
   // Only a token minted by create_impersonation_token (ADR-020) carries
   // this claim -- a normal login's own token never does, so this banner
@@ -78,7 +86,21 @@ export function AppShell({ children }: { children?: React.ReactNode } = {}) {
               >
                 <Menu className="h-5 w-5" aria-hidden="true" />
               </button>
-              <span className="text-sm text-muted-foreground">{tenantSlug}</span>
+              <div className="flex items-center gap-2 min-w-0">
+                {tenantLogoUrl && (
+                  <img
+                    src={tenantLogoUrl}
+                    alt={tenantSettings?.name ?? "Brand logo"}
+                    className="h-6 w-6 rounded object-contain border border-border/40 p-0.5 bg-card shrink-0"
+                  />
+                )}
+                <span className="truncate text-sm font-medium text-foreground">
+                  {tenantSettings?.name || tenantSlug}
+                </span>
+                {tenantSettings?.name && tenantSlug && (
+                  <span className="hidden text-xs text-muted-foreground lg:inline">({tenantSlug})</span>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <button

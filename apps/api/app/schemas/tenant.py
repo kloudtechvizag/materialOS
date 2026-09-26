@@ -38,9 +38,34 @@ class CompanyOut(BaseModel):
     e_invoice_enabled: bool
     e_way_bill_enabled: bool
     industry_profile: IndustryProfileOut | None
+    logo_url: str | None = None
 
     class Config:
         from_attributes = True
+
+
+class TenantSettingsOut(BaseModel):
+    tenant_id: uuid.UUID
+    name: str
+    slug: str
+    logo_url: str | None = None
+    company_id: uuid.UUID | None = None
+    company_name: str | None = None
+    gstin: str | None = None
+
+    class Config:
+        from_attributes = True
+
+
+class LogoUploadResponse(BaseModel):
+    logo_url: str
+    file_name: str
+    size_bytes: int
+
+
+class LogoDeleteResponse(BaseModel):
+    success: bool
+    logo_url: str | None = None
 
 
 class CompanyComplianceUpdate(BaseModel):

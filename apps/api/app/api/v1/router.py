@@ -64,6 +64,7 @@ from app.api.v1 import (
     tally_export,
     timetable,
     transport,
+    tenant,
     tenants,
     users,
     warehouse_ops,
@@ -138,3 +139,4 @@ api_router.include_router(search.router)
 api_router.include_router(serial.router)
 api_router.include_router(webhooks.router)
 api_router.include_router(support.router)
+api_router.include_router(tenant.router)

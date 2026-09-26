@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ErrorState } from "@/components/ui/error-state";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BrandLogoUploadCard } from "@/components/settings/BrandLogoUploadCard";
 import { apiFetch, ApiError } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 
@@ -17,6 +18,7 @@ interface Company {
   state: string | null;
   e_invoice_enabled: boolean;
   e_way_bill_enabled: boolean;
+  logo_url?: string | null;
 }
 
 function todayISO() {
@@ -75,6 +77,8 @@ export function CompanySettingsPage() {
         <h1 className="text-2xl font-semibold">Company settings</h1>
         <p className="text-sm text-muted-foreground">{company.name} · {company.gstin ?? "No GSTIN on file"}</p>
       </div>
+
+      <BrandLogoUploadCard logoUrl={company.logo_url} companyName={company.name} />
 
       <Card>
         <CardHeader><CardTitle className="text-base">GST compliance</CardTitle></CardHeader>
