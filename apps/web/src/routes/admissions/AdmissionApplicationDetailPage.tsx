@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
-import { Paperclip, Trash2 } from "lucide-react";
+import { MessageCircle, Paperclip, Trash2 } from "lucide-react";
+
+import { WhatsAppSendModal } from "@/components/communication/WhatsAppSendModal";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -49,6 +51,7 @@ export function AdmissionApplicationDetailPage() {
   const [convertForm, setConvertForm] = useState({ school_class_id: "", section_id: "", roll_number: "" });
   const [documentType, setDocumentType] = useState("");
   const [documentFile, setDocumentFile] = useState<File | null>(null);
+  const [waOpen, setWaOpen] = useState(false);
 
   const { data: application, isLoading, error, refetch } = useQuery({
     queryKey: ["admission-application", applicationId],
@@ -123,7 +126,18 @@ export function AdmissionApplicationDetailPage() {
           <h1 className="text-2xl font-semibold">{application.first_name} {application.last_name}</h1>
           <p className="text-sm text-muted-foreground">Applied {application.application_date}{application.desired_grade ? ` · ${application.desired_grade}` : ""}</p>
         </div>
-        <Badge variant={application.status === "admitted" ? "success" : isTerminal ? "destructive" : "outline"}>{STATUS_LABEL[application.status]}</Badge>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setWaOpen(true)}
+            className="gap-1.5 border-emerald-600/40 text-emerald-400 hover:bg-emerald-600/10"
+          >
+            <MessageCircle className="h-4 w-4" />
+            Notify Guardian
+          </Button>
+          <Badge variant={application.status === "admitted" ? "success" : isTerminal ? "destructive" : "outline"}>{STATUS_LABEL[application.status]}</Badge>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -223,6 +237,21 @@ export function AdmissionApplicationDetailPage() {
           </CardContent>
         </Card>
       )}
+
+      <WhatsAppSendModal
+        open={waOpen}
+        onOpenChange={setWaOpen}
+        recipientPhone={application.guardian_phone ?? ""}
+        recipientName={application.guardian_name}
+        defaultTemplateSlug="admission_status"
+        defaultVariables={{
+          student_name: `${application.first_name} ${application.last_name}`,
+          status: STATUS_LABEL[application.status] ?? application.status,
+          application_date: application.application_date,
+        }}
+        entityType="admission_application"
+        entityId={application.id}
+      />
     </div>
   );
 }

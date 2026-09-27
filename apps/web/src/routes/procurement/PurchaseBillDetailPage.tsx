@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
+import { MessageCircle } from "lucide-react";
 
+import { WhatsAppSendModal } from "@/components/communication/WhatsAppSendModal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +22,7 @@ export function PurchaseBillDetailPage() {
   const queryClient = useQueryClient();
   const [amount, setAmount] = useState("");
   const [mode, setMode] = useState("bank");
+  const [waOpen, setWaOpen] = useState(false);
 
   const { data: bill, isLoading, error, refetch } = useQuery({
     queryKey: ["purchase-bill", billId],
@@ -44,9 +47,20 @@ export function PurchaseBillDetailPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">{bill.number}</h1>
-        <p className="text-sm text-muted-foreground">{bill.bill_date}</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold">{bill.number}</h1>
+          <p className="text-sm text-muted-foreground">{bill.bill_date}</p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setWaOpen(true)}
+          className="gap-1.5 border-emerald-600/40 text-emerald-400 hover:bg-emerald-600/10"
+        >
+          <MessageCircle className="h-4 w-4" />
+          Notify Supplier via WhatsApp
+        </Button>
       </div>
 
       <Card>
@@ -95,6 +109,20 @@ export function PurchaseBillDetailPage() {
           </Button>
         </CardContent>
       </Card>
+
+      <WhatsAppSendModal
+        open={waOpen}
+        onOpenChange={setWaOpen}
+        recipientPhone=""
+        defaultTemplateSlug="payment_reminder"
+        defaultVariables={{
+          bill_number: bill.number,
+          amount: formatINR(bill.total),
+          bill_date: bill.bill_date,
+        }}
+        entityType="purchase_bill"
+        entityId={bill.id}
+      />
     </div>
   );
 }

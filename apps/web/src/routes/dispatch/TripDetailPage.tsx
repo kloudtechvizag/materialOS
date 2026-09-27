@@ -1,6 +1,9 @@
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
+import { MessageCircle } from "lucide-react";
 
+import { WhatsAppSendModal } from "@/components/communication/WhatsAppSendModal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +17,7 @@ interface Trip { id: string; status: string; trip_date: string; deliveries: Deli
 export function TripDetailPage() {
   const { tripId } = useParams<{ tripId: string }>();
   const queryClient = useQueryClient();
+  const [waOpen, setWaOpen] = useState(false);
 
   const { data: trip, isLoading, error, refetch } = useQuery({
     queryKey: ["trip", tripId],
@@ -49,9 +53,20 @@ export function TripDetailPage() {
           <h1 className="text-2xl font-semibold">Trip -- {trip.trip_date}</h1>
           <Badge variant={trip.status === "completed" ? "success" : "secondary"} className="mt-1">{trip.status}</Badge>
         </div>
-        {trip.status === "planned" && trip.deliveries.length > 0 && (
-          <Button onClick={() => start.mutate()} disabled={start.isPending}>{start.isPending ? "Starting..." : "Start trip"}</Button>
-        )}
+        <div className="flex items-center gap-2">
+          {trip.status === "planned" && trip.deliveries.length > 0 && (
+            <Button onClick={() => start.mutate()} disabled={start.isPending}>{start.isPending ? "Starting..." : "Start trip"}</Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setWaOpen(true)}
+            className="gap-1.5 border-emerald-600/40 text-emerald-400 hover:bg-emerald-600/10"
+          >
+            <MessageCircle className="h-4 w-4" />
+            Notify Customers
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -90,6 +105,20 @@ export function TripDetailPage() {
           </CardContent>
         </Card>
       )}
+
+      <WhatsAppSendModal
+        open={waOpen}
+        onOpenChange={setWaOpen}
+        recipientPhone=""
+        defaultTemplateSlug="dispatch_alert"
+        defaultVariables={{
+          trip_date: trip.trip_date,
+          delivery_count: String(trip.deliveries.length),
+          status: trip.status,
+        }}
+        entityType="trip"
+        entityId={trip.id}
+      />
     </div>
   );
 }

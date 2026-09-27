@@ -1,6 +1,9 @@
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
+import { MessageCircle } from "lucide-react";
 
+import { WhatsAppSendModal } from "@/components/communication/WhatsAppSendModal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,6 +41,7 @@ export function SalesOrderDetailPage() {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [waOpen, setWaOpen] = useState(false);
 
   const { data: order, isLoading, error, refetch } = useQuery({
     queryKey: ["sales-order", orderId],
@@ -68,6 +72,15 @@ export function SalesOrderDetailPage() {
         <div className="flex gap-2">
           {order.status === "reserved" && <Button onClick={() => dispatch.mutate()} disabled={dispatch.isPending}>{dispatch.isPending ? "Dispatching..." : "Dispatch"}</Button>}
           {order.status === "dispatched" && <Button onClick={() => invoice.mutate()} disabled={invoice.isPending}>{invoice.isPending ? "Invoicing..." : "Create invoice"}</Button>}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setWaOpen(true)}
+            className="gap-1.5 border-emerald-600/40 text-emerald-400 hover:bg-emerald-600/10"
+          >
+            <MessageCircle className="h-4 w-4" />
+            Share via WhatsApp
+          </Button>
         </div>
       </div>
 
@@ -95,6 +108,20 @@ export function SalesOrderDetailPage() {
       </Card>
 
       <div className="flex justify-end text-lg font-semibold">Total: {formatINR(order.total)}</div>
+
+      <WhatsAppSendModal
+        open={waOpen}
+        onOpenChange={setWaOpen}
+        recipientPhone=""
+        defaultTemplateSlug="order_confirmation"
+        defaultVariables={{
+          order_number: order.number,
+          amount: formatINR(order.total),
+          status: order.status,
+        }}
+        entityType="sales_order"
+        entityId={order.id}
+      />
     </div>
   );
 }

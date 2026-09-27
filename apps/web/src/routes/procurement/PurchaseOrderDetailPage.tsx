@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
+import { MessageCircle } from "lucide-react";
 
+import { WhatsAppSendModal } from "@/components/communication/WhatsAppSendModal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +22,7 @@ export function PurchaseOrderDetailPage() {
   const queryClient = useQueryClient();
   const [receiveQty, setReceiveQty] = useState<Record<string, string>>({});
   const [qcStatus, setQcStatus] = useState<Record<string, string>>({});
+  const [waOpen, setWaOpen] = useState(false);
 
   const { data: order, isLoading, error, refetch } = useQuery({
     queryKey: ["purchase-order", orderId],
@@ -61,7 +64,18 @@ export function PurchaseOrderDetailPage() {
           <h1 className="text-2xl font-semibold">{order.number}</h1>
           <Badge variant={order.status === "received" ? "success" : "secondary"} className="mt-1">{order.status}</Badge>
         </div>
-        {order.status === "draft" && <Button onClick={() => approve.mutate()} disabled={approve.isPending}>Approve</Button>}
+        <div className="flex items-center gap-2">
+          {order.status === "draft" && <Button onClick={() => approve.mutate()} disabled={approve.isPending}>Approve</Button>}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setWaOpen(true)}
+            className="gap-1.5 border-emerald-600/40 text-emerald-400 hover:bg-emerald-600/10"
+          >
+            <MessageCircle className="h-4 w-4" />
+            Send PO to Vendor
+          </Button>
+        </div>
       </div>
 
       {approve.isError && <ErrorState error={approve.error} />}
@@ -112,6 +126,20 @@ export function PurchaseOrderDetailPage() {
           </CardContent>
         </Card>
       )}
+
+      <WhatsAppSendModal
+        open={waOpen}
+        onOpenChange={setWaOpen}
+        recipientPhone=""
+        defaultTemplateSlug="order_confirmation"
+        defaultVariables={{
+          order_number: order.number,
+          amount: formatINR(order.subtotal),
+          status: order.status,
+        }}
+        entityType="purchase_order"
+        entityId={order.id}
+      />
     </div>
   );
 }
