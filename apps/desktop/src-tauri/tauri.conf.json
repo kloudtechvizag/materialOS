@@ -14,10 +14,12 @@
       {
         "label": "main",
         "title": "MaterialOS",
-        "width": 1360,
-        "height": 860,
+        "width": 1440,
+        "height": 900,
         "minWidth": 1024,
-        "minHeight": 640
+        "minHeight": 640,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true
       }
     ],
     "security": {

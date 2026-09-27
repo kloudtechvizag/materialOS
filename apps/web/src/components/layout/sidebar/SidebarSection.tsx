@@ -38,10 +38,14 @@ export function SidebarSection({
         onClick={onToggle}
         aria-expanded={expanded}
         aria-controls={panelId}
-        className="flex h-8 w-full items-center justify-between rounded-md px-3 text-xs font-semibold uppercase tracking-wide text-brand-navy-muted transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/40"
+        className="group flex h-7 w-full items-center justify-between rounded-md px-2 text-[10.5px] font-bold uppercase tracking-wider text-slate-400/90 transition-colors hover:bg-white/[0.04] hover:text-slate-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/40"
       >
-        <span>{section.label}</span>
-        {expanded ? <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" /> : <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />}
+        <span className="truncate">{section.label}</span>
+        {expanded ? (
+          <ChevronDown className="h-3 w-3 text-slate-500 transition-transform group-hover:text-slate-300" aria-hidden="true" />
+        ) : (
+          <ChevronRight className="h-3 w-3 text-slate-500 transition-transform group-hover:text-slate-300" aria-hidden="true" />
+        )}
       </button>
       <div
         id={panelId}
