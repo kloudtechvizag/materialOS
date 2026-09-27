@@ -66,11 +66,25 @@ jobs:
         id: create
         with:
           script: |
+            const tagName = context.ref.replace('refs/tags/', '');
+            try {
+              const existing = await github.rest.repos.getReleaseByTag({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag: tagName,
+              });
+              if (existing && existing.data && existing.data.id) {
+                return existing.data.id;
+              }
+            } catch (err) {
+              // Release does not exist yet, proceed with creation
+            }
+
             const { data } = await github.rest.repos.createRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              tag_name: context.ref.replace('refs/tags/', ''),
-              name: `MaterialOS Desktop ${context.ref.replace('refs/tags/', '')}`,
+              tag_name: tagName,
+              name: `MaterialOS Desktop ${tagName}`,
               draft: true,
               prerelease: false,
             });
