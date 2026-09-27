@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { z } from "zod";
 import { Building2, Mail, Lock, Sparkles, ArrowRight, ShieldAlert } from "lucide-react";
 
@@ -74,13 +74,29 @@ function ConnectionBeacon({ state }: { state: ConnectionState }) {
 }
 
 const DEMO_ACCOUNTS = [
-  { label: "Sri Balaji Materials", slug: "sribalaji-demo", email: "owner@sribalaji-demo.example.com", badge: "Enterprise" },
-  { label: "Fashion Hub Retail", slug: "fashionhub-demo", email: "owner@fashionhub-demo.example.com", badge: "POS" },
-  { label: "ABC Medicals", slug: "abcmedicals-demo", email: "owner@abcmedicals-demo.example.com", badge: "FEFO" },
+  {
+    label: "Building Materials",
+    slug: "sribalaji-demo",
+    email: "owner@sribalaji-demo.example.com",
+    badge: "Dealer ERP",
+  },
+  {
+    label: "Construction / Contractors",
+    slug: "contractor-demo",
+    email: "owner@contractor-demo.example.com",
+    badge: "Contractors ERP",
+  },
+  {
+    label: "School Management",
+    slug: "greenwood-demo",
+    email: "owner@greenwood-demo.example.com",
+    badge: "School ERP",
+  },
 ];
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const setSession = useAuthStore((s) => s.setSession);
   const lastTenantSlug = useAuthStore((s) => s.lastTenantSlug);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -105,6 +121,22 @@ export function LoginPage() {
     setValue("password", "demo-password-123", { shouldValidate: true });
     setServerError(null);
   }
+
+  useEffect(() => {
+    const demoParam = searchParams.get("demo");
+    if (!demoParam) return;
+    const lower = demoParam.toLowerCase();
+    const matched = DEMO_ACCOUNTS.find(
+      (acc) =>
+        acc.slug === demoParam ||
+        ((lower.includes("contractor") || lower.includes("construction") || lower.includes("civil")) && acc.slug === "contractor-demo") ||
+        ((lower.includes("material") || lower.includes("balaji") || lower.includes("dealer")) && acc.slug === "sribalaji-demo") ||
+        ((lower.includes("school") || lower.includes("greenwood") || lower.includes("education")) && acc.slug === "greenwood-demo")
+    );
+    if (matched) {
+      loadDemo(matched);
+    }
+  }, [searchParams]);
 
   async function onSubmit(values: FormValues) {
     setServerError(null);

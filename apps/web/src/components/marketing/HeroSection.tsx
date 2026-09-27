@@ -64,6 +64,50 @@ export function HeroSection({ onExploreDemo }: { onExploreDemo?: () => void }) {
           </Button>
         </div>
 
+        {/* 1-Click Demo Evaluation Strip */}
+        <div className="mt-8 flex flex-col items-center justify-center gap-2.5">
+          <div className="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-950/40 px-3.5 py-1 text-xs font-semibold text-violet-300 shadow-sm backdrop-blur-md">
+            <Sparkles className="h-3.5 w-3.5 text-violet-400" />
+            <span>1-Click Demo Evaluation</span>
+            <span className="text-[10px] text-zinc-400 font-mono pl-1 border-l border-white/10">Password: demo-password-123</span>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-2.5">
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 rounded-lg border-white/15 bg-white/5 px-3 text-xs font-medium text-zinc-200 hover:border-violet-500/50 hover:bg-violet-500/10 hover:text-white transition-all shadow-sm"
+              asChild
+            >
+              <Link to="/login?demo=sribalaji-demo">
+                <span>Building Materials</span>
+                <span className="ml-1.5 rounded bg-black/40 px-1.5 py-0.5 text-[9px] font-mono text-violet-300">Dealer ERP</span>
+              </Link>
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 rounded-lg border-white/15 bg-white/5 px-3 text-xs font-medium text-zinc-200 hover:border-violet-500/50 hover:bg-violet-500/10 hover:text-white transition-all shadow-sm"
+              asChild
+            >
+              <Link to="/login?demo=contractor-demo">
+                <span>Construction / Contractors</span>
+                <span className="ml-1.5 rounded bg-black/40 px-1.5 py-0.5 text-[9px] font-mono text-violet-300">Contractors ERP</span>
+              </Link>
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 rounded-lg border-white/15 bg-white/5 px-3 text-xs font-medium text-zinc-200 hover:border-violet-500/50 hover:bg-violet-500/10 hover:text-white transition-all shadow-sm"
+              asChild
+            >
+              <Link to="/login?demo=greenwood-demo">
+                <span>School Management</span>
+                <span className="ml-1.5 rounded bg-black/40 px-1.5 py-0.5 text-[9px] font-mono text-violet-300">School ERP</span>
+              </Link>
+            </Button>
+          </div>
+        </div>
+
         {/* Trust Proof Strip */}
         <div className="mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-xs text-zinc-400">
           <div className="flex items-center gap-2">

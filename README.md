@@ -333,6 +333,10 @@ scripts/
                     module in the vertical shows real data on first
                     login, via the same real service calls the live
                     app uses (no HTTP layer, no backdated history)
+  seed_contractor.py Civil & Building Contractors demo tenant (Apex Civil
+                    Contractors, construction_contractor profile): active
+                    projects, multi-site destinations, client employers,
+                    material suppliers, and BOQ items with site opening stock
 ```
 
 Money is `NUMERIC(18,4)` + Python `Decimal` end to end, never a float.
@@ -356,7 +360,7 @@ docker-compose -p materialos up -d api worker beat web
 executes jobs handed to it but never triggers the schedule on its own.
 
 Then either sign up a fresh workspace at http://localhost:5173/signup,
-or load the demo tenant:
+or load the demo tenants:
 
 ```bash
 cd apps/api
@@ -364,12 +368,9 @@ DATABASE_URL="postgresql+psycopg://materialos_app:materialos_app_dev_password@lo
   python ../../scripts/seed.py
 ```
 
-Demo login: `owner@sribalaji-demo.example.com` / `demo-password-123`
-(workspace: `sribalaji-demo`). The same pattern with `seed_retail.py`
-(`owner@fashionhub-demo.example.com`, workspace `fashionhub-demo`) and
-`seed_pharmacy.py` (`owner@abcmedicals-demo.example.com`, workspace
-`abcmedicals-demo`) demonstrates the Industry Profile Engine (ADR-010)
-rendering a genuinely different sidebar/dashboard/item form per profile.
+- **Building Materials (Dealer ERP)**: `owner@sribalaji-demo.example.com` / `demo-password-123` (workspace: `sribalaji-demo`)
+- **Building Contractors & Civil Construction ERP**: `owner@contractor-demo.example.com` / `demo-password-123` (workspace: `contractor-demo`, seeded by `seed_contractor.py`)
+- **School Management (Education ERP)**: `owner@greenwood-demo.example.com` / `demo-password-123` (workspace: `greenwood-demo`, seeded by `seed_school.py`)
 
 **School Management (Education) demo**, seeded by `seed_school.py`:
 
