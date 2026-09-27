@@ -2,6 +2,11 @@ import { isTauri } from "@tauri-apps/api/core";
 
 export function isDesktopApp(): boolean {
   try {
+    if (typeof window !== "undefined") {
+      if (window.location.search.includes("desktop=true") || window.location.pathname.startsWith("/desktop")) {
+        return true;
+      }
+    }
     return isTauri();
   } catch {
     return false;

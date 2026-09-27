@@ -20,15 +20,36 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { isDesktopApp } from "@/lib/desktopWindow";
+import { DesktopWindowControls } from "@/components/layout/DesktopWindowControls";
 import { MarketingHeader } from "@/components/marketing/MarketingHeader";
 
 type LegalModalType = "privacy" | "terms" | "security" | null;
 
 export function MarketingLayout({ children }: { children: React.ReactNode }) {
   const [legalModal, setLegalModal] = useState<LegalModalType>(null);
+  const isTauri = isDesktopApp();
 
   return (
     <div className="flex min-h-screen flex-col bg-[#070B14] text-white selection:bg-violet-500/30 selection:text-violet-200">
+      {isTauri && (
+        <div
+          data-tauri-drag-region
+          className="flex h-9 shrink-0 items-center justify-between border-b border-white/10 bg-[#04070E] px-3 select-none text-xs text-zinc-400 z-50"
+        >
+          <div className="flex items-center gap-2 no-drag">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1.5 font-medium text-violet-400 hover:text-violet-300 transition-colors"
+            >
+              <span>← Return to Workstation Launchpad</span>
+            </Link>
+          </div>
+          <div className="no-drag">
+            <DesktopWindowControls />
+          </div>
+        </div>
+      )}
       <MarketingHeader theme="dark" />
 
       <main className="flex-1">{children}</main>

@@ -173,10 +173,14 @@ function RequirePlatformAuth({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-/** "/" is shared between the public marketing homepage and the
- * authenticated Dashboard -- a logged-in visitor sees exactly what
- * they see today (Dashboard, unchanged); a logged-out visitor sees the
- * marketing homepage instead of being redirected to /login. */
+import { isDesktopApp } from "@/lib/desktopWindow";
+import { DesktopLaunchpadPage } from "@/routes/desktop/DesktopLaunchpadPage";
+
+/** "/" is shared between the public marketing homepage, the
+ * authenticated Dashboard, and the native Desktop Workstation Launchpad.
+ * - Authenticated users see Dashboard.
+ * - Desktop client (Tauri) visitors see DesktopLaunchpadPage.
+ * - Web visitors see the public marketing homepage. */
 function RootRoute() {
   const accessToken = useAuthStore((s) => s.accessToken);
   if (accessToken) {
@@ -185,6 +189,9 @@ function RootRoute() {
         <DashboardPage />
       </AppShell>
     );
+  }
+  if (isDesktopApp()) {
+    return <DesktopLaunchpadPage />;
   }
   return (
     <MarketingLayout>
@@ -196,7 +203,8 @@ function RootRoute() {
 export default function App() {
   return (
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
+      <Route path="/desktop" element={<DesktopLaunchpadPage />} />
+      <Route path="/login" element={isDesktopApp() ? <DesktopLaunchpadPage /> : <LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/impersonate" element={<ImpersonationEntryPage />} />
       <Route path="/server-settings" element={<ServerSettingsPage />} />
