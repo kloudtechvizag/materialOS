@@ -35,6 +35,7 @@ import {
   ListChecks,
   MapPin,
   Megaphone,
+  MessageSquare,
   Microscope,
   Package,
   Printer,
@@ -240,6 +241,7 @@ const ALL_NAV_SECTIONS: NavigationSection[] = [
     id: "communications",
     label: "Communications",
     items: [
+      { id: "communication-hub", label: "Messages & WhatsApp", href: "/communication", icon: MessageSquare, permission: "communication.view" },
       { id: "announcements", label: "Announcements", href: "/announcements", icon: Megaphone, module: "education", permission: "announcements.view" },
     ],
   },

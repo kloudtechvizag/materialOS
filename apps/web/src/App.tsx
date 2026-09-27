@@ -140,6 +140,8 @@ import { MetalRatesPage } from "@/routes/settings/MetalRatesPage";
 import { ReceiptSettingsPage } from "@/routes/settings/ReceiptSettingsPage";
 import { SettingsLayout } from "@/routes/settings/SettingsLayout";
 import { WebhooksPage } from "@/routes/settings/WebhooksPage";
+import { CommunicationSettingsPage } from "@/routes/settings/CommunicationSettingsPage";
+import { CommunicationHubPage } from "@/routes/communication/CommunicationHubPage";
 import { SubscriptionPaymentsPage } from "@/routes/settings/SubscriptionPaymentsPage";
 import { UsersPage } from "@/routes/UsersPage";
 import { useAuthStore } from "@/store/auth";
@@ -319,6 +321,7 @@ export default function App() {
         <Route path="/homework/:homeworkId" element={<RequireModule module="education"><HomeworkDetailPage /></RequireModule>} />
         <Route path="/fees" element={<RequireModule module="education"><FeesPage /></RequireModule>} />
         <Route path="/announcements" element={<RequireModule module="education"><AnnouncementsPage /></RequireModule>} />
+        <Route path="/communication" element={<CommunicationHubPage />} />
         <Route path="/transport" element={<RequireModule module="education"><TransportPage /></RequireModule>} />
         <Route path="/library" element={<RequireModule module="education"><LibraryPage /></RequireModule>} />
         <Route path="/hostel" element={<RequireModule module="education"><HostelPage /></RequireModule>} />
@@ -390,6 +393,7 @@ export default function App() {
           <Route path="subscription/payments" element={<SubscriptionPaymentsPage />} />
           <Route path="capabilities" element={<CapabilityMarketplacePage />} />
           <Route path="webhooks" element={<WebhooksPage />} />
+          <Route path="communication" element={<CommunicationSettingsPage />} />
           <Route path="receipts" element={<ReceiptSettingsPage />} />
           <Route path="metal-rates" element={<MetalRatesPage />} />
           <Route path="imports" element={<ImportsPage />} />

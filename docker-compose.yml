@@ -87,6 +87,9 @@ services:
       - WAHA_APPS_ENABLED=True
       - WAHA_APPS_ON=calls,chatwoot,mcp
       - WHATSAPP_DEFAULT_ENGINE=NOWEB
+      - REDIS_URL=redis://redis:6379/1
+      - WAHA_API_KEY=materialos_secret_waha_key
+      - WAHA_API_KEY_PLAIN=materialos_secret_waha_key
       - WHATSAPP_API_KEY=materialos_secret_waha_key
       - WHATSAPP_HOOK_URL=http://api:8000/api/v1/communication/webhooks/waha
       - WHATSAPP_HOOK_EVENTS=message,session.status,message.ack

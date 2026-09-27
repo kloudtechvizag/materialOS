@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
+import { MessageSquare } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ErrorState } from "@/components/ui/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
+import { WhatsAppSendModal } from "@/components/communication/WhatsAppSendModal";
 import { apiFetch } from "@/lib/api";
 import { formatINR } from "@/lib/format";
 
@@ -25,11 +27,13 @@ interface QuotationItem {
 interface Quotation {
   id: string;
   number: string;
+  customer_id?: string;
   status: string;
   subtotal: string;
   tax_total: string;
   total: string;
   total_cost: string;
+  valid_until?: string;
   items: QuotationItem[];
 }
 
@@ -40,10 +44,17 @@ export function QuotationDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [warehouseId, setWarehouseId] = useState("");
+  const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
 
   const { data: quotation, isLoading, error, refetch } = useQuery({
     queryKey: ["quotation", quotationId],
     queryFn: () => apiFetch<Quotation>(`/quotations/${quotationId}`),
+  });
+
+  const { data: customer } = useQuery({
+    queryKey: ["customer", quotation?.customer_id],
+    queryFn: () => apiFetch<{ id: string; name: string; phone?: string; billing_phone?: string; mobile?: string }>(`/customers/${quotation?.customer_id}`),
+    enabled: !!quotation?.customer_id,
   });
   const { data: warehouses } = useQuery({ queryKey: ["warehouses"], queryFn: () => apiFetch<Warehouse[]>("/warehouses") });
 
@@ -83,13 +94,21 @@ export function QuotationDetailPage() {
           </Badge>
         </div>
         <div className="flex gap-2">
+          <Button
+            variant="default"
+            size="sm"
+            className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium gap-1.5 shadow-sm shadow-emerald-700/20"
+            onClick={() => setShowWhatsAppModal(true)}
+          >
+            <MessageSquare className="h-4 w-4" /> Send via WhatsApp
+          </Button>
           {quotation.status === "draft" && (
-            <Button variant="outline" onClick={() => sendToCustomer.mutate()} disabled={sendToCustomer.isPending}>
+            <Button variant="outline" size="sm" onClick={() => sendToCustomer.mutate()} disabled={sendToCustomer.isPending}>
               {sendToCustomer.isPending ? "Sending..." : "Send to customer"}
             </Button>
           )}
           {(quotation.status === "draft" || quotation.status === "sent") && (
-            <Button onClick={() => approve.mutate()} disabled={approve.isPending}>Approve</Button>
+            <Button size="sm" onClick={() => approve.mutate()} disabled={approve.isPending}>Approve</Button>
           )}
         </div>
       </div>
@@ -140,6 +159,24 @@ export function QuotationDetailPage() {
             </Button>
           </CardContent>
         </Card>
+      )}
+      {showWhatsAppModal && (
+        <WhatsAppSendModal
+          open={showWhatsAppModal}
+          onOpenChange={setShowWhatsAppModal}
+          recipientPhone={customer?.phone || customer?.billing_phone || customer?.mobile || "+919848012345"}
+          recipientName={customer?.name || "Valued Customer"}
+          defaultTemplateSlug="quote_created"
+          defaultVariables={{
+            quote_number: quotation.number,
+            customer_name: customer?.name || "Valued Customer",
+            total_amount: formatINR(quotation.total),
+            valid_until: quotation.valid_until || "15 days",
+          }}
+          mediaFilename={`${quotation.number}.pdf`}
+          entityType="quotation"
+          entityId={quotation.id}
+        />
       )}
     </div>
   );

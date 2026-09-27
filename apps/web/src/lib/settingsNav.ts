@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Building2, Coins, CreditCard, Printer, SlidersHorizontal, Store, UploadCloud, Users, Webhook } from "lucide-react";
+import { Building2, Coins, CreditCard, MessageSquare, Printer, SlidersHorizontal, Store, UploadCloud, Users, Webhook } from "lucide-react";
 
 export interface SettingsItem {
   id: string;
@@ -71,6 +71,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
     id: "system",
     label: "Integrations & System",
     items: [
+      { id: "communication", label: "WhatsApp & SMS", href: "/settings/communication", icon: MessageSquare, permission: "communication.view" },
       { id: "webhooks", label: "Webhooks", href: "/settings/webhooks", icon: Webhook, permission: "webhooks.view" },
       // Meaningless without "accounting" (payment-receipt template /
       // Tally-Busy migration are both accounting-stack concepts).

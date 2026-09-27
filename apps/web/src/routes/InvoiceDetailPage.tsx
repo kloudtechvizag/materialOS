@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
-import { Printer } from "lucide-react";
+import { MessageSquare, Printer } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PrintReceiptOverlay } from "@/components/receipts/PrintReceiptOverlay";
+import { WhatsAppSendModal } from "@/components/communication/WhatsAppSendModal";
 import { apiFetch, ApiError } from "@/lib/api";
 import { formatINR } from "@/lib/format";
 
@@ -62,6 +63,7 @@ export function InvoiceDetailPage() {
   const [amount, setAmount] = useState("");
   const [mode, setMode] = useState("bank");
   const [showThermalPrint, setShowThermalPrint] = useState(false);
+  const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
 
   const [vehicleNumber, setVehicleNumber] = useState("");
   const [distanceKm, setDistanceKm] = useState("");
@@ -69,6 +71,12 @@ export function InvoiceDetailPage() {
   const { data: invoice, isLoading, error, refetch } = useQuery({
     queryKey: ["invoice", invoiceId],
     queryFn: () => apiFetch<Invoice>(`/invoices/${invoiceId}`),
+  });
+
+  const { data: customer } = useQuery({
+    queryKey: ["customer", invoice?.customer_id],
+    queryFn: () => apiFetch<{ id: string; name: string; phone?: string; billing_phone?: string; mobile?: string }>(`/customers/${invoice?.customer_id}`),
+    enabled: !!invoice?.customer_id,
   });
 
   const eInvoice = useOptional(["e-invoice", invoiceId], () => apiFetch<EInvoice>(`/invoices/${invoiceId}/e-invoice`));
@@ -133,6 +141,14 @@ export function InvoiceDetailPage() {
               (ADR-012) with no extra code. Hidden from the printed output
               itself via the .no-print class further down. */}
           <div className="no-print flex gap-2">
+            <Button
+              variant="default"
+              size="sm"
+              className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium gap-1.5 shadow-sm shadow-emerald-700/20"
+              onClick={() => setShowWhatsAppModal(true)}
+            >
+              <MessageSquare className="h-4 w-4" /> Send via WhatsApp
+            </Button>
             <Button variant="outline" size="sm" onClick={() => window.print()}>
               <Printer className="h-4 w-4" /> Print A4
             </Button>
@@ -266,6 +282,25 @@ export function InvoiceDetailPage() {
     </div>
     {showThermalPrint && (
       <PrintReceiptOverlay documentType="invoice" documentId={invoice.id} onClose={() => setShowThermalPrint(false)} />
+    )}
+    {showWhatsAppModal && (
+      <WhatsAppSendModal
+        open={showWhatsAppModal}
+        onOpenChange={setShowWhatsAppModal}
+        recipientPhone={customer?.phone || customer?.billing_phone || customer?.mobile || "+919848012345"}
+        recipientName={customer?.name || "Valued Customer"}
+        defaultTemplateSlug="invoice_share"
+        defaultVariables={{
+          invoice_number: invoice.number,
+          customer_name: customer?.name || "Valued Customer",
+          total_amount: formatINR(invoice.total),
+          due_date: invoice.invoice_date,
+          pay_link: typeof window !== "undefined" ? window.location.href : "",
+        }}
+        mediaFilename={`${invoice.number}.pdf`}
+        entityType="invoice"
+        entityId={invoice.id}
+      />
     )}
     </>
   );
