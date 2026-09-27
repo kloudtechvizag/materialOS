@@ -148,7 +148,7 @@ function GenericDashboard({
       </div>
 
       {isLoading && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-3 sm:grid-cols-3 lg:grid-cols-6 min-w-0">
           {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-20" />)}
         </div>
       )}
@@ -156,15 +156,23 @@ function GenericDashboard({
       {error && <ErrorState error={error} onRetry={() => refetch()} />}
 
       {data && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-3 sm:grid-cols-3 lg:grid-cols-6 min-w-0">
           {widgetKeys.map((key) => DASHBOARD_WIDGETS[key]?.(data)).filter(Boolean)}
         </div>
       )}
 
       {!isLoading && (enabledModules === undefined || enabledModules.includes("accounting") || enabledModules.includes("collections")) && (
-        <div className="grid gap-4 lg:grid-cols-2">
-          {(enabledModules === undefined || enabledModules.includes("accounting")) && <SalesTrendChart />}
-          {(enabledModules === undefined || enabledModules.includes("collections")) && <ReceivablesChart />}
+        <div className="grid gap-4 lg:grid-cols-2 min-w-0">
+          {(enabledModules === undefined || enabledModules.includes("accounting")) && (
+            <div className="min-w-0 overflow-hidden">
+              <SalesTrendChart />
+            </div>
+          )}
+          {(enabledModules === undefined || enabledModules.includes("collections")) && (
+            <div className="min-w-0 overflow-hidden">
+              <ReceivablesChart />
+            </div>
+          )}
         </div>
       )}
 

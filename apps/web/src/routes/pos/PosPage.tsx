@@ -167,54 +167,109 @@ export function PosPage() {
         {cart.length === 0 && <EmptyState icon={CreditCard} title="Cart is empty" description="Search for an item above to start a sale." />}
 
         {cart.length > 0 && (
-          <div className="overflow-hidden rounded-lg border border-border">
-            <table className="w-full text-sm">
-              <tbody>
-                {cart.map((line) => (
-                  <tr key={line.item.id} className="border-t border-border first:border-t-0">
-                    <td className="px-4 py-2">{line.item.name}</td>
-                    <td className="px-4 py-2 text-muted-foreground">{formatINR(line.item.standard_price)}</td>
-                    <td className="px-4 py-2">
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => setQty(line.item.id, line.qty - 1)}>
-                          <Minus className="h-3 w-3" />
-                        </Button>
-                        <span className="w-6 text-center">{line.qty}</span>
-                        <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => setQty(line.item.id, line.qty + 1)}>
-                          <Plus className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </td>
-                    <td className="px-4 py-2 text-right font-medium">{formatINR(Number(line.item.standard_price) * line.qty)}</td>
-                    <td className="px-2 py-2">
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => setQty(line.item.id, 0)}>
-                        <Trash2 className="h-3.5 w-3.5" />
+          <div className="space-y-2">
+            {/* Mobile Cart View (<640px) */}
+            <div className="divide-y divide-border rounded-xl border border-border bg-card sm:hidden">
+              {cart.map((line) => (
+                <div key={line.item.id} className="p-3 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="font-medium text-sm text-foreground">{line.item.name}</div>
+                      <div className="text-xs text-muted-foreground">{formatINR(line.item.standard_price)} / {line.item.base_uom}</div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive active:scale-90"
+                      onClick={() => setQty(line.item.id, 0)}
+                      aria-label="Remove item"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="flex items-center justify-between pt-1">
+                    <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 p-0.5">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 active:scale-95"
+                        onClick={() => setQty(line.item.id, line.qty - 1)}
+                        aria-label="Decrease quantity"
+                      >
+                        <Minus className="h-3.5 w-3.5" />
                       </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      <span className="w-8 text-center text-sm font-semibold">{line.qty}</span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 active:scale-95"
+                        onClick={() => setQty(line.item.id, line.qty + 1)}
+                        aria-label="Increase quantity"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] uppercase text-muted-foreground block">Line Total</span>
+                      <span className="text-sm font-bold text-foreground">
+                        {formatINR(Number(line.item.standard_price) * line.qty)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop / Tablet Table View (>=640px) */}
+            <div className="hidden sm:block overflow-hidden rounded-xl border border-border bg-card">
+              <table className="w-full text-sm">
+                <tbody>
+                  {cart.map((line) => (
+                    <tr key={line.item.id} className="border-t border-border first:border-t-0">
+                      <td className="px-4 py-3 font-medium">{line.item.name}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{formatINR(line.item.standard_price)}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <Button variant="outline" size="icon" className="h-8 w-8 active:scale-95" onClick={() => setQty(line.item.id, line.qty - 1)}>
+                            <Minus className="h-3.5 w-3.5" />
+                          </Button>
+                          <span className="w-8 text-center font-medium">{line.qty}</span>
+                          <Button variant="outline" size="icon" className="h-8 w-8 active:scale-95" onClick={() => setQty(line.item.id, line.qty + 1)}>
+                            <Plus className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-right font-semibold">{formatINR(Number(line.item.standard_price) * line.qty)}</td>
+                      <td className="px-2 py-3">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive active:scale-95" onClick={() => setQty(line.item.id, 0)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
 
-      <Card className="h-fit">
-        <CardHeader>
+      <Card className="h-fit shadow-xs">
+        <CardHeader className="pb-3">
           <CardTitle className="text-base">Checkout</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex justify-between text-lg font-semibold">
+          <div className="flex justify-between text-lg font-semibold border-b border-border pb-3">
             <span>Estimated total</span>
-            <span>{formatINR(estimatedTotal)}</span>
+            <span className="text-primary">{formatINR(estimatedTotal)}</span>
           </div>
           <p className="text-xs text-muted-foreground">Final price and tax are calculated at checkout.</p>
 
           <div className="space-y-1.5">
             <Label>Payment mode</Label>
-            <div className="flex gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {(["cash", "upi", "card"] as PaymentMode[]).map((m) => (
-                <Button key={m} type="button" variant={mode === m ? "default" : "outline"} size="sm" onClick={() => setMode(m)} className="capitalize">
+                <Button key={m} type="button" variant={mode === m ? "default" : "outline"} size="sm" onClick={() => setMode(m)} className="capitalize py-2.5 h-auto">
                   {m}
                 </Button>
               ))}
@@ -224,7 +279,13 @@ export function PosPage() {
           {mode === "cash" && (
             <div className="space-y-1.5">
               <Label>Tendered</Label>
-              <Input type="number" value={tendered} onChange={(e) => setTendered(e.target.value)} placeholder={estimatedTotal.toFixed(2)} />
+              <Input
+                type="number"
+                inputMode="decimal"
+                value={tendered}
+                onChange={(e) => setTendered(e.target.value)}
+                placeholder={estimatedTotal.toFixed(2)}
+              />
             </div>
           )}
 

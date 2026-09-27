@@ -229,6 +229,9 @@ export function LoginPage() {
                     id="tenantSlug"
                     className="h-11 rounded-xl border-white/10 bg-white/5 pl-3.5 text-xs text-white placeholder:text-zinc-500 focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50"
                     placeholder="e.g. sribalaji-demo"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck="false"
                     {...register("tenantSlug")}
                   />
                 </div>
@@ -244,6 +247,10 @@ export function LoginPage() {
                 <Input
                   id="email"
                   type="email"
+                  inputMode="email"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck="false"
                   className="h-11 rounded-xl border-white/10 bg-white/5 pl-3.5 text-xs text-white placeholder:text-zinc-500 focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50"
                   placeholder="owner@yourcompany.com"
                   {...register("email")}

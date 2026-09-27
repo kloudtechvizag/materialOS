@@ -45,6 +45,12 @@
     --brand-navy-foreground: 0 0% 100%;
     --brand-navy-muted: 217 20% 65%;
 
+    /* Safe area insets for mobile dynamic islands, notches, and home bars */
+    --sat: env(safe-area-inset-top, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+    --sal: env(safe-area-inset-left, 0px);
+    --sar: env(safe-area-inset-right, 0px);
+
     /* Density mode (comfortable/compact, useDensityStore -> "data-density"
        on <html>): a single control-height token consumed by Button's and
        Input's "default" size and shared table cell padding, so compact
@@ -54,6 +60,13 @@
        that doesn't go through these tokens are not (yet) density-aware. */
     --control-h: 2.5rem;
     --table-cell-py: 0.5rem;
+  }
+
+  @media (max-width: 640px) {
+    :root {
+      /* Mobile touch ergonomics: comfortable touch targets (minimum 44px) */
+      --control-h: 2.75rem;
+    }
   }
 
   [data-density="compact"] {
@@ -141,4 +154,44 @@
   .no-print {
     display: none !important;
   }
+}
+
+/* Mobile safe-area utilities & touch improvements */
+.pt-safe {
+  padding-top: var(--sat);
+}
+.pb-safe {
+  padding-bottom: var(--sab);
+}
+.pl-safe {
+  padding-left: var(--sal);
+}
+.pr-safe {
+  padding-right: var(--sar);
+}
+.h-screen-safe {
+  height: calc(100vh - var(--sat) - var(--sab));
+}
+.min-h-screen-safe {
+  min-height: calc(100vh - var(--sat) - var(--sab));
+}
+
+/* Touch responsiveness */
+html, body {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Responsive Table Horizontal Scroll Indicators */
+.responsive-table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.responsive-table-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+.responsive-table-scroll::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--border));
+  border-radius: 9999px;
 }
