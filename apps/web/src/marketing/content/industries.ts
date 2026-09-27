@@ -33,6 +33,7 @@ export const ALL_INDUSTRIES: { slug: string; name: string; category: string }[] 
   { slug: "grocery", name: "Grocery", category: "retail" },
   { slug: "printing_press", name: "Printing Press & Digital Color Lab", category: "printing" },
   { slug: "laboratory", name: "Laboratory & Scientific Testing", category: "laboratory" },
+  { slug: "school_education", name: "School Management", category: "education" },
   { slug: "construction_contractor", name: "Building Contractors & Civil Construction", category: "construction" },
 ];
 

@@ -2,22 +2,60 @@ import re
 import uuid
 from typing import Dict, Optional, Tuple
 
-from opentelemetry import trace
-from opentelemetry.sdk.resources import Resource
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
+from contextlib import contextmanager
 
-# Initialize global OpenTelemetry TracerProvider once
-_RESOURCE = Resource.create({
-    "service.name": "materialos-api",
-    "service.version": "0.1.0",
-    "deployment.environment": "production",
-})
+try:
+    from opentelemetry import trace
+    from opentelemetry.sdk.resources import Resource
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 
-_PROVIDER = TracerProvider(resource=_RESOURCE)
-trace.set_tracer_provider(_PROVIDER)
-_TRACER = trace.get_tracer("materialos-api", "0.1.0")
-_PROPAGATOR = TraceContextTextMapPropagator()
+    # Initialize global OpenTelemetry TracerProvider once
+    _RESOURCE = Resource.create({
+        "service.name": "materialos-api",
+        "service.version": "0.1.0",
+        "deployment.environment": "production",
+    })
+
+    _PROVIDER = TracerProvider(resource=_RESOURCE)
+    trace.set_tracer_provider(_PROVIDER)
+    _TRACER = trace.get_tracer("materialos-api", "0.1.0")
+    _PROPAGATOR = TraceContextTextMapPropagator()
+    HAVE_OPENTELEMETRY = True
+except ImportError:
+    HAVE_OPENTELEMETRY = False
+
+    class _DummySpan:
+        def set_attribute(self, *args, **kwargs):
+            pass
+
+        def record_exception(self, *args, **kwargs):
+            pass
+
+        def set_status(self, *args, **kwargs):
+            pass
+
+        def is_recording(self):
+            return False
+
+        def get_span_context(self):
+            return None
+
+    class _DummyTracer:
+        @contextmanager
+        def start_as_current_span(self, *args, **kwargs):
+            yield _DummySpan()
+
+    class _DummyPropagator:
+        def inject(self, carrier, *args, **kwargs):
+            pass
+
+        def extract(self, carrier, *args, **kwargs):
+            return {}
+
+    trace = None
+    _TRACER = _DummyTracer()
+    _PROPAGATOR = _DummyPropagator()
 
 # Regex to validate standard W3C traceparent (version-trace_id-parent_id-trace_flags)
 _TRACEPARENT_RE = re.compile(r"^00-([0-9a-f]{32})-([0-9a-f]{16})-[0-9a-f]{2}$")
@@ -29,6 +67,8 @@ def get_tracer():
 
 def get_current_trace_and_span_id() -> Tuple[Optional[str], Optional[str]]:
     """Returns current active (trace_id, span_id) as 32-char and 16-char hex strings."""
+    if trace is None:
+        return None, None
     span = trace.get_current_span()
     ctx = span.get_span_context() if span else None
     if ctx and ctx.is_valid:

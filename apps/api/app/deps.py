@@ -47,15 +47,18 @@ def get_db_tenant(authorization: str | None = Header(default=None)) -> Generator
 
         # Correlate tenant and user into observability contextvars & active span
         from app.observability.logging import tenant_id_ctx, user_id_ctx
-        from opentelemetry import trace
         tenant_id_ctx.set(str(payload["tenant_id"]))
         user_id_ctx.set(str(payload["sub"]))
-        span = trace.get_current_span()
-        if span and span.is_recording():
-            span.set_attribute("tenant.id", str(payload["tenant_id"]))
-            span.set_attribute("user.id", str(payload["sub"]))
-            if payload.get("impersonated_by"):
-                span.set_attribute("user.impersonated_by", str(payload.get("impersonated_by")))
+        try:
+            from opentelemetry import trace
+            span = trace.get_current_span()
+            if span and span.is_recording():
+                span.set_attribute("tenant.id", str(payload["tenant_id"]))
+                span.set_attribute("user.id", str(payload["sub"]))
+                if payload.get("impersonated_by"):
+                    span.set_attribute("user.impersonated_by", str(payload.get("impersonated_by")))
+        except Exception:
+            pass
 
         yield db
         db.commit()

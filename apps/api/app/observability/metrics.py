@@ -1,14 +1,44 @@
 import time
 from typing import Callable
 from fastapi import Response
-from prometheus_client import (
-    CONTENT_TYPE_LATEST,
-    CollectorRegistry,
-    Counter,
-    Gauge,
-    Histogram,
-    generate_latest,
-)
+try:
+    from prometheus_client import (
+        CONTENT_TYPE_LATEST,
+        CollectorRegistry,
+        Counter,
+        Gauge,
+        Histogram,
+        generate_latest,
+    )
+except ImportError:
+    CONTENT_TYPE_LATEST = "text/plain; version=0.0.4; charset=utf-8"
+
+    class _DummyMetric:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def labels(self, *args, **kwargs):
+            return self
+
+        def inc(self, *args, **kwargs):
+            pass
+
+        def dec(self, *args, **kwargs):
+            pass
+
+        def set(self, *args, **kwargs):
+            pass
+
+        def observe(self, *args, **kwargs):
+            pass
+
+    CollectorRegistry = _DummyMetric
+    Counter = _DummyMetric
+    Gauge = _DummyMetric
+    Histogram = _DummyMetric
+
+    def generate_latest(registry=None):
+        return b"# Prometheus metrics not installed\n"
 
 # Shared Prometheus Registry for MaterialOS
 REGISTRY = CollectorRegistry(auto_describe=True)

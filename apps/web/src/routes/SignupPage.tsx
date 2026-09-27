@@ -15,6 +15,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { apiFetch, ApiError } from "@/lib/api";
 import { INDIAN_STATES } from "@/lib/indianStates";
 import { cn } from "@/lib/utils";
+import { ALL_INDUSTRIES } from "@/marketing/content/industries";
 import { useAuthStore } from "@/store/auth";
 
 interface IndustryProfileOption {
@@ -54,6 +55,13 @@ export function SignupPage() {
     queryKey: ["industry-profiles"],
     queryFn: () => apiFetch<IndustryProfileOption[]>("/industry-profiles", { auth: false }),
   });
+
+  const profileOptions = useMemo(() => {
+    if (industries && industries.length > 0) {
+      return industries;
+    }
+    return ALL_INDUSTRIES.map((i) => ({ slug: i.slug, name: i.name }));
+  }, [industries]);
 
   const {
     register,
@@ -207,7 +215,7 @@ export function SignupPage() {
                     className="flex h-10 w-full rounded-xl border border-white/10 bg-[#0B0F19] px-3 text-xs text-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50"
                     {...register("industrySlug")}
                   >
-                    {(industries ?? [{ slug: "building_materials", name: "Building Materials & Steel" }]).map((i) => (
+                    {profileOptions.map((i) => (
                       <option key={i.slug} value={i.slug} className="bg-[#0B0F19] text-white">
                         {i.name}
                       </option>
