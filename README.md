@@ -347,13 +347,33 @@ constraint, not a convention.
 
 ## Running it
 
-Requires Docker. Ports are non-standard to avoid clashing with other
-projects on the same machine: API on `58000`, web on `5173`, Postgres on
-`55432`, Redis on `56379`.
+Requires Docker. The system employs a **Dual Access Strategy**, combining direct host ports (avoiding clashes with standard local services) alongside a **Traefik v3 Edge Ingress** for clean local domain routing.
+
+### Services & Dual Access Endpoints
+
+| Service | Traefik Ingress (Port 80 / 8080) | Direct Host Port | Notes |
+|:---|:---|:---|:---|
+| **Web Frontend** (Vite React) | `http://localhost` or `http://app.localhost` | `http://localhost:5173` | Main dashboard & tenant workspace |
+| **API Backend** (FastAPI) | `http://api.localhost/api/v1` or `http://localhost/api` | `http://localhost:58000/api/v1` | REST API, OpenAPI docs at `/docs` |
+| **WAHA Gateway** (WhatsApp API) | `http://waha.localhost` | `http://localhost:53000` | devlike.pro WAHA WhatsApp HTTP engine |
+| **Traefik Dashboard** | `http://traefik.localhost:8080` | `http://localhost:8080` | Ingress router & service monitor |
+| **PostgreSQL 16** | — | `localhost:55432` | DB superuser `materialos`, app role `materialos_app` |
+| **Redis 7** | — | `localhost:56379` | Celery broker, caching & WAHA session store |
+
+### Traefik File Provider Configuration
+
+Traefik uses a dedicated dynamic configuration file at `infra/traefik/dynamic.yml` with clean routing rules for Traefik v3:
+- `http://api.localhost/api/v1` & `http://localhost/api` → `api:8000`
+- `http://localhost` & `http://app.localhost` → `web:5173`
+- `http://waha.localhost` → `waha:3000`
+- `http://traefik.localhost:8080` (or `http://localhost:8080`) → Traefik Dashboard (`api@internal`)
+
+`infra/traefik/dynamic.yml` is mounted into the Traefik container with live reload enabled (`--providers.file.directory=/etc/traefik/dynamic`, `--providers.file.watch=true`). This decouples Traefik from Docker socket version mismatches (e.g. Docker Engine 29+ API requirements).
+
+### Starting the Stack
 
 ```bash
-docker-compose -p materialos up -d db redis
-docker-compose -p materialos up -d api worker beat web
+docker-compose -p materialos up -d
 ```
 
 `beat` runs the daily scheduled backup (ADR-013) -- `worker` alone
