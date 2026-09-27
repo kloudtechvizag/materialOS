@@ -12,7 +12,7 @@
  */
 
 const STORAGE_KEY = "materialos.api_base_url";
-const BUILT_IN_DEFAULT = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:58000/api/v1";
+const BUILT_IN_DEFAULT = import.meta.env.VITE_API_BASE_URL ?? "http://api.localhost/api/v1";
 
 function normalize(url: string): string {
   return url.trim().replace(/\/+$/, "");
@@ -25,7 +25,15 @@ export function defaultApiBase(): string {
 export function getApiBase(): string {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) return stored;
+    if (stored) {
+      // Auto-migrate stale high-port URLs (pre-Traefik era: localhost:58000)
+      // to the new Traefik hostname default so users don't get stuck on upgrade.
+      if (/localhost:\d{4,5}\/api\/v1/.test(stored)) {
+        localStorage.removeItem(STORAGE_KEY);
+        return BUILT_IN_DEFAULT;
+      }
+      return stored;
+    }
   } catch {
     // localStorage unavailable -- fall through to the built-in default.
   }

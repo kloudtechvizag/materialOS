@@ -66,7 +66,7 @@ export function ServerSettingsPage() {
             <Label htmlFor="apiUrl" className="text-xs font-medium text-zinc-300">Server Endpoint API Address</Label>
             <Input
               id="apiUrl"
-              placeholder="http://localhost:58000/api/v1"
+              placeholder="http://api.localhost/api/v1"
               value={url}
               onChange={(e) => {
                 setUrl(e.target.value);
@@ -74,7 +74,7 @@ export function ServerSettingsPage() {
               }}
               className="h-11 border-white/10 bg-white/5 font-mono text-xs text-white placeholder:text-zinc-500 focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50"
             />
-            <p className="text-xs text-zinc-400">Include the /api/v1 path, e.g. http://192.168.1.20:58000/api/v1 for LAN servers.</p>
+            <p className="text-xs text-zinc-400">Use the /api/v1 path, e.g. http://api.localhost/api/v1 (default) or http://192.168.1.20:58000/api/v1 for LAN.</p>
           </div>
 
           {testResult && (

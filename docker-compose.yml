@@ -1,6 +1,41 @@
 version: "3.9"
 
 services:
+
+  # ---------------------------------------------------------------------------
+  # Traefik — Edge Ingress (ADR-014)
+  # Routes all HTTP traffic on port 80 by hostname:
+  #   http://localhost          → frontend (web)
+  #   http://app.localhost      → frontend (web) alias
+  #   http://api.localhost      → API (FastAPI)
+  #   http://waha.localhost     → WAHA WhatsApp gateway
+  #   http://traefik.localhost  → Traefik dashboard
+  # ---------------------------------------------------------------------------
+  traefik:
+    image: traefik:v3.1
+    restart: unless-stopped
+    command:
+      - "--log.level=WARN"
+      - "--api.dashboard=true"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=materialos_default"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"        # Main HTTP ingress — all services here
+      - "8080:8080"    # Traefik dashboard → http://traefik.localhost:8080
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.localhost`)"
+      - "traefik.http.routers.traefik-dashboard.entrypoints=web"
+      - "traefik.http.routers.traefik-dashboard.service=api@internal"
+
+  # ---------------------------------------------------------------------------
+  # Database
+  # ---------------------------------------------------------------------------
   db:
     image: postgres:16-alpine
     environment:
@@ -8,7 +43,7 @@ services:
       POSTGRES_PASSWORD: materialos
       POSTGRES_DB: materialos
     ports:
-      - "55432:5432"
+      - "55432:5432"   # kept for direct psql access from host
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
@@ -17,23 +52,30 @@ services:
       timeout: 5s
       retries: 10
 
+  # ---------------------------------------------------------------------------
+  # Redis
+  # ---------------------------------------------------------------------------
   redis:
     image: redis:7-alpine
     ports:
-      - "56379:6379"
+      - "56379:6379"   # kept for redis-cli access from host
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
       retries: 10
 
+  # ---------------------------------------------------------------------------
+  # API — FastAPI / uvicorn
+  # Accessible at: http://api.localhost/api/v1/...
+  # ---------------------------------------------------------------------------
   api:
     build:
       context: ./apps/api
     env_file:
       - ./apps/api/.env
-    ports:
-      - "58000:8000"
+    expose:
+      - "8000"          # internal only — Traefik proxies it
     depends_on:
       db:
         condition: service_healthy
@@ -42,7 +84,15 @@ services:
     volumes:
       - ./apps/api:/app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`api.localhost`)"
+      - "traefik.http.routers.api.entrypoints=web"
+      - "traefik.http.services.api.loadbalancer.server.port=8000"
 
+  # ---------------------------------------------------------------------------
+  # Celery Worker
+  # ---------------------------------------------------------------------------
   worker:
     build:
       context: ./apps/api
@@ -57,10 +107,9 @@ services:
       - ./apps/api:/app
     command: celery -A app.celery_app worker --loglevel=info
 
-  # ADR-013: runs the daily backup schedule (celery_app.py's
-  # beat_schedule). The worker above only executes jobs it's handed --
-  # without this process, on-demand backups/notification retries still
-  # work, but nothing ever triggers the scheduled daily backup.
+  # ---------------------------------------------------------------------------
+  # Celery Beat — scheduled jobs (daily backups, etc.)
+  # ---------------------------------------------------------------------------
   beat:
     build:
       context: ./apps/api
@@ -75,11 +124,15 @@ services:
       - ./apps/api:/app
     command: celery -A app.celery_app beat --loglevel=info -s /tmp/celerybeat-schedule
 
+  # ---------------------------------------------------------------------------
+  # WAHA — WhatsApp HTTP API (devlike.pro)
+  # Accessible at: http://waha.localhost
+  # ---------------------------------------------------------------------------
   waha:
     image: devlikeapro/waha:latest
     restart: unless-stopped
-    ports:
-      - "53000:3000"
+    expose:
+      - "3000"          # internal only — Traefik proxies it
     environment:
       - WAHA_ZIP_JSON_VALUE=True
       - WAHA_PRINT_QR=False
@@ -98,16 +151,30 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.waha.rule=Host(`waha.localhost`)"
+      - "traefik.http.routers.waha.entrypoints=web"
+      - "traefik.http.services.waha.loadbalancer.server.port=3000"
 
+  # ---------------------------------------------------------------------------
+  # Frontend — Vite dev server
+  # Accessible at: http://localhost  or  http://app.localhost
+  # ---------------------------------------------------------------------------
   web:
     build:
       context: ./apps/web
-    ports:
-      - "5173:5173"
+    expose:
+      - "5173"          # internal only — Traefik proxies it
     volumes:
       - ./apps/web:/app
       - /app/node_modules
     command: npm run dev -- --host 0.0.0.0
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web.rule=Host(`localhost`) || Host(`app.localhost`)"
+      - "traefik.http.routers.web.entrypoints=web"
+      - "traefik.http.services.web.loadbalancer.server.port=5173"
 
 volumes:
   db_data:

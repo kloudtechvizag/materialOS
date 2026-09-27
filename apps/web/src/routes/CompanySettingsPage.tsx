@@ -50,7 +50,7 @@ export function CompanySettingsPage() {
   async function downloadTallyExport() {
     setExportError(null);
     try {
-      const base = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:58000/api/v1";
+      const base = import.meta.env.VITE_API_BASE_URL ?? "http://api.localhost/api/v1";
       const res = await fetch(`${base}/tally-export?from_date=${fromDate}&to_date=${toDate}`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });

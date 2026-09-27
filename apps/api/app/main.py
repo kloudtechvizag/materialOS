@@ -41,7 +41,7 @@ app.add_middleware(
     # connection" (GET /health/live, no preflight) succeeded while
     # signup/login (POST, preflighted) failed with what looked like a
     # network error but was actually this.
-    allow_origin_regex=r"^(https?://(localhost|127\.0\.0\.1)(:\d+)?|https?://tauri\.localhost|tauri://localhost)$",
+    allow_origin_regex=r"^(https?://(localhost|127\.0\.0\.1)(:\d+)?|https?://[a-z0-9-]+\.localhost(:\d+)?|https?://tauri\.localhost|tauri://localhost)$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
