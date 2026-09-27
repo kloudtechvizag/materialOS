@@ -355,8 +355,10 @@ Requires Docker. The system employs a **Dual Access Strategy**, combining direct
 |:---|:---|:---|:---|
 | **Web Frontend** (Vite React) | `http://localhost` or `http://app.localhost` | `http://localhost:5173` | Main dashboard & tenant workspace |
 | **API Backend** (FastAPI) | `http://api.localhost/api/v1` or `http://localhost/api` | `http://localhost:58000/api/v1` | REST API, OpenAPI docs at `/docs` |
+| **API Prometheus Metrics** | `http://api.localhost/metrics` | `http://localhost:58000/metrics` | Prometheus golden signals, rate & latency histograms |
 | **WAHA Gateway** (WhatsApp API) | `http://waha.localhost` | `http://localhost:53000` | devlike.pro WAHA WhatsApp HTTP engine |
 | **Traefik Dashboard** | `http://traefik.localhost:8080` | `http://localhost:8080` | Ingress router & service monitor |
+| **Traefik Ingress Metrics** | `http://traefik.localhost:8080/metrics` | `http://localhost:8080/metrics` | Traefik Prometheus edge router metrics |
 | **PostgreSQL 16** | — | `localhost:55432` | DB superuser `materialos`, app role `materialos_app` |
 | **Redis 7** | — | `localhost:56379` | Celery broker, caching & WAHA session store |
 
