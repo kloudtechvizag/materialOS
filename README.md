@@ -370,6 +370,25 @@ Traefik uses a dedicated dynamic configuration file at `infra/traefik/dynamic.ym
 
 `infra/traefik/dynamic.yml` is mounted into the Traefik container with live reload enabled (`--providers.file.directory=/etc/traefik/dynamic`, `--providers.file.watch=true`). This decouples Traefik from Docker socket version mismatches (e.g. Docker Engine 29+ API requirements).
 
+### Observability, Tracing & Metrics
+
+MaterialOS ships with comprehensive enterprise observability across all layers:
+
+1. **Distributed Tracing & OpenTelemetry**:
+   - End-to-end W3C `traceparent` propagation across Frontend &rarr; Traefik Ingress &rarr; FastAPI &rarr; Database queries &rarr; Celery background tasks &rarr; Outgoing HTTP gateways (WAHA, SMS).
+   - Injects `X-Request-ID`, `X-Trace-ID`, and `Server-Timing` headers into all API responses.
+2. **Prometheus Metrics Endpoints**:
+   - **API Golden Signals Metrics**: `http://localhost:58000/metrics` (or `http://api.localhost/metrics`) tracking HTTP request rates (`materialos_http_requests_total`), duration histograms (`materialos_http_request_duration_seconds`), in-flight requests (`materialos_http_requests_in_progress`), active/idle DB connections, and WAHA / POS counters.
+   - **Traefik Ingress Metrics**: `http://localhost:8080/metrics` exposing Go runtime and edge router telemetry.
+3. **Structured JSON Logging**:
+   - Machine-parseable JSON logs on stdout with ISO-8601 UTC timestamps, log levels, `trace_id`, `span_id`, `request_id`, and `tenant_id` context.
+   - Automatic security & PII sanitization (masking passwords, JWT tokens, PAN, Aadhaar).
+4. **Health & Readiness Probes**:
+   - **Liveness**: `GET /api/v1/health/live` &rarr; Lightweight zero-dependency check for k8s/Docker container restarts.
+   - **Deep Readiness**: `GET /api/v1/health/ready` &rarr; Dependency probe checking PostgreSQL read/write, Redis ping, WAHA WhatsApp engine status, and storage volume availability. Returns HTTP 200 when ready or HTTP 503 when core dependencies are unavailable.
+5. **Frontend RUM & Trace Injection**:
+   - `apps/web/src/lib/api.ts` automatically generates unique `X-Request-ID` and W3C `traceparent` headers for every request, logging telemetry for slow queries (>2000ms).
+
 ### Starting the Stack
 
 ```bash

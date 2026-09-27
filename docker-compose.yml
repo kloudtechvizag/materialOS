@@ -21,6 +21,9 @@ services:
       - "--providers.file.directory=/etc/traefik/dynamic"
       - "--providers.file.watch=true"
       - "--entrypoints.web.address=:80"
+      - "--metrics.prometheus=true"
+      - "--accesslog=true"
+      - "--accesslog.format=json"
     ports:
       - "80:80"        # Main HTTP ingress — all services here
       - "8080:8080"    # Traefik dashboard → http://traefik.localhost:8080 or http://localhost:8080

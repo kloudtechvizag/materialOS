@@ -44,6 +44,19 @@ def get_db_tenant(authorization: str | None = Header(default=None)) -> Generator
         # token, which is how the tenant-facing UI knows to show its
         # "you are being impersonated" banner.
         db.info["impersonated_by"] = payload.get("impersonated_by")
+
+        # Correlate tenant and user into observability contextvars & active span
+        from app.observability.logging import tenant_id_ctx, user_id_ctx
+        from opentelemetry import trace
+        tenant_id_ctx.set(str(payload["tenant_id"]))
+        user_id_ctx.set(str(payload["sub"]))
+        span = trace.get_current_span()
+        if span and span.is_recording():
+            span.set_attribute("tenant.id", str(payload["tenant_id"]))
+            span.set_attribute("user.id", str(payload["sub"]))
+            if payload.get("impersonated_by"):
+                span.set_attribute("user.impersonated_by", str(payload.get("impersonated_by")))
+
         yield db
         db.commit()
     except Exception:

@@ -7,13 +7,17 @@ export class ApiError extends Error {
   details: Record<string, unknown>;
   retryable: boolean;
   status: number;
+  requestId?: string;
+  traceId?: string;
 
-  constructor(status: number, body: ApiErrorBody) {
+  constructor(status: number, body: ApiErrorBody, requestId?: string, traceId?: string) {
     super(body.error.message);
     this.status = status;
     this.code = body.error.code;
     this.details = body.error.details;
     this.retryable = body.error.retryable;
+    this.requestId = requestId;
+    this.traceId = traceId;
   }
 }
 
@@ -25,10 +29,27 @@ interface RequestOptions {
   auth?: boolean;
 }
 
+function generateHex(length: number): string {
+  const bytes = new Uint8Array(Math.ceil(length / 2));
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0"))
+    .join("")
+    .slice(0, length);
+}
+
 export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { method = "GET", body, isFormData = false, idempotencyKey, auth = true } = options;
 
-  const headers: Record<string, string> = {};
+  // Generate W3C traceparent & request ID for end-to-end distributed tracing
+  const traceId = generateHex(32);
+  const spanId = generateHex(16);
+  const requestId = `req_${generateHex(12)}`;
+
+  const headers: Record<string, string> = {
+    "X-Request-ID": requestId,
+    traceparent: `00-${traceId}-${spanId}-01`,
+  };
+
   if (!isFormData) headers["Content-Type"] = "application/json";
   if (idempotencyKey) headers["Idempotency-Key"] = idempotencyKey;
 
@@ -38,6 +59,7 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
   }
 
   const apiBase = getApiBase();
+  const startTime = performance.now();
   let res: Response;
   try {
     res = await fetch(`${apiBase}${path}`, {
@@ -52,14 +74,28 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
     // `err instanceof ApiError` check failed to recognize, falling
     // back to a generic "Something went wrong"-style message that
     // gave no hint the real problem was an unreachable server address.
-    throw new ApiError(0, {
-      error: {
-        code: "NETWORK_ERROR",
-        message: `Could not reach the MaterialOS server at ${apiBase}. Check your server settings.`,
-        details: { apiBase },
-        retryable: true,
+    throw new ApiError(
+      0,
+      {
+        error: {
+          code: "NETWORK_ERROR",
+          message: `Could not reach the MaterialOS server at ${apiBase}. Check your server settings.`,
+          details: { apiBase },
+          retryable: true,
+        },
       },
-    });
+      requestId,
+      traceId
+    );
+  }
+
+  const durationMs = Math.round(performance.now() - startTime);
+  const serverRequestId = res.headers.get("X-Request-ID") || requestId;
+  const serverTraceId = res.headers.get("X-Trace-ID") || traceId;
+
+  // Log telemetry for slow network queries (> 2000ms)
+  if (durationMs > 2000) {
+    console.warn(`[Telemetry Slow Query] ${method} ${path} took ${durationMs}ms (Trace ID: ${serverTraceId})`);
   }
 
   if (!res.ok) {
@@ -71,7 +107,7 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
         error: { code: "INTERNAL_ERROR", message: `Request failed with status ${res.status}`, details: {}, retryable: true },
       };
     }
-    throw new ApiError(res.status, errorBody);
+    throw new ApiError(res.status, errorBody, serverRequestId, serverTraceId);
   }
 
   if (res.status === 204) return undefined as T;

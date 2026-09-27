@@ -37,3 +37,62 @@ celery_app.conf.beat_schedule = {
         "schedule": crontab(hour=3, minute=0),
     },
 }
+
+# ---------------------------------------------------------------------------
+# Celery Observability Signals (OTel Trace & Metrics Correlation)
+# ---------------------------------------------------------------------------
+import logging
+import time
+import uuid
+from celery.signals import task_prerun, task_postrun, worker_init
+from app.observability.logging import (
+    setup_observability_logging,
+    request_id_ctx,
+    trace_id_ctx,
+    span_id_ctx,
+)
+from app.observability.metrics import CELERY_TASK_DURATION_SECONDS
+from app.observability.tracing import extract_traceparent
+
+logger = logging.getLogger("materialos.celery")
+_TASK_START_TIMES: dict[str, float] = {}
+
+
+@worker_init.connect
+def on_worker_init(**kwargs):
+    setup_observability_logging()
+    logger.info("Celery worker observability initialized with JSON logging")
+
+
+@task_prerun.connect
+def on_task_prerun(task_id=None, task=None, args=None, kwargs=None, **other):
+    _TASK_START_TIMES[task_id] = time.perf_counter()
+
+    # Extract or generate trace correlation
+    headers = getattr(task.request, "headers", None) or {}
+    trace_id, span_id = extract_traceparent(headers)
+    req_id = headers.get("X-Request-ID") or f"celery_{task_id[:12]}"
+
+    request_id_ctx.set(req_id)
+    trace_id_ctx.set(trace_id)
+    span_id_ctx.set(span_id)
+
+    logger.info(
+        f"Starting task {task.name}[{task_id}]",
+        extra={"task_name": task.name, "task_id": task_id, "queue": getattr(task.request, "delivery_info", {}).get("routing_key")},
+    )
+
+
+@task_postrun.connect
+def on_task_postrun(task_id=None, task=None, state=None, **other):
+    start = _TASK_START_TIMES.pop(task_id, None)
+    duration_s = (time.perf_counter() - start) if start else 0.0
+    duration_ms = round(duration_s * 1000, 2)
+
+    CELERY_TASK_DURATION_SECONDS.labels(task_name=task.name).observe(duration_s)
+
+    logger.info(
+        f"Completed task {task.name}[{task_id}] state={state} ({duration_ms}ms)",
+        extra={"task_name": task.name, "task_id": task_id, "state": state, "duration_ms": duration_ms},
+    )
+

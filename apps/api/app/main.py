@@ -6,9 +6,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.router import api_router
 from app.db import SessionLocal
 from app.errors import register_error_handlers
+from app.observability.logging import setup_observability_logging
+from app.observability.metrics import metrics_endpoint_response
+from app.observability.middleware import ObservabilityMiddleware
 from app.services.billing_plans import ensure_plan_catalog
 from app.services.industry import ensure_industry_profile_catalog
 from app.services.permissions import ensure_permission_catalog
+
+# Configure Structured JSON Logging with Trace Correlation
+setup_observability_logging()
 
 
 @asynccontextmanager
@@ -25,6 +31,9 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="MaterialOS API", version="0.1.0", lifespan=lifespan)
+
+# Observability Middleware: W3C traceparent, Prometheus metrics, structured logs
+app.add_middleware(ObservabilityMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -49,3 +58,6 @@ app.add_middleware(
 
 register_error_handlers(app)
 app.include_router(api_router)
+
+# Root-level Prometheus exposition for standard scrapers
+app.add_route("/metrics", metrics_endpoint_response, methods=["GET"], include_in_schema=False)
