@@ -119,7 +119,9 @@ def signup_tenant(db: Session, req: TenantSignupRequest) -> dict:
     ensure_default_accounts(db, tenant_id=tenant.id, company_id=company.id)
     ensure_default_approval_rules(db, tenant_id=tenant.id)
     ensure_default_notification_rules(db, tenant_id=tenant.id)
-    create_subscription_for_new_tenant(db, tenant_id=tenant.id)
+    create_subscription_for_new_tenant(
+        db, tenant_id=tenant.id, plan_slug=req.plan_slug, billing_cycle=req.billing_cycle or "yearly"
+    )
     ensure_default_departments(db, tenant_id=tenant.id, company_id=company.id)
     ensure_default_salary_components(db, tenant_id=tenant.id, company_id=company.id)
     ensure_default_leave_types(db, tenant_id=tenant.id, company_id=company.id)

@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
 import { apiFetch, ApiError } from "@/lib/api";
 import { INDIAN_STATES } from "@/lib/indianStates";
+import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth";
 
 interface IndustryProfileOption {
@@ -41,6 +42,10 @@ export function SignupPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialIndustry = searchParams.get("industry") ?? "building_materials";
+  const initialPlan = searchParams.get("plan") ?? "growth";
+  const initialBilling = searchParams.get("billing") ?? "yearly";
+  const [selectedPlan, setSelectedPlan] = useState<string>(initialPlan);
+  const [selectedBilling, setSelectedBilling] = useState<string>(initialBilling);
 
   const setSession = useAuthStore((s) => s.setSession);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -95,6 +100,8 @@ export function SignupPage() {
           owner_full_name: values.ownerFullName,
           owner_email: values.ownerEmail,
           owner_password: values.ownerPassword,
+          plan_slug: selectedPlan,
+          billing_cycle: selectedBilling,
         },
       });
 
@@ -235,6 +242,70 @@ export function SignupPage() {
                     </span>
                   </div>
                   {errors.tenantSlug && <p className="text-[11px] text-rose-400 font-medium">{errors.tenantSlug.message}</p>}
+                </div>
+
+                {/* Plan Tier Selection */}
+                <div className="space-y-2 pt-1">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-medium text-zinc-300 flex items-center gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5 text-violet-400" />
+                      Plan & Trial Edition
+                    </Label>
+                    <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                      14-Day Free Trial
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      {
+                        slug: "free",
+                        name: "Free",
+                        price: "₹0",
+                        sub: "Forever free",
+                      },
+                      {
+                        slug: "starter",
+                        name: "Starter",
+                        price: selectedBilling === "yearly" ? "₹1,499/mo" : "₹1,899/mo",
+                        sub: "14-day trial",
+                      },
+                      {
+                        slug: "growth",
+                        name: "Growth",
+                        price: selectedBilling === "yearly" ? "₹3,999/mo" : "₹4,999/mo",
+                        sub: "14d trial • Pro",
+                      },
+                    ].map((p) => (
+                      <button
+                        key={p.slug}
+                        type="button"
+                        onClick={() => setSelectedPlan(p.slug)}
+                        className={cn(
+                          "flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition-all",
+                          selectedPlan === p.slug
+                            ? "border-violet-500 bg-violet-600/20 text-white shadow-sm ring-1 ring-violet-400"
+                            : "border-white/10 bg-white/5 text-zinc-400 hover:border-white/20 hover:text-white"
+                        )}
+                      >
+                        <span className="text-xs font-bold text-white">{p.name}</span>
+                        <span className="text-[10.5px] font-semibold text-zinc-200 mt-0.5">{p.price}</span>
+                        <span className="text-[9px] text-zinc-400 mt-0.5">{p.sub}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {selectedPlan !== "free" && (
+                    <div className="flex items-center justify-center gap-2 pt-1 text-[11px] text-zinc-400">
+                      <span>Billing:</span>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedBilling(selectedBilling === "yearly" ? "monthly" : "yearly")}
+                        className="font-semibold text-violet-400 hover:underline"
+                      >
+                        {selectedBilling === "yearly" ? "Annual (Save 20%)" : "Monthly"}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 

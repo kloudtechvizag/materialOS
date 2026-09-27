@@ -42,17 +42,20 @@ def get_billing_address(db: Session, tenant_id: uuid.UUID) -> BillingAddress | N
     ).scalars().first()
 
 
-def create_subscription_for_new_tenant(db: Session, *, tenant_id: uuid.UUID) -> Subscription:
-    plan = get_default_signup_plan(db) or get_plan_by_slug(db, "free")
+def create_subscription_for_new_tenant(
+    db: Session, *, tenant_id: uuid.UUID, plan_slug: str | None = None, billing_cycle: str = "yearly"
+) -> Subscription:
+    plan = (get_plan_by_slug(db, plan_slug) if plan_slug else None) or get_default_signup_plan(db) or get_plan_by_slug(db, "free")
     if plan is None:
         raise AppError(ErrorCode.INTERNAL_ERROR, "No signup plan is configured.", status_code=500)
 
     now = datetime.now(timezone.utc)
     on_trial = plan.trial_days > 0
+    cycle = billing_cycle if billing_cycle in ("monthly", "yearly") else "yearly"
     subscription = Subscription(
         tenant_id=tenant_id, plan_id=plan.id, status="trialing" if on_trial else "active",
-        billing_cycle="yearly", current_period_start=now,
-        current_period_end=now + timedelta(days=plan.trial_days) if on_trial else period_end("yearly", now),
+        billing_cycle=cycle, current_period_start=now,
+        current_period_end=now + timedelta(days=plan.trial_days) if on_trial else period_end(cycle, now),
         trial_ends_at=now + timedelta(days=plan.trial_days) if on_trial else None,
     )
     db.add(subscription)

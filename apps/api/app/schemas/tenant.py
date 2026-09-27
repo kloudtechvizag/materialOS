@@ -18,6 +18,8 @@ class TenantSignupRequest(BaseModel):
     # Defaults to the flagship profile so existing signup flows/tests that
     # don't know about industries yet keep working unchanged.
     industry_slug: str = "building_materials"
+    plan_slug: str | None = None
+    billing_cycle: str = "yearly"
 
 
 class TenantSignupResponse(BaseModel):

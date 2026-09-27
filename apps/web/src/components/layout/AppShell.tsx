@@ -27,6 +27,7 @@ import { useSidebarStore } from "@/store/sidebar";
 import { BottomNavBar } from "@/components/layout/BottomNavBar";
 import { DesktopStatusBar } from "@/components/layout/DesktopStatusBar";
 import { DesktopWindowControls } from "@/components/layout/DesktopWindowControls";
+import { TrialBanner } from "@/components/subscription/TrialBanner";
 import { useBreakpoint } from "@/hooks/useBreakpoint";
 
 export function AppShell({ children }: { children?: React.ReactNode } = {}) {
@@ -119,6 +120,9 @@ export function AppShell({ children }: { children?: React.ReactNode } = {}) {
                 )}
               </div>
             </div>
+
+            {/* Ambient Trial Countdown & Plan Activation Banner */}
+            <TrialBanner />
 
             {/* Center: Omni-Search Bar with Keyboard Shortcut */}
             <div className="hidden md:flex flex-1 max-w-md mx-4 justify-center no-drag">

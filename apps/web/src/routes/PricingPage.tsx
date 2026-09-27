@@ -252,7 +252,13 @@ export function PricingPage() {
                         : "border-white/15 bg-white/5 text-white hover:bg-white/10 hover:border-white/30"
                     )}
                   >
-                    <Link to={plan.slug === "enterprise" ? "/book-demo" : "/signup"}>
+                    <Link
+                      to={
+                        plan.slug === "enterprise"
+                          ? "/book-demo"
+                          : `/signup?plan=${plan.slug}&billing=${yearly ? "yearly" : "monthly"}`
+                      }
+                    >
                       {plan.slug === "enterprise"
                         ? "Talk to Sales"
                         : plan.monthly_price === "0.00" || plan.slug === "free"
