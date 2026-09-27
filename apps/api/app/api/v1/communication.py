@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.db import get_db, set_session_context
+from app.db import SessionLocal, set_session_context
 from app.deps import get_current_user, get_db_tenant, require_permission
 from app.errors import AppError, ErrorCode
 from app.models.communication import (
@@ -236,11 +236,23 @@ def list_messages(
 # Inbound Webhooks (WAHA Event Receiver)
 # -------------------------------------------------------------------------
 
+def _plain_db():
+    """Unauthenticated DB session for inbound webhook handlers (no bearer token)."""
+    db = SessionLocal()
+    try:
+        yield db
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
 @router.post("/webhooks/waha")
 async def waha_webhook_handler(
     request: Request,
     tenant_id: uuid.UUID = Query(None),
-    db: Session = Depends(get_db),
+    db: Session = Depends(lambda: next(_plain_db())),
 ) -> dict[str, Any]:
     """Receives real-time events from WAHA (message, session.status, message.ack).
     Validates tenant context and logs inbound interactions for AI Copilot routing.
