@@ -15,6 +15,7 @@ from app.api.v1 import (
     catalog,
     collections,
     command_center,
+    communication,
     companies,
     compliance,
     crm,
@@ -140,3 +141,4 @@ api_router.include_router(serial.router)
 api_router.include_router(webhooks.router)
 api_router.include_router(support.router)
 api_router.include_router(tenant.router)
+api_router.include_router(communication.router)

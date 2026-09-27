@@ -57,6 +57,12 @@ from app.models.pricing import CustomerItemPrice, RateContract
 from app.models.receipts import ReceiptSettings
 from app.models.serial import RmaRequest, SerialUnit
 from app.models.webhooks import WebhookDelivery, WebhookSubscription
+from app.models.communication import (
+    CommunicationMessage,
+    CommunicationTemplate,
+    InboundCommunicationMessage,
+    TenantCommunicationConfig,
+)
 from app.models.printing import PrintJob, PrintJobArtwork, PrintMachine
 from app.models.procurement import (
     GoodsReceipt,
@@ -219,4 +225,8 @@ __all__ = [
     "RmaRequest",
     "WebhookSubscription",
     "WebhookDelivery",
+    "TenantCommunicationConfig",
+    "CommunicationTemplate",
+    "CommunicationMessage",
+    "InboundCommunicationMessage",
 ]

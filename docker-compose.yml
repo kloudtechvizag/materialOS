@@ -75,6 +75,27 @@ services:
       - ./apps/api:/app
     command: celery -A app.celery_app beat --loglevel=info -s /tmp/celerybeat-schedule
 
+  waha:
+    image: devlikeapro/waha:latest
+    restart: unless-stopped
+    ports:
+      - "53000:3000"
+    environment:
+      - WAHA_ZIP_JSON_VALUE=True
+      - WAHA_PRINT_QR=False
+      - WAHA_DASHBOARD_ENABLED=True
+      - WAHA_APPS_ENABLED=True
+      - WAHA_APPS_ON=calls,chatwoot,mcp
+      - WHATSAPP_DEFAULT_ENGINE=NOWEB
+      - WHATSAPP_API_KEY=materialos_secret_waha_key
+      - WHATSAPP_HOOK_URL=http://api:8000/api/v1/communication/webhooks/waha
+      - WHATSAPP_HOOK_EVENTS=message,session.status,message.ack
+    volumes:
+      - waha_sessions:/app/.sessions
+    depends_on:
+      redis:
+        condition: service_healthy
+
   web:
     build:
       context: ./apps/web
@@ -87,3 +108,4 @@ services:
 
 volumes:
   db_data:
+  waha_sessions:
