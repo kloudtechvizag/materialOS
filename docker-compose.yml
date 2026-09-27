@@ -15,23 +15,17 @@ services:
     image: traefik:v3.1
     restart: unless-stopped
     command:
-      - "--log.level=WARN"
+      - "--log.level=INFO"
       - "--api.dashboard=true"
       - "--api.insecure=true"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--providers.docker.network=materialos_default"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
       - "--entrypoints.web.address=:80"
     ports:
       - "80:80"        # Main HTTP ingress — all services here
-      - "8080:8080"    # Traefik dashboard → http://traefik.localhost:8080
+      - "8080:8080"    # Traefik dashboard → http://traefik.localhost:8080 or http://localhost:8080
     volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.localhost`)"
-      - "traefik.http.routers.traefik-dashboard.entrypoints=web"
-      - "traefik.http.routers.traefik-dashboard.service=api@internal"
+      - ./infra/traefik:/etc/traefik/dynamic:ro
 
   # ---------------------------------------------------------------------------
   # Database
@@ -74,6 +68,8 @@ services:
       context: ./apps/api
     env_file:
       - ./apps/api/.env
+    ports:
+      - "58000:8000"   # Direct host access for backwards compatibility & dev
     expose:
       - "8000"          # internal only — Traefik proxies it
     depends_on:
@@ -86,7 +82,7 @@ services:
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.api.rule=Host(`api.localhost`)"
+      - "traefik.http.routers.api.rule=Host(`api.localhost`) || (Host(`localhost`) && PathPrefix(`/api`))"
       - "traefik.http.routers.api.entrypoints=web"
       - "traefik.http.services.api.loadbalancer.server.port=8000"
 
@@ -131,6 +127,8 @@ services:
   waha:
     image: devlikeapro/waha:latest
     restart: unless-stopped
+    ports:
+      - "53000:3000"   # Direct host access for backwards compatibility & dev
     expose:
       - "3000"          # internal only — Traefik proxies it
     environment:
@@ -164,6 +162,8 @@ services:
   web:
     build:
       context: ./apps/web
+    ports:
+      - "5173:5173"   # Direct host access for Vite dev server & browser tab
     expose:
       - "5173"          # internal only — Traefik proxies it
     volumes:

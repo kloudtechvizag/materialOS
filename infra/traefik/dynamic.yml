@@ -1,0 +1,41 @@
+http:
+  routers:
+    api:
+      rule: "Host(`api.localhost`) || (Host(`localhost`) && PathPrefix(`/api`))"
+      entryPoints:
+        - web
+      service: api-service
+
+    waha:
+      rule: "Host(`waha.localhost`)"
+      entryPoints:
+        - web
+      service: waha-service
+
+    web:
+      rule: "Host(`localhost`) || Host(`app.localhost`)"
+      entryPoints:
+        - web
+      service: web-service
+
+    traefik-dashboard:
+      rule: "Host(`traefik.localhost`)"
+      entryPoints:
+        - web
+      service: api@internal
+
+  services:
+    api-service:
+      loadBalancer:
+        servers:
+          - url: "http://api:8000"
+
+    waha-service:
+      loadBalancer:
+        servers:
+          - url: "http://waha:3000"
+
+    web-service:
+      loadBalancer:
+        servers:
+          - url: "http://web:5173"
