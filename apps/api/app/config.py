@@ -60,6 +60,8 @@ class Settings(BaseSettings):
     # own subscription invoices to tenants (distinct from any tenant's
     # own company_state, which is for *their* sales).
     platform_gstin: str | None = None
+    platform_state: str = "Telangana"
+    platform_gst_rate: Decimal = Decimal("18")
     # WAHA (WhatsApp HTTP API by devlike.pro) & Omnichannel settings
     waha_base_url: str = "http://waha:3000"
     waha_api_key: str = "materialos_secret_waha_key"
