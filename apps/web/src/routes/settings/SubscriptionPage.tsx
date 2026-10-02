@@ -216,7 +216,11 @@ export function SubscriptionPage() {
                   <div>
                     <p className="font-medium">{p.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {p.monthly_price === null ? "Custom" : `₹${Number(subscription.billing_cycle === "yearly" ? p.yearly_price : p.monthly_price).toLocaleString("en-IN")} / ${subscription.billing_cycle === "yearly" ? "yr" : "mo"}`}
+                      {p.monthly_price === null
+                        ? "Custom"
+                        : subscription.billing_cycle === "yearly" && p.yearly_price
+                          ? `₹${Math.round(Number(p.yearly_price) / 12).toLocaleString("en-IN")} / mo (₹${Number(p.yearly_price).toLocaleString("en-IN")} billed yearly)`
+                          : `₹${Number(p.monthly_price).toLocaleString("en-IN")} / mo`}
                     </p>
                   </div>
                   <Button size="sm" onClick={() => changePlan.mutate({ action: planPicker, planSlug: p.slug })} disabled={changePlan.isPending}>

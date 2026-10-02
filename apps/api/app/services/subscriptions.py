@@ -169,6 +169,12 @@ def upgrade_subscription(db: Session, *, tenant_id: uuid.UUID, new_plan_slug: st
     new_plan = get_plan_by_slug(db, new_plan_slug)
     if new_plan is None or not new_plan.is_active:
         raise AppError(ErrorCode.VALIDATION_ERROR, f"Unknown plan: {new_plan_slug!r}", status_code=422)
+    if new_plan_slug == "enterprise":
+        raise AppError(
+            ErrorCode.VALIDATION_ERROR,
+            "Enterprise tier requires a custom enterprise agreement. Please contact sales.",
+            status_code=400,
+        )
 
     return _change_plan(db, tenant_id=tenant_id, subscription=subscription, new_plan=new_plan, billing_cycle=billing_cycle)
 
