@@ -16,6 +16,7 @@ import { formatINR } from "@/lib/format";
 
 interface BillItem { id: string; qty: string; rate: string; taxable_value: string; cgst_amount: string; sgst_amount: string; igst_amount: string; line_total: string; }
 interface PurchaseBill { id: string; number: string; supplier_id: string; bill_date: string; subtotal: string; tax_total: string; total: string; items: BillItem[]; }
+interface SupplierInfo { id: string; name: string; phone?: string; billing_phone?: string; mobile?: string; }
 
 export function PurchaseBillDetailPage() {
   const { billId } = useParams<{ billId: string }>();
@@ -27,6 +28,12 @@ export function PurchaseBillDetailPage() {
   const { data: bill, isLoading, error, refetch } = useQuery({
     queryKey: ["purchase-bill", billId],
     queryFn: () => apiFetch<PurchaseBill>(`/purchase-bills/${billId}`),
+  });
+
+  const { data: supplier } = useQuery({
+    queryKey: ["supplier", bill?.supplier_id],
+    queryFn: () => apiFetch<SupplierInfo>(`/suppliers/${bill!.supplier_id}`),
+    enabled: !!bill?.supplier_id,
   });
 
   const recordPayment = useMutation({
@@ -113,10 +120,12 @@ export function PurchaseBillDetailPage() {
       <WhatsAppSendModal
         open={waOpen}
         onOpenChange={setWaOpen}
-        recipientPhone=""
+        recipientPhone={supplier?.phone || supplier?.billing_phone || supplier?.mobile || ""}
+        recipientName={supplier?.name || ""}
         defaultTemplateSlug="payment_reminder"
         defaultVariables={{
           bill_number: bill.number,
+          customer_name: supplier?.name || "Valued Partner",
           amount: formatINR(bill.total),
           bill_date: bill.bill_date,
         }}

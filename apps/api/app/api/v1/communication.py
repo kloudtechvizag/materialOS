@@ -30,7 +30,9 @@ from app.schemas.communication import (
 )
 from app.services.communication.waha import (
     WahaService,
+    ensure_default_templates,
     get_or_create_tenant_config,
+    is_template_applicable_for_profile,
 )
 
 router = APIRouter(prefix="/communication", tags=["communication"])
@@ -119,15 +121,20 @@ def stop_whatsapp_session(
 @router.get("/templates", response_model=list[CommunicationTemplateOut])
 def list_templates(
     category: str | None = None,
+    business_profile: str | None = None,
     db: Session = Depends(get_db_tenant),
     user: User = Depends(require_permission("communication.view")),
 ) -> list[CommunicationTemplate]:
     # Ensure default templates exist
     get_or_create_tenant_config(db, user.tenant_id)
+    ensure_default_templates(db, user.tenant_id)
     query = select(CommunicationTemplate).filter_by(tenant_id=user.tenant_id)
     if category:
         query = query.filter_by(category=category)
-    return db.execute(query.order_by(CommunicationTemplate.slug)).scalars().all()
+    templates = db.execute(query.order_by(CommunicationTemplate.slug)).scalars().all()
+    if business_profile:
+        templates = [t for t in templates if is_template_applicable_for_profile(t, business_profile)]
+    return templates
 
 
 @router.post("/templates", response_model=CommunicationTemplateOut, status_code=201)

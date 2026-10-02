@@ -71,6 +71,46 @@ DEFAULT_TEMPLATES = [
         "sample_variables": {"invoice_no": "FEE-2026-0092", "student_name": "Diya Kapoor", "class": "3", "section": "A", "amount": "18,500", "due_date": "10-Oct-2026", "upi_pay_link": "upi://pay?pa=greenwood@icici&am=18500"},
     },
     {
+        "slug": "order_confirmation",
+        "name": "Sales Order Confirmation",
+        "category": "sales",
+        "whatsapp_body": "📦 *Order Confirmation - #{{order_number}}*\n\nDear {{customer_name}},\n\nThank you for your order with *{{company_name}}*! Your order *#{{order_number}}* for *₹{{amount}}* has been confirmed.\n\nStatus: *{{status}}*\nWe will notify you once your order is dispatched.",
+        "sms_body": "{{company_name}}: Order #{{order_number}} for Rs.{{amount}} confirmed. Status: {{status}}.",
+        "sample_variables": {"customer_name": "Sri Balaji Constructions", "company_name": "Apex Steels", "order_number": "SO-2026-27-000001", "amount": "3,58,130", "status": "Invoiced"},
+    },
+    {
+        "slug": "invoice_share",
+        "name": "Tax Invoice Share",
+        "category": "sales",
+        "whatsapp_body": "Dear {{customer_name}},\n\nTax Invoice *#{{invoice_number}}* for *₹{{total_amount}}* has been issued by *{{company_name}}*.\n\nDue Date: {{due_date}}.\nPlease review the attached invoice PDF.\nPayment Link: {{pay_link}}",
+        "sms_body": "Invoice #{{invoice_number}} for Rs.{{total_amount}} issued by {{company_name}}. Due date: {{due_date}}.",
+        "sample_variables": {"customer_name": "Prestige Infra", "company_name": "Apex Steels", "invoice_number": "INV-2026-0189", "total_amount": "1,85,500", "due_date": "15-Oct-2026", "pay_link": "https://materialos.app/pay/INV-0189"},
+    },
+    {
+        "slug": "payment_reminder",
+        "name": "Payment Reminder",
+        "category": "sales",
+        "whatsapp_body": "🔔 *Payment Reminder*\n\nDear {{customer_name}},\n\nThis is a friendly reminder from *{{company_name}}* regarding *#{{bill_number}}* for *₹{{amount}}* dated *{{bill_date}}*.\n\nPlease process the payment at your earliest convenience.\nThank you for your business!",
+        "sms_body": "{{company_name}}: Friendly reminder for Bill #{{bill_number}} of Rs.{{amount}} dated {{bill_date}}.",
+        "sample_variables": {"customer_name": "Valued Partner", "company_name": "Apex Steels", "bill_number": "PB-2026-0045", "amount": "2,45,000", "bill_date": "25-Sep-2026"},
+    },
+    {
+        "slug": "dispatch_alert",
+        "name": "Trip Dispatch Notification",
+        "category": "dispatch",
+        "whatsapp_body": "🚚 *Trip Consignment Dispatched!*\n\nTrip Date: *{{trip_date}}*\nTotal Deliveries: *{{delivery_count}}*\nStatus: *{{status}}*\n\nPlease track your deliveries in real-time.",
+        "sms_body": "Trip dispatched on {{trip_date}} with {{delivery_count}} deliveries. Status: {{status}}.",
+        "sample_variables": {"trip_date": "02-Oct-2026", "delivery_count": "3", "status": "In Transit"},
+    },
+    {
+        "slug": "admission_status",
+        "name": "Admission Application Status",
+        "category": "education",
+        "whatsapp_body": "🎓 *Admission Application Update*\n\nDear Parent/Guardian,\n\nThe admission application for *{{student_name}}* applied on *{{application_date}}* has been updated.\n\nCurrent Status: *{{status}}*.\nPlease contact the admissions office for further procedures.",
+        "sms_body": "Admission update: Application for {{student_name}} is now {{status}}. Contact admissions office.",
+        "sample_variables": {"student_name": "Rohan Sharma", "status": "Admitted", "application_date": "28-Sep-2026"},
+    },
+    {
         "slug": "boq_ra_bill",
         "name": "Contractor RA Bill Approval",
         "category": "contractor",
@@ -90,6 +130,48 @@ def clean_phone_number(phone: str) -> str:
     return cleaned
 
 
+def ensure_default_templates(db: Session, tenant_id: uuid.UUID) -> None:
+    """Ensure all default communication templates exist for the given tenant."""
+    existing_slugs = set(
+        db.execute(
+            select(CommunicationTemplate.slug).filter_by(tenant_id=tenant_id)
+        ).scalars().all()
+    )
+    for tpl in DEFAULT_TEMPLATES:
+        if tpl["slug"] not in existing_slugs:
+            db.add(CommunicationTemplate(tenant_id=tenant_id, **tpl))
+    db.flush()
+
+
+def is_template_applicable_for_profile(template: CommunicationTemplate, profile_slug: str | None) -> bool:
+    """Filter templates wrt business/industry profile."""
+    if not profile_slug:
+        return True
+    slug = template.slug
+    cat = template.category
+
+    is_education = profile_slug in ("school_education", "education")
+    is_contractor = profile_slug in ("construction_contractor", "civil_contractor")
+
+    # Education-exclusive templates
+    if slug in ("student_absent", "fee_invoice", "admission_status") or cat in ("attendance", "fees", "education"):
+        return is_education
+
+    # Contractor-exclusive templates
+    if slug in ("boq_ra_bill",) or cat in ("contractor",):
+        return is_contractor
+
+    # Commercial trade templates hidden from education
+    if is_education and slug in ("quote_created", "order_confirmation", "invoice_created", "invoice_share", "dispatch_challan", "dispatch_alert"):
+        return False
+
+    # Dispatch templates hidden from pure service/lab profiles
+    if slug in ("dispatch_challan", "dispatch_alert") and profile_slug in ("services", "travel", "laboratory"):
+        return False
+
+    return True
+
+
 def get_or_create_tenant_config(db: Session, tenant_id: uuid.UUID) -> TenantCommunicationConfig:
     config = db.execute(
         select(TenantCommunicationConfig).filter_by(tenant_id=tenant_id)
@@ -107,15 +189,7 @@ def get_or_create_tenant_config(db: Session, tenant_id: uuid.UUID) -> TenantComm
         db.add(config)
         db.flush()
 
-        # Seed default templates for tenant
-        for tpl in DEFAULT_TEMPLATES:
-            existing_tpl = db.execute(
-                select(CommunicationTemplate).filter_by(tenant_id=tenant_id, slug=tpl["slug"])
-            ).scalar_one_or_none()
-            if not existing_tpl:
-                db.add(CommunicationTemplate(tenant_id=tenant_id, **tpl))
-        db.flush()
-
+    ensure_default_templates(db, tenant_id)
     return config
 
 

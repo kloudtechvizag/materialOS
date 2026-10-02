@@ -78,6 +78,28 @@ def test_communication_templates():
     assert "dispatch_challan" in slugs
     assert "student_absent" in slugs
     assert "fee_invoice" in slugs
+    assert "order_confirmation" in slugs
+
+    # Test business profile filtering for Building Materials
+    resp_bm = client.get("/api/v1/communication/templates?business_profile=building_materials", headers=headers)
+    assert resp_bm.status_code == 200
+    bm_slugs = {t["slug"] for t in resp_bm.json()}
+    assert "order_confirmation" in bm_slugs
+    assert "dispatch_challan" in bm_slugs
+    assert "invoice_created" in bm_slugs
+    assert "student_absent" not in bm_slugs
+    assert "fee_invoice" not in bm_slugs
+    assert "boq_ra_bill" not in bm_slugs
+
+    # Test business profile filtering for School Management
+    resp_school = client.get("/api/v1/communication/templates?business_profile=school_education", headers=headers)
+    assert resp_school.status_code == 200
+    school_slugs = {t["slug"] for t in resp_school.json()}
+    assert "student_absent" in school_slugs
+    assert "fee_invoice" in school_slugs
+    assert "boq_ra_bill" not in school_slugs
+    assert "dispatch_challan" not in school_slugs
+    assert "order_confirmation" not in school_slugs
 
     # Create new custom template
     new_tpl_slug = f"custom_notice_{uuid.uuid4().hex[:4]}"

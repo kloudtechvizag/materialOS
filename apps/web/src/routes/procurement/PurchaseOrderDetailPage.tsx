@@ -14,7 +14,8 @@ import { apiFetch } from "@/lib/api";
 import { formatINR } from "@/lib/format";
 
 interface POItem { id: string; item_id: string; qty: string; uom: string; rate: string; line_total: string; qty_received: string; }
-interface PurchaseOrder { id: string; number: string; status: string; subtotal: string; items: POItem[]; }
+interface PurchaseOrder { id: string; number: string; supplier_id?: string; status: string; subtotal: string; items: POItem[]; }
+interface SupplierInfo { id: string; name: string; phone?: string; billing_phone?: string; mobile?: string; }
 
 export function PurchaseOrderDetailPage() {
   const { orderId } = useParams<{ orderId: string }>();
@@ -27,6 +28,12 @@ export function PurchaseOrderDetailPage() {
   const { data: order, isLoading, error, refetch } = useQuery({
     queryKey: ["purchase-order", orderId],
     queryFn: () => apiFetch<PurchaseOrder>(`/purchase-orders/${orderId}`),
+  });
+
+  const { data: supplier } = useQuery({
+    queryKey: ["supplier", order?.supplier_id],
+    queryFn: () => apiFetch<SupplierInfo>(`/suppliers/${order!.supplier_id}`),
+    enabled: !!order?.supplier_id,
   });
 
   const approve = useMutation({
@@ -130,10 +137,12 @@ export function PurchaseOrderDetailPage() {
       <WhatsAppSendModal
         open={waOpen}
         onOpenChange={setWaOpen}
-        recipientPhone=""
+        recipientPhone={supplier?.phone || supplier?.billing_phone || supplier?.mobile || ""}
+        recipientName={supplier?.name || ""}
         defaultTemplateSlug="order_confirmation"
         defaultVariables={{
           order_number: order.number,
+          customer_name: supplier?.name || "Valued Partner",
           amount: formatINR(order.subtotal),
           status: order.status,
         }}

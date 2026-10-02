@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   MessageSquare,
@@ -27,6 +27,8 @@ import {
   fetchCommunicationTemplates,
   sendWhatsAppMessage,
 } from "@/lib/communication";
+import { useIndustryProfile } from "@/lib/industryProfile";
+import { filterTemplatesForProfile } from "@/lib/communicationProfile";
 
 interface WhatsAppSendModalProps {
   open: boolean;
@@ -46,7 +48,7 @@ export function WhatsAppSendModal({
   open,
   onOpenChange,
   recipientPhone: initialPhone,
-  recipientName = "",
+  recipientName: initialRecipientName = "",
   defaultTemplateSlug,
   defaultVariables = {},
   mediaUrl,
@@ -56,7 +58,10 @@ export function WhatsAppSendModal({
   onSuccess,
 }: WhatsAppSendModalProps) {
   const queryClient = useQueryClient();
+  const { profile } = useIndustryProfile();
+
   const [phone, setPhone] = useState(initialPhone);
+  const [recipientName, setRecipientName] = useState(initialRecipientName);
   const [selectedSlug, setSelectedSlug] = useState(defaultTemplateSlug || "");
   const [variables, setVariables] = useState<Record<string, string>>(defaultVariables);
   const [customText, setCustomText] = useState("");
@@ -67,15 +72,35 @@ export function WhatsAppSendModal({
   }, [initialPhone]);
 
   useEffect(() => {
+    setRecipientName(initialRecipientName || "");
+  }, [initialRecipientName]);
+
+  useEffect(() => {
     if (defaultTemplateSlug) setSelectedSlug(defaultTemplateSlug);
     if (defaultVariables) setVariables(defaultVariables);
   }, [defaultTemplateSlug, defaultVariables]);
 
-  const { data: templates } = useQuery({
-    queryKey: ["communication-templates"],
-    queryFn: () => fetchCommunicationTemplates(),
+  const { data: rawTemplates } = useQuery({
+    queryKey: ["communication-templates", profile?.slug],
+    queryFn: () => fetchCommunicationTemplates(undefined, profile?.slug),
     enabled: open,
   });
+
+  // Filter templates wrt the tenant's active business / industry profile
+  const templates = useMemo(() => {
+    return filterTemplatesForProfile(rawTemplates, profile);
+  }, [rawTemplates, profile]);
+
+  // Ensure an applicable template is selected
+  useEffect(() => {
+    if (!templates || templates.length === 0) return;
+    if (defaultTemplateSlug && templates.some((t) => t.slug === defaultTemplateSlug)) {
+      setSelectedSlug(defaultTemplateSlug);
+    } else if (!selectedSlug || !templates.some((t) => t.slug === selectedSlug)) {
+      setSelectedSlug(templates[0].slug);
+      setVariables((prev) => ({ ...templates[0].sample_variables, ...prev }));
+    }
+  }, [defaultTemplateSlug, templates, selectedSlug]);
 
   const selectedTemplate = templates?.find((t) => t.slug === selectedSlug);
 
@@ -84,7 +109,15 @@ export function WhatsAppSendModal({
     if (useCustom) return customText;
     if (!selectedTemplate) return customText;
     let text = selectedTemplate.whatsapp_body;
-    for (const [key, val] of Object.entries(variables)) {
+    const mergedVars: Record<string, string> = {
+      ...selectedTemplate.sample_variables,
+      ...variables,
+    };
+    if (recipientName.trim()) {
+      mergedVars.customer_name = recipientName.trim();
+      mergedVars.student_name = recipientName.trim();
+    }
+    for (const [key, val] of Object.entries(mergedVars)) {
       text = text.replace(new RegExp(`\\{\\{${key}\\}\\}`, "g"), val || "");
     }
     return text;
@@ -94,10 +127,13 @@ export function WhatsAppSendModal({
     mutationFn: () =>
       sendWhatsAppMessage({
         recipient_phone: phone,
-        recipient_name: recipientName,
+        recipient_name: recipientName.trim() || undefined,
         template_slug: useCustom ? undefined : selectedSlug,
         message_text: useCustom ? customText : undefined,
-        variables,
+        variables: {
+          ...variables,
+          ...(recipientName.trim() ? { customer_name: recipientName.trim() } : {}),
+        },
         media_url: mediaUrl,
         media_filename: mediaFilename,
         entity_type: entityType,
@@ -148,8 +184,9 @@ export function WhatsAppSendModal({
               <Label className="text-zinc-300 text-xs font-medium">Recipient Name</Label>
               <Input
                 value={recipientName}
-                readOnly
-                className="border-white/10 bg-white/5 text-xs text-zinc-400 cursor-not-allowed"
+                onChange={(e) => setRecipientName(e.target.value)}
+                placeholder="e.g. Sri Balaji Constructions"
+                className="border-white/10 bg-white/5 text-xs text-white focus:border-emerald-500"
               />
             </div>
           </div>
@@ -157,7 +194,14 @@ export function WhatsAppSendModal({
           {/* Template Selector */}
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <Label className="text-zinc-300 text-xs font-medium">Message Template</Label>
+              <div className="flex items-center gap-2">
+                <Label className="text-zinc-300 text-xs font-medium">Message Template</Label>
+                {profile && (
+                  <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 text-[9px] py-0 px-1.5 font-normal">
+                    {profile.name}
+                  </Badge>
+                )}
+              </div>
               <button
                 type="button"
                 onClick={() => setUseCustom(!useCustom)}

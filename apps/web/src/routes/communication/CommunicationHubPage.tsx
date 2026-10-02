@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   MessageSquare,
@@ -32,14 +32,18 @@ import {
   fetchWhatsAppSessionStatus,
   type CommunicationTemplate,
 } from "@/lib/communication";
+import { useIndustryProfile } from "@/lib/industryProfile";
+import { filterTemplatesForProfile } from "@/lib/communicationProfile";
 import { WhatsAppSendModal } from "@/components/communication/WhatsAppSendModal";
 
 export function CommunicationHubPage() {
   const queryClient = useQueryClient();
+  const { profile } = useIndustryProfile();
   const [activeTab, setActiveTab] = useState("messages");
   const [searchPhone, setSearchPhone] = useState("");
   const [testModalOpen, setTestModalOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<CommunicationTemplate | null>(null);
+  const [filterByProfileOnly, setFilterByProfileOnly] = useState(true);
 
   // New Template Form State
   const [newSlug, setNewSlug] = useState("");
@@ -65,10 +69,15 @@ export function CommunicationHubPage() {
     refetchInterval: 5000,
   });
 
-  const { data: templates } = useQuery({
+  const { data: rawTemplates } = useQuery({
     queryKey: ["communication-templates"],
     queryFn: () => fetchCommunicationTemplates(),
   });
+
+  const templates = useMemo(() => {
+    if (!filterByProfileOnly || !profile) return rawTemplates;
+    return filterTemplatesForProfile(rawTemplates, profile);
+  }, [rawTemplates, profile, filterByProfileOnly]);
 
   const createTemplateMutation = useMutation({
     mutationFn: () =>
@@ -326,10 +335,33 @@ export function CommunicationHubPage() {
             <div className="lg:col-span-2 space-y-4">
               <Card className="border-white/10 bg-[#0B0F19]/90 backdrop-blur-xl">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-bold text-white">Pre-Configured Industry Templates</CardTitle>
-                  <CardDescription className="text-xs text-zinc-400">
-                    Templates adapt terminology and variables based on your active business profile.
-                  </CardDescription>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <CardTitle className="text-base font-bold text-white flex items-center gap-2">
+                        Pre-Configured Templates
+                        {profile && (
+                          <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 text-[10px] py-0">
+                            {profile.name}
+                          </Badge>
+                        )}
+                      </CardTitle>
+                      <CardDescription className="text-xs text-zinc-400 mt-0.5">
+                        {filterByProfileOnly && profile
+                          ? `Displaying templates tailored for your ${profile.name} business profile.`
+                          : "Displaying all communication templates in system."}
+                      </CardDescription>
+                    </div>
+                    {profile && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setFilterByProfileOnly(!filterByProfileOnly)}
+                        className="text-[11px] h-7 border-white/10 text-zinc-300 hover:text-white"
+                      >
+                        {filterByProfileOnly ? "Show All Templates" : `Filter by ${profile.name}`}
+                      </Button>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-2.5">
                   {templates?.map((t) => (

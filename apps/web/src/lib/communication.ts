@@ -145,8 +145,14 @@ export async function stopWhatsAppSession(): Promise<WhatsAppSessionStatus> {
   });
 }
 
-export async function fetchCommunicationTemplates(category?: string): Promise<CommunicationTemplate[]> {
-  const query = category ? `?category=${encodeURIComponent(category)}` : "";
+export async function fetchCommunicationTemplates(
+  category?: string,
+  businessProfile?: string
+): Promise<CommunicationTemplate[]> {
+  const params = new URLSearchParams();
+  if (category) params.set("category", category);
+  if (businessProfile) params.set("business_profile", businessProfile);
+  const query = params.toString() ? `?${params.toString()}` : "";
   return apiFetch<CommunicationTemplate[]>(`/communication/templates${query}`);
 }
 

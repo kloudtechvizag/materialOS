@@ -24,9 +24,18 @@ interface SalesOrderItem {
 interface SalesOrder {
   id: string;
   number: string;
+  customer_id?: string;
   status: string;
   total: string;
   items: SalesOrderItem[];
+}
+
+interface CustomerInfo {
+  id: string;
+  name: string;
+  phone?: string;
+  billing_phone?: string;
+  mobile?: string;
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -48,6 +57,12 @@ export function SalesOrderDetailPage() {
     queryFn: () => apiFetch<SalesOrder>(`/sales-orders/${orderId}`),
   });
 
+  const { data: customer } = useQuery({
+    queryKey: ["customer", order?.customer_id],
+    queryFn: () => apiFetch<CustomerInfo>(`/customers/${order!.customer_id}`),
+    enabled: !!order?.customer_id,
+  });
+
   const dispatch = useMutation({
     mutationFn: () => apiFetch(`/sales-orders/${orderId}/dispatch`, { method: "POST" }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["sales-order", orderId] }),
@@ -62,12 +77,27 @@ export function SalesOrderDetailPage() {
   if (error) return <ErrorState error={error} onRetry={() => refetch()} />;
   if (!order) return null;
 
+  const recipientPhone = customer?.phone || customer?.billing_phone || customer?.mobile || "";
+  const recipientName = customer?.name || "";
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">{order.number}</h1>
-          <Badge variant={order.status === "invoiced" ? "success" : "secondary"} className="mt-1">{STATUS_LABEL[order.status] ?? order.status}</Badge>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-semibold">{order.number}</h1>
+            <Badge variant={order.status === "invoiced" ? "success" : "secondary"}>
+              {STATUS_LABEL[order.status] ?? order.status}
+            </Badge>
+          </div>
+          {customer && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Customer: <span className="text-foreground font-medium">{customer.name}</span>
+              {recipientPhone && (
+                <span className="ml-1.5 font-mono text-emerald-400">({recipientPhone})</span>
+              )}
+            </p>
+          )}
         </div>
         <div className="flex gap-2">
           {order.status === "reserved" && <Button onClick={() => dispatch.mutate()} disabled={dispatch.isPending}>{dispatch.isPending ? "Dispatching..." : "Dispatch"}</Button>}
@@ -112,12 +142,14 @@ export function SalesOrderDetailPage() {
       <WhatsAppSendModal
         open={waOpen}
         onOpenChange={setWaOpen}
-        recipientPhone=""
+        recipientPhone={recipientPhone}
+        recipientName={recipientName}
         defaultTemplateSlug="order_confirmation"
         defaultVariables={{
           order_number: order.number,
+          customer_name: recipientName || "Valued Customer",
           amount: formatINR(order.total),
-          status: order.status,
+          status: STATUS_LABEL[order.status] ?? order.status,
         }}
         entityType="sales_order"
         entityId={order.id}
