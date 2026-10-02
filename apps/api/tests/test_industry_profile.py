@@ -167,3 +167,42 @@ def test_a_laboratory_tenants_dashboard_config_round_trips_through_companies():
 
     company = client.get("/api/v1/companies", headers=headers).json()[0]
     assert company["industry_profile"]["golden_workflow"]["cta_href"] == "/lab/samples"
+
+
+def test_company_activity_summary_and_sister_company_fork():
+    slug = f"industry-fork-{uuid.uuid4().hex[:8]}"
+    token = _signed_up_token(slug, industry_slug="building_materials")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    company = client.get("/api/v1/companies", headers=headers).json()[0]
+    comp_id = company["id"]
+
+    # Activity summary
+    summary_resp = client.get(f"/api/v1/companies/{comp_id}/activity-summary", headers=headers)
+    assert summary_resp.status_code == 200
+    summary = summary_resp.json()
+    assert "has_transactions" in summary
+    assert "invoices_count" in summary
+    assert summary["has_transactions"] is False  # brand new company
+
+    # Fork a sister company for retail
+    fork_resp = client.post(
+        "/api/v1/companies/fork",
+        headers=headers,
+        json={
+            "source_company_id": comp_id,
+            "name": "Sister Retail Mart",
+            "industry_slug": "retail",
+            "clone_parties": True,
+        },
+    )
+    assert fork_resp.status_code == 200
+    forked = fork_resp.json()
+    assert forked["name"] == "Sister Retail Mart"
+    assert forked["industry_profile"]["slug"] == "retail"
+
+    # Listing companies now shows both companies
+    all_companies = client.get("/api/v1/companies", headers=headers).json()
+    assert len(all_companies) == 2
+    assert {c["name"] for c in all_companies} == {company["name"], "Sister Retail Mart"}
+

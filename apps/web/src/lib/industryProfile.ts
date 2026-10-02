@@ -49,10 +49,20 @@ export function useIndustryProfile() {
     enabled: !!tenantSlug,
   });
 
+  const activeId = typeof window !== "undefined" ? localStorage.getItem("materialos_active_company_id") : null;
+  const activeCompany = (query.data && query.data.find((c) => c.id === activeId)) || query.data?.[0];
+
+  const setActiveCompany = (companyId: string) => {
+    localStorage.setItem("materialos_active_company_id", companyId);
+    window.location.reload();
+  };
+
   return {
-    profile: query.data?.[0]?.industry_profile ?? null,
-    companyId: query.data?.[0]?.id ?? null,
-    companyName: query.data?.[0]?.name ?? null,
+    profile: activeCompany?.industry_profile ?? null,
+    companyId: activeCompany?.id ?? null,
+    companyName: activeCompany?.name ?? null,
+    companies: query.data ?? [],
+    setActiveCompany,
     isLoading: query.isLoading,
   };
 }

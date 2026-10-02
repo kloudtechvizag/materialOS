@@ -79,6 +79,22 @@ class CompanyIndustryUpdate(BaseModel):
     industry_slug: str
 
 
+class CompanyActivitySummary(BaseModel):
+    invoices_count: int
+    orders_count: int
+    items_count: int
+    customers_count: int
+    has_transactions: bool
+
+
+class CompanyForkRequest(BaseModel):
+    source_company_id: uuid.UUID
+    name: str
+    legal_name: str | None = None
+    industry_slug: str
+    clone_parties: bool = True
+
+
 class BranchOut(BaseModel):
     id: uuid.UUID
     company_id: uuid.UUID
